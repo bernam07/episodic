@@ -1,7 +1,16 @@
 # Episodic
 
-A Letterboxd for television. Track series, check off episodes, rate what you finish.
-A PWA built mobile-first for iPhone, installable to the home screen.
+A Letterboxd for television. Track series, check off episodes, rate what you finish,
+and follow what your friends are watching. A PWA built mobile-first for iPhone,
+installable to the home screen, and fully usable on desktop.
+
+## Features
+
+- **Discover** — endless browse feed with genre filters, trending hero, TMDB search
+- **Track** — four lists (Want to Watch, Watching, Watched, Abandoned), per-episode check-ins, season progress bars
+- **Know where you stand** — "up to date", "3 episodes behind", "you finished this series", with next air dates
+- **Rate & review** — half-star ratings, spoiler-tagged reviews, editable and deletable
+- **Social** — search people, follow them, and see a feed of what they add, rate and finish
 
 ## Stack
 
@@ -91,14 +100,33 @@ Modals render as bottom sheets on phones and as centered dialogs from `md` up.
 
 **"Up to date" vs "finished" are different states.** `describeWatchState` in `domain/entities/Airing.ts` distinguishes them: a returning series with every aired episode watched is *up to date* (and shows the next air date), while only an ended series with every episode watched is *finished*. Aired counts are derived from TMDB's `last_episode_to_air` combined with `seasons_meta`.
 
+## Privacy model
+
+**Libraries are visible only to people you follow.** This is enforced in Postgres, not in the UI:
+
+```sql
+using (
+  auth.uid() = user_id
+  or exists (select 1 from follows f
+             where f.follower_id = auth.uid() and f.following_id = user_series_status.user_id)
+)
+```
+
+Unfollowing revokes access immediately. Aggregate counts (series, episodes, reviews) are public via `security definer` RPCs, matching how Letterboxd shows profile stats. Episode-level check-ins stay private to their owner.
+
+**Username login never exposes emails.** Signing in with a username needs a username-to-email lookup. Doing that with a database RPC would leak every user's email to anyone who can guess a username, so it happens inside the `auth-login` Edge Function using the service role instead. The browser only ever receives tokens. The function returns an identical `invalid_credentials` error for both an unknown username and a wrong password, so it cannot be used to enumerate accounts.
+
+**Usernames are claimed atomically.** The signup trigger raises on a duplicate, and because it runs inside the signup transaction the auth user is rolled back too — no orphaned account. The live availability check in the UI is a convenience, not the guard.
+
 ## Verification
 
 Nothing here was shipped on assumption:
 
 - **Schema** — 32 behaviour checks against real Postgres (via PGlite) covering the auth trigger, username collisions, upsert idempotency, progress math, every status transition, review constraints, cross-user RLS isolation, and cascade deletion of a user
+- **Social schema** — 24 further checks: follow constraints (no self-follow, no forging), the follow-gated library policy, that unfollowing revokes access, search accuracy, and follow cascade on user deletion
 - **Domain** — 24 unit checks over the airing logic: status parsing, aired-episode derivation, and every `WatchState` branch
-- **Live backend** — end-to-end against a real project: signup → profile trigger → TMDB function → series cache → season check-in → progress → review
-- **UI** — driven in Chromium at iPhone 15 Pro, iPad Pro, and 1440px desktop viewports: signup, search, add to library, episode check-in, mark-season-watched, mark-series-watched, review, library, profile, session persistence across reload, sign out, no horizontal overflow at any breakpoint, zero console errors
+- **Auth** — 13 checks against the live project: username signup, duplicate rejection, username/email login, case-insensitivity, no email in the response, and identical errors for wrong-password vs unknown-user
+- **UI** — 40 checks driven in Chromium at iPhone 15 Pro, iPad Pro, and 1440px desktop viewports, using two real accounts that follow each other: signup, login, password reset, infinite scroll, genre filters, user search, follow/unfollow, friends feed, library filters, review deletion, and no horizontal overflow at any breakpoint
 
 ## License
 
