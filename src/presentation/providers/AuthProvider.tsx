@@ -6,9 +6,11 @@ type AuthContextValue = {
   user: AuthUser | null;
   profile: Profile | null;
   initialising: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, username?: string) => Promise<void>;
+  signIn: (identifier: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -75,11 +77,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    await container.usecases.signIn.execute({ email, password });
+  const signIn = useCallback(async (identifier: string, password: string) => {
+    const next = await container.usecases.signIn.execute({ identifier, password });
+    setUser(next);
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, username?: string) => {
+  const signUp = useCallback(async (email: string, password: string, username: string) => {
     await container.usecases.signUp.execute({ email, password, username });
   }, []);
 
@@ -87,9 +90,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await container.usecases.signOut.execute();
   }, []);
 
+  const requestPasswordReset = useCallback(async (email: string) => {
+    await container.usecases.requestPasswordReset.execute(email);
+  }, []);
+
+  const updatePassword = useCallback(async (password: string) => {
+    await container.usecases.updatePassword.execute(password);
+  }, []);
+
   const value = useMemo(
-    () => ({ user, profile, initialising, signIn, signUp, signOut }),
-    [user, profile, initialising, signIn, signUp, signOut]
+    () => ({
+      user,
+      profile,
+      initialising,
+      signIn,
+      signUp,
+      signOut,
+      requestPasswordReset,
+      updatePassword,
+    }),
+    [user, profile, initialising, signIn, signUp, signOut, requestPasswordReset, updatePassword]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -15,6 +15,7 @@ import { Button } from "@/presentation/components/ui/Button";
 import { RatingDisplay } from "@/presentation/components/ui/Rating";
 import { Sheet } from "@/presentation/components/ui/Sheet";
 import { FullScreenSpinner } from "@/presentation/components/ui/Spinner";
+import { useAuth } from "@/presentation/hooks/useAuth";
 import { useSeriesDetail } from "@/presentation/hooks/useDiscovery";
 import { useOwnReview, useSeriesReviews } from "@/presentation/hooks/useReviews";
 import {
@@ -48,6 +49,7 @@ function BackButton() {
 export function SeriesDetailScreen() {
   const params = useParams<{ tmdbId: string }>();
   const tmdbId = Number(params.tmdbId);
+  const { user } = useAuth();
 
   const [statusSheetOpen, setStatusSheetOpen] = useState(false);
   const [reviewSheetOpen, setReviewSheetOpen] = useState(false);
@@ -207,7 +209,11 @@ export function SeriesDetailScreen() {
 
         <section className="mt-7">
           <h2 className="mb-1 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">Reviews</h2>
-          <ReviewList reviews={reviews ?? []} />
+          <ReviewList
+            reviews={reviews ?? []}
+            currentUserId={user?.id}
+            emptyMessage="No reviews yet. Be the first."
+          />
         </section>
       </div>
 

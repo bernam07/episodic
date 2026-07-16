@@ -1,11 +1,53 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import type { SearchResult } from "@/domain/repositories/ITmdbRepository";
 import { container } from "@/presentation/di/container";
 import { queryKeys } from "./queryKeys";
+
+function nextPageParam(last: SearchResult) {
+  return last.page < last.totalPages ? last.page + 1 : undefined;
+}
 
 export function useTrending() {
   return useQuery({
     queryKey: queryKeys.trending,
     queryFn: () => container.usecases.getTrending.execute(),
+    staleTime: 1000 * 60 * 60,
+  });
+}
+
+export function useInfiniteDiscover(genreId: number | null) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.discover(genreId),
+    queryFn: ({ pageParam }) => container.usecases.discoverByGenre.execute(genreId, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: nextPageParam,
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
+export function useInfiniteTrending() {
+  return useInfiniteQuery({
+    queryKey: queryKeys.trendingInfinite,
+    queryFn: ({ pageParam }) => container.usecases.getTrending.execute(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: nextPageParam,
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
+export function useGenres() {
+  return useQuery({
+    queryKey: queryKeys.genres,
+    queryFn: () => container.usecases.getGenres.execute(),
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+}
+
+export function useRecommendations(tmdbId: number | null) {
+  return useQuery({
+    queryKey: queryKeys.recommendations(tmdbId),
+    queryFn: () => container.usecases.getRecommendations.execute(tmdbId as number),
+    enabled: tmdbId !== null && tmdbId > 0,
     staleTime: 1000 * 60 * 60,
   });
 }

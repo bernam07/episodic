@@ -40,3 +40,18 @@ export function useSubmitReview(seriesId: string | null) {
     },
   });
 }
+
+export function useDeleteReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (seriesId: string) => container.usecases.deleteReview.execute(seriesId),
+    onSuccess: (_result, seriesId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.seriesReviews(seriesId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ownReview(seriesId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ownReviews });
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed });
+    },
+  });
+}

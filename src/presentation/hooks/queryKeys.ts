@@ -2,7 +2,12 @@ import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
 
 export const queryKeys = {
   trending: ["trending"] as const,
+  trendingInfinite: ["trending", "infinite"] as const,
+  discover: (genreId: number | null) => ["discover", genreId ?? "all"] as const,
+  genres: ["genres"] as const,
+  recommendations: (tmdbId: number | null) => ["recommendations", tmdbId] as const,
   search: (query: string) => ["search", query] as const,
+  searchProfiles: (query: string) => ["search-profiles", query] as const,
   seriesDetail: (tmdbId: number) => ["series", tmdbId] as const,
   season: (tmdbId: number, seasonNumber: number) => ["series", tmdbId, "season", seasonNumber] as const,
   library: (status?: SeriesStatus) => ["library", status ?? "all"] as const,
@@ -13,4 +18,7 @@ export const queryKeys = {
   seriesReviews: (seriesId: string | null) => ["reviews", seriesId] as const,
   ownReview: (seriesId: string | null) => ["own-review", seriesId] as const,
   ownReviews: ["own-reviews"] as const,
+  followingFeed: ["following-feed"] as const,
+  profileSummary: (username: string | null) => ["profile-summary", username] as const,
+  userLibrary: (userId: string | null) => ["user-library", userId] as const,
 };
