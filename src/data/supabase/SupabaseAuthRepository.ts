@@ -1,8 +1,8 @@
 import { AppError } from "@/core/errors/AppError";
 import type { AuthUser, Profile } from "@/domain/entities/Profile";
 import type {
-  Credentials,
   IAuthRepository,
+  SignInInput,
   SignUpInput,
 } from "@/domain/repositories/IAuthRepository";
 import { supabase } from "./client";
@@ -45,14 +45,29 @@ export class SupabaseAuthRepository implements IAuthRepository {
     };
   }
 
-  async signIn({ email, password }: Credentials): Promise<AuthUser> {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  async signIn({ identifier, password }: SignInInput): Promise<AuthUser> {
+    const { data, error } = await supabase.functions.invoke<{
+      access_token: string;
+      refresh_token: string;
+    }>("auth-login", {
+      method: "POST",
+      body: { identifier, password },
+    });
 
-    if (error) {
-      throw new AppError("auth", "Incorrect email or password.", error);
+    if (error || !data?.access_token) {
+      throw new AppError("auth", "Incorrect username or password.", error);
     }
 
-    return toAuthUser(data.user);
+    const { data: session, error: sessionError } = await supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+    });
+
+    if (sessionError || !session.user) {
+      throw new AppError("auth", "Could not start your session.", sessionError);
+    }
+
+    return toAuthUser(session.user);
   }
 
   async signUp({ email, password, username }: SignUpInput): Promise<AuthUser | null> {
@@ -60,15 +75,41 @@ export class SupabaseAuthRepository implements IAuthRepository {
       email,
       password,
       options: {
-        data: username ? { username, display_name: username } : {},
+        data: { username, display_name: username },
       },
+    });
+
+    if (error) {
+      const taken =
+        error.message.toLowerCase().includes("username_taken") ||
+        error.message.toLowerCase().includes("duplicate");
+
+      throw new AppError(
+        "auth",
+        taken ? `Username "${username}" is already taken.` : error.message,
+        error
+      );
+    }
+
+    return data.user ? toAuthUser(data.user) : null;
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
     });
 
     if (error) {
       throw new AppError("auth", error.message, error);
     }
+  }
 
-    return data.user ? toAuthUser(data.user) : null;
+  async updatePassword(password: string): Promise<void> {
+    const { error } = await supabase.auth.updateUser({ password });
+
+    if (error) {
+      throw new AppError("auth", error.message, error);
+    }
   }
 
   async signOut(): Promise<void> {

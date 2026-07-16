@@ -5,7 +5,8 @@ import { supabase } from "./client";
 
 const SELECT_WITH_AUTHOR = `
   id, user_id, series_id, rating, body, contains_spoilers, created_at,
-  profiles ( username, display_name, avatar_url )
+  profiles ( username, display_name, avatar_url ),
+  series ( tmdb_id, name, poster_path )
 `;
 
 type ReviewRow = {
@@ -17,6 +18,7 @@ type ReviewRow = {
   contains_spoilers: boolean;
   created_at: string;
   profiles?: { username: string; display_name: string | null; avatar_url: string | null } | null;
+  series?: { tmdb_id: number; name: string; poster_path: string | null } | null;
 };
 
 function toReview(row: ReviewRow): Review {
@@ -33,6 +35,13 @@ function toReview(row: ReviewRow): Review {
           username: row.profiles.username,
           displayName: row.profiles.display_name,
           avatarUrl: row.profiles.avatar_url,
+        }
+      : undefined,
+    series: row.series
+      ? {
+          tmdbId: row.series.tmdb_id,
+          name: row.series.name,
+          posterPath: row.series.poster_path,
         }
       : undefined,
   };

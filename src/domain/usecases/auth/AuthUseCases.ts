@@ -1,45 +1,78 @@
 import { AppError } from "@/core/errors/AppError";
 import type { AuthUser } from "@/domain/entities/Profile";
-import type { Credentials, IAuthRepository, SignUpInput } from "@/domain/repositories/IAuthRepository";
+import type {
+  IAuthRepository,
+  SignInInput,
+  SignUpInput,
+} from "@/domain/repositories/IAuthRepository";
+import type { ISocialRepository } from "@/domain/repositories/ISocialRepository";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,24}$/;
 const MIN_PASSWORD_LENGTH = 8;
 
-function assertCredentials(input: Credentials): void {
-  if (!EMAIL_PATTERN.test(input.email.trim())) {
-    throw new AppError("validation", "Enter a valid email address.");
-  }
+export function isValidUsername(username: string): boolean {
+  return USERNAME_PATTERN.test(username.trim());
+}
 
-  if (input.password.length < MIN_PASSWORD_LENGTH) {
-    throw new AppError("validation", `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
-  }
+export function isValidEmail(email: string): boolean {
+  return EMAIL_PATTERN.test(email.trim());
 }
 
 export class SignIn {
   constructor(private readonly auth: IAuthRepository) {}
 
-  async execute(input: Credentials): Promise<AuthUser> {
-    assertCredentials(input);
-    return this.auth.signIn({ email: input.email.trim(), password: input.password });
+  async execute(input: SignInInput): Promise<AuthUser> {
+    const identifier = input.identifier.trim();
+
+    if (!identifier) {
+      throw new AppError("validation", "Enter your username or email.");
+    }
+
+    if (!input.password) {
+      throw new AppError("validation", "Enter your password.");
+    }
+
+    return this.auth.signIn({ identifier, password: input.password });
   }
 }
 
 export class SignUp {
-  constructor(private readonly auth: IAuthRepository) {}
+  constructor(
+    private readonly auth: IAuthRepository,
+    private readonly social: ISocialRepository
+  ) {}
 
   async execute(input: SignUpInput): Promise<AuthUser | null> {
-    assertCredentials(input);
+    const email = input.email.trim();
+    const username = input.username.trim();
 
-    const username = input.username?.trim();
+    if (!isValidEmail(email)) {
+      throw new AppError("validation", "Enter a valid email address.");
+    }
 
-    if (username && !/^[a-zA-Z0-9_]{3,24}$/.test(username)) {
+    if (!username) {
+      throw new AppError("validation", "Choose a username.");
+    }
+
+    if (!isValidUsername(username)) {
       throw new AppError(
         "validation",
-        "Username must be 3-24 characters, letters, numbers or underscore."
+        "Username must be 3-24 characters: letters, numbers or underscore."
       );
     }
 
-    return this.auth.signUp({ email: input.email.trim(), password: input.password, username });
+    if (input.password.length < MIN_PASSWORD_LENGTH) {
+      throw new AppError("validation", `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+    }
+
+    const available = await this.social.isUsernameAvailable(username);
+
+    if (!available) {
+      throw new AppError("validation", `Username "${username}" is already taken.`);
+    }
+
+    return this.auth.signUp({ email, password: input.password, username });
   }
 }
 
@@ -48,5 +81,43 @@ export class SignOut {
 
   async execute(): Promise<void> {
     return this.auth.signOut();
+  }
+}
+
+export class RequestPasswordReset {
+  constructor(private readonly auth: IAuthRepository) {}
+
+  async execute(email: string): Promise<void> {
+    const trimmed = email.trim();
+
+    if (!isValidEmail(trimmed)) {
+      throw new AppError("validation", "Enter a valid email address.");
+    }
+
+    return this.auth.requestPasswordReset(trimmed);
+  }
+}
+
+export class UpdatePassword {
+  constructor(private readonly auth: IAuthRepository) {}
+
+  async execute(password: string): Promise<void> {
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      throw new AppError("validation", `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+    }
+
+    return this.auth.updatePassword(password);
+  }
+}
+
+export class CheckUsernameAvailable {
+  constructor(private readonly social: ISocialRepository) {}
+
+  async execute(username: string): Promise<boolean> {
+    if (!isValidUsername(username)) {
+      return false;
+    }
+
+    return this.social.isUsernameAvailable(username.trim());
   }
 }

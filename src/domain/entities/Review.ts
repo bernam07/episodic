@@ -11,6 +11,11 @@ export type Review = {
     displayName: string | null;
     avatarUrl: string | null;
   };
+  series?: {
+    tmdbId: number;
+    name: string;
+    posterPath: string | null;
+  };
 };
 
 export const MIN_RATING = 0.5;

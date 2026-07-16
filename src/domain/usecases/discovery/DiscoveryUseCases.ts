@@ -1,6 +1,6 @@
 import type { Season } from "@/domain/entities/Episode";
 import type { SeriesDetail } from "@/domain/entities/Series";
-import type { ITmdbRepository, SearchResult } from "@/domain/repositories/ITmdbRepository";
+import type { Genre, ITmdbRepository, SearchResult } from "@/domain/repositories/ITmdbRepository";
 
 const MIN_QUERY_LENGTH = 2;
 
@@ -23,6 +23,30 @@ export class GetTrending {
 
   async execute(page = 1): Promise<SearchResult> {
     return this.tmdb.trending(page);
+  }
+}
+
+export class GetGenres {
+  constructor(private readonly tmdb: ITmdbRepository) {}
+
+  async execute(): Promise<Genre[]> {
+    return this.tmdb.getGenres();
+  }
+}
+
+export class DiscoverByGenre {
+  constructor(private readonly tmdb: ITmdbRepository) {}
+
+  async execute(genreId: number | null, page = 1): Promise<SearchResult> {
+    return this.tmdb.discoverByGenre(genreId, page);
+  }
+}
+
+export class GetRecommendations {
+  constructor(private readonly tmdb: ITmdbRepository) {}
+
+  async execute(tmdbId: number, page = 1): Promise<SearchResult> {
+    return this.tmdb.getRecommendations(tmdbId, page);
   }
 }
 

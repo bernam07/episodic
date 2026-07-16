@@ -2,7 +2,7 @@ import { AppError } from "@/core/errors/AppError";
 import type { EpisodeStub } from "@/domain/entities/Airing";
 import type { Episode, Season } from "@/domain/entities/Episode";
 import type { SeriesDetail, SeriesSummary } from "@/domain/entities/Series";
-import type { ITmdbRepository, SearchResult } from "@/domain/repositories/ITmdbRepository";
+import type { Genre, ITmdbRepository, SearchResult } from "@/domain/repositories/ITmdbRepository";
 import { supabase } from "../supabase/client";
 
 type RawSummary = {
@@ -154,6 +154,24 @@ export class TmdbRepository implements ITmdbRepository {
 
   async trending(page = 1): Promise<SearchResult> {
     const raw = await this.invoke<RawSearch>(`trending?page=${page}`);
+
+    return { page: raw.page, totalPages: raw.total_pages, results: raw.results.map(toSummary) };
+  }
+
+  async getGenres(): Promise<Genre[]> {
+    const raw = await this.invoke<{ genres: Genre[] }>("genres");
+    return raw.genres ?? [];
+  }
+
+  async discoverByGenre(genreId: number | null, page = 1): Promise<SearchResult> {
+    const query = genreId === null ? `discover?page=${page}` : `discover?genre=${genreId}&page=${page}`;
+    const raw = await this.invoke<RawSearch>(query);
+
+    return { page: raw.page, totalPages: raw.total_pages, results: raw.results.map(toSummary) };
+  }
+
+  async getRecommendations(tmdbId: number, page = 1): Promise<SearchResult> {
+    const raw = await this.invoke<RawSearch>(`series/${tmdbId}/recommendations?page=${page}`);
 
     return { page: raw.page, totalPages: raw.total_pages, results: raw.results.map(toSummary) };
   }
