@@ -166,6 +166,48 @@ async function handleTrending(url: URL) {
   }, 200, 3600);
 }
 
+async function handleGenres() {
+  const data = await tmdbFetch("/genre/tv/list");
+
+  return json({ genres: (data.genres ?? []) as TmdbGenre[] }, 200, 86400);
+}
+
+async function handleDiscover(url: URL) {
+  const genre = url.searchParams.get("genre");
+  const page = url.searchParams.get("page") ?? "1";
+  const sort = url.searchParams.get("sort") ?? "popularity.desc";
+
+  const params: Record<string, string> = {
+    page,
+    sort_by: sort,
+    include_adult: "false",
+    "vote_count.gte": "50",
+  };
+
+  if (genre) {
+    params.with_genres = genre;
+  }
+
+  const data = await tmdbFetch("/discover/tv", params);
+
+  return json({
+    page: data.page,
+    total_pages: Math.min(data.total_pages ?? 0, 500),
+    results: (data.results ?? []).map(mapSeriesSummary),
+  }, 200, 1800);
+}
+
+async function handleRecommendations(tmdbId: string, url: URL) {
+  const page = url.searchParams.get("page") ?? "1";
+  const data = await tmdbFetch(`/tv/${tmdbId}/recommendations`, { page });
+
+  return json({
+    page: data.page,
+    total_pages: data.total_pages,
+    results: (data.results ?? []).map(mapSeriesSummary),
+  }, 200, 3600);
+}
+
 async function handleSeriesDetail(tmdbId: string) {
   const data = await tmdbFetch(`/tv/${tmdbId}`);
   return json(mapSeriesDetail(data), 200, 3600);
@@ -210,8 +252,20 @@ Deno.serve(async (req: Request) => {
       return await handleTrending(url);
     }
 
+    if (route[0] === "genres") {
+      return await handleGenres();
+    }
+
+    if (route[0] === "discover") {
+      return await handleDiscover(url);
+    }
+
     if (route[0] === "series" && route[1] && route.length === 2) {
       return await handleSeriesDetail(route[1]);
+    }
+
+    if (route[0] === "series" && route[1] && route[2] === "recommendations") {
+      return await handleRecommendations(route[1], url);
     }
 
     if (route[0] === "series" && route[1] && route[2] === "season" && route[3]) {

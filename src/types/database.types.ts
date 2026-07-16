@@ -59,6 +59,39 @@ export type Database = {
           },
         ]
       }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -297,6 +330,38 @@ export type Database = {
           watched_episodes: number
         }[]
       }
+      get_following_feed: {
+        Args: { p_limit?: number }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          poster_path: string
+          rating: number
+          series_id: string
+          series_name: string
+          status: Database["public"]["Enums"]["series_watch_status"]
+          tmdb_id: number
+          updated_at: string
+          user_id: string
+          username: string
+        }[]
+      }
+      get_profile_summary: {
+        Args: { p_username: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          episodes_watched: number
+          followers_count: number
+          following_count: number
+          id: string
+          is_following: boolean
+          is_self: boolean
+          reviews_count: number
+          series_count: number
+          username: string
+        }[]
+      }
       get_season_progress: {
         Args: { p_series_id: string }
         Returns: {
@@ -304,6 +369,31 @@ export type Database = {
           season_number: number
           total_episodes: number
           watched_episodes: number
+        }[]
+      }
+      get_user_library: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          poster_path: string
+          rating: number
+          series_id: string
+          series_name: string
+          status: Database["public"]["Enums"]["series_watch_status"]
+          tmdb_id: number
+          updated_at: string
+        }[]
+      }
+      search_profiles: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          followers_count: number
+          following_count: number
+          id: string
+          is_following: boolean
+          series_count: number
+          username: string
         }[]
       }
       set_season_watched: {
@@ -320,6 +410,7 @@ export type Database = {
         Returns: number
       }
       upsert_series_from_tmdb: { Args: { p_payload: Json }; Returns: string }
+      username_available: { Args: { p_username: string }; Returns: boolean }
     }
     Enums: {
       series_watch_status:

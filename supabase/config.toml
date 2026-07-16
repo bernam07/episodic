@@ -42,3 +42,6 @@ enabled = false
 
 [functions.tmdb]
 verify_jwt = true
+
+[functions.auth-login]
+verify_jwt = false
