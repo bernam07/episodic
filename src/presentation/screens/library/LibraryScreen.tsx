@@ -117,7 +117,37 @@ export function LibraryScreen() {
         </p>
       ) : null}
 
-      {visible.length > 0 ? (
+      {visible.length > 0 && filter === "all" ? (
+        <div className="space-y-7 px-5">
+          {SERIES_STATUSES.map((status) => {
+            const group = visible.filter((item) => item.status === status);
+            if (group.length === 0) return null;
+            return (
+              <section key={status}>
+                <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+                  {SERIES_STATUS_LABELS[status]}
+                  <span className="ml-1.5 text-mist-600">{group.length}</span>
+                </h2>
+                <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                  {group.map((item) => (
+                    <SeriesCard
+                      key={item.seriesId}
+                      tmdbId={item.tmdbId}
+                      name={item.name}
+                      posterPath={item.posterPath}
+                      status={item.status}
+                      caption={`${item.watchedEpisodes}/${item.numberOfEpisodes} episodes`}
+                      progressPercent={item.progressPercent}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {visible.length > 0 && filter !== "all" ? (
         <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {visible.map((item) => (
             <SeriesCard

@@ -27,4 +27,5 @@ export interface IAuthRepository {
   requestPasswordReset(email: string): Promise<void>;
   updatePassword(password: string): Promise<void>;
   onAuthChange(callback: (user: AuthUser | null) => void): () => void;
+  deleteAccount(): Promise<void>;
 }

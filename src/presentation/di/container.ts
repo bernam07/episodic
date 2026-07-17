@@ -1,4 +1,5 @@
 import { SupabaseAuthRepository } from "@/data/supabase/SupabaseAuthRepository";
+import { SupabaseNotificationRepository } from "@/data/supabase/SupabaseNotificationRepository";
 import { SupabaseReviewRepository } from "@/data/supabase/SupabaseReviewRepository";
 import { SupabaseSeriesRepository } from "@/data/supabase/SupabaseSeriesRepository";
 import { SupabaseSocialRepository } from "@/data/supabase/SupabaseSocialRepository";
@@ -6,6 +7,7 @@ import { SupabaseTrackingRepository } from "@/data/supabase/SupabaseTrackingRepo
 import { TmdbRepository } from "@/data/tmdb/TmdbRepository";
 import {
   CheckUsernameAvailable,
+  DeleteAccount,
   RequestPasswordReset,
   SignIn,
   SignOut,
@@ -18,12 +20,18 @@ import {
   DiscoverByGenre,
   GetCredits,
   GetGenres,
+  GetPersonDetail,
   GetRecommendations,
   GetSeason,
   GetSeriesDetail,
   GetTrending,
   SearchSeries,
 } from "@/domain/usecases/discovery/DiscoveryUseCases";
+import {
+  GetNotifications,
+  GetUnreadCount,
+  MarkNotificationsRead,
+} from "@/domain/usecases/notifications/NotificationUseCases";
 import {
   DeleteReview,
   GetOwnReview,
@@ -60,6 +68,7 @@ const seriesRepository = new SupabaseSeriesRepository();
 const trackingRepository = new SupabaseTrackingRepository();
 const reviewRepository = new SupabaseReviewRepository();
 const socialRepository = new SupabaseSocialRepository();
+const notificationRepository = new SupabaseNotificationRepository();
 
 const ensureSeriesCached = new EnsureSeriesCached(tmdbRepository, seriesRepository);
 const collectAiredEpisodes = new CollectAiredEpisodes(tmdbRepository);
@@ -72,6 +81,7 @@ export const container = {
     tracking: trackingRepository,
     reviews: reviewRepository,
     social: socialRepository,
+    notifications: notificationRepository,
   },
   usecases: {
     signIn: new SignIn(authRepository),
@@ -82,6 +92,7 @@ export const container = {
     checkUsernameAvailable: new CheckUsernameAvailable(socialRepository),
     updateProfile: new UpdateProfile(authRepository),
     uploadAvatar: new UploadAvatar(authRepository),
+    deleteAccount: new DeleteAccount(authRepository),
 
     searchSeries: new SearchSeries(tmdbRepository),
     getTrending: new GetTrending(tmdbRepository),
@@ -91,6 +102,7 @@ export const container = {
     getSeriesDetail: new GetSeriesDetail(tmdbRepository),
     getSeason: new GetSeason(tmdbRepository),
     getCredits: new GetCredits(tmdbRepository),
+    getPersonDetail: new GetPersonDetail(tmdbRepository),
 
     ensureSeriesCached,
     collectAiredEpisodes,
@@ -117,5 +129,9 @@ export const container = {
     getFollowers: new GetFollowers(socialRepository),
     getFollowing: new GetFollowing(socialRepository),
     toggleFollow: new ToggleFollow(socialRepository),
+
+    getNotifications: new GetNotifications(notificationRepository),
+    getUnreadCount: new GetUnreadCount(notificationRepository),
+    markNotificationsRead: new MarkNotificationsRead(notificationRepository),
   },
 } as const;

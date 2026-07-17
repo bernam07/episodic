@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { backdropUrl } from "@/data/tmdb/images";
 import { releaseYear, type SeriesSummary } from "@/domain/entities/Series";
+import { NotificationSheet } from "@/presentation/components/notifications/NotificationSheet";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
 import { Spinner } from "@/presentation/components/ui/Spinner";
-import { useGenres, useInfiniteDiscover, useTrending } from "@/presentation/hooks/useDiscovery";
+import { useGenres, useInfiniteDiscover, useRecommendations, useTrending } from "@/presentation/hooks/useDiscovery";
 import { useInfiniteScroll } from "@/presentation/hooks/useInfiniteScroll";
 import { useAuth } from "@/presentation/hooks/useAuth";
-import { useContinueWatching } from "@/presentation/hooks/useTracking";
+import { useUnreadCount } from "@/presentation/hooks/useNotifications";
+import { useContinueWatching, useLibrary } from "@/presentation/hooks/useTracking";
 
 function Hero({ series }: { series: SeriesSummary }) {
   const backdrop = backdropUrl(series.backdropPath, "w1280");
@@ -68,6 +70,46 @@ function ContinueWatchingRail() {
               {item.watchedEpisodes}/{item.numberOfEpisodes} episodes
             </p>
             <ProgressBar value={item.progressPercent} className="mt-1.5" />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RecommendationsRail() {
+  const { data: library } = useLibrary();
+
+  const seedTmdbId = useMemo(() => {
+    if (!library || library.length === 0) return null;
+    const watching = library.filter((item) => item.status === "watching" || item.status === "watched");
+    const pool = watching.length > 0 ? watching : library;
+    return pool[Math.floor(Math.random() * pool.length)].tmdbId;
+  }, [library]);
+
+  const { data: recs } = useRecommendations(seedTmdbId);
+
+  if (!recs || recs.results.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="mt-7">
+      <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+        Recommended for You
+      </h2>
+      <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
+        {recs.results.slice(0, 15).map((item) => (
+          <Link
+            key={item.tmdbId}
+            to={`/series/${item.tmdbId}`}
+            className="tap-none w-[132px] shrink-0 active:opacity-70"
+          >
+            <SeriesPoster path={item.posterPath} alt={item.name} />
+            <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
+            {item.firstAirDate ? (
+              <p className="mt-0.5 text-[11px] text-mist-400">{releaseYear(item)}</p>
+            ) : null}
           </Link>
         ))}
       </div>
@@ -165,15 +207,35 @@ function EndlessGrid() {
 export function HomeScreen() {
   const { profile } = useAuth();
   const { data: trending } = useTrending();
+  const { data: unreadCount } = useUnreadCount();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const featured = trending?.results[0];
 
   return (
     <>
-      <header className="px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-4">
-        <p className="text-[13px] text-mist-400">
-          {profile ? `Welcome back, ${profile.displayName || profile.username}` : "Welcome"}
-        </p>
-        <h1 className="text-[28px] font-bold tracking-tight text-mist-100">Episodic</h1>
+      <header className="flex items-start justify-between px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-4">
+        <div>
+          <p className="text-[13px] text-mist-400">
+            {profile ? `Welcome back, ${profile.displayName || profile.username}` : "Welcome"}
+          </p>
+          <h1 className="text-[28px] font-bold tracking-tight text-mist-100">Episodic</h1>
+        </div>
+        <button
+          type="button"
+          onClick={() => setNotificationsOpen(true)}
+          className="tap-none relative mt-2 flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
+          aria-label="Notifications"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {(unreadCount ?? 0) > 0 ? (
+            <span className="absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-accent-600 text-[10px] font-bold text-white">
+              {unreadCount! > 9 ? "9+" : unreadCount}
+            </span>
+          ) : null}
+        </button>
       </header>
 
       {featured ? (
@@ -183,7 +245,10 @@ export function HomeScreen() {
       ) : null}
 
       <ContinueWatchingRail />
+      <RecommendationsRail />
       <EndlessGrid />
+
+      <NotificationSheet open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
     </>
   );
 }

@@ -89,3 +89,12 @@ export function useCredits(tmdbId: number) {
     staleTime: 1000 * 60 * 60 * 24,
   });
 }
+
+export function usePersonDetail(personId: number | null) {
+  return useQuery({
+    queryKey: queryKeys.personDetail(personId ?? -1),
+    queryFn: () => container.usecases.getPersonDetail.execute(personId as number),
+    enabled: personId !== null && personId > 0,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+}

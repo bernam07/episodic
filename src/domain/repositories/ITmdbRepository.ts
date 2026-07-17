@@ -1,5 +1,6 @@
 import type { CastMember } from "../entities/Cast";
 import type { Season } from "../entities/Episode";
+import type { PersonDetail } from "../entities/Person";
 import type { SeriesDetail, SeriesSummary } from "../entities/Series";
 
 export type SearchResult = {
@@ -22,4 +23,5 @@ export interface ITmdbRepository {
   getSeriesDetail(tmdbId: number): Promise<SeriesDetail>;
   getSeason(tmdbId: number, seasonNumber: number): Promise<Season>;
   getCredits(tmdbId: number): Promise<CastMember[]>;
+  getPersonDetail(personId: number): Promise<PersonDetail>;
 }

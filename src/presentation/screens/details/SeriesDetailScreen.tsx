@@ -5,6 +5,7 @@ import { airedEpisodeCount } from "@/domain/entities/Airing";
 import type { Episode } from "@/domain/entities/Episode";
 import { releaseYear } from "@/domain/entities/Series";
 import { SERIES_STATUS_LABELS, type SeriesStatus } from "@/domain/entities/SeriesStatus";
+import { ActorDetailSheet } from "@/presentation/components/actors/ActorDetailSheet";
 import { SeasonAccordion } from "@/presentation/components/episodes/SeasonAccordion";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { ReviewSheet } from "@/presentation/components/reviews/ReviewSheet";
@@ -55,6 +56,7 @@ export function SeriesDetailScreen() {
   const [statusSheetOpen, setStatusSheetOpen] = useState(false);
   const [reviewSheetOpen, setReviewSheetOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<SeriesStatus | null>(null);
+  const [selectedActor, setSelectedActor] = useState<{ id: number; name: string } | null>(null);
 
   const { data: detail, isLoading } = useSeriesDetail(tmdbId);
   const { data: seriesId } = useLocalSeriesId(tmdbId);
@@ -224,7 +226,12 @@ export function SeriesDetailScreen() {
           <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">Cast</h2>
           <div className="no-scrollbar flex gap-4 overflow-x-auto px-5 pb-1">
             {cast.map((member) => (
-              <div key={member.id} className="flex w-[68px] shrink-0 flex-col items-center gap-1.5">
+              <button
+                key={member.id}
+                type="button"
+                onClick={() => setSelectedActor({ id: member.id, name: member.name })}
+                className="tap-none flex w-[68px] shrink-0 flex-col items-center gap-1.5 active:opacity-70"
+              >
                 <div className="size-[68px] overflow-hidden rounded-full bg-ink-800">
                   {member.profilePath ? (
                     <img
@@ -246,7 +253,7 @@ export function SeriesDetailScreen() {
                 <p className="w-full truncate text-center text-[10px] text-mist-500">
                   {member.character}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         </section>
@@ -307,6 +314,13 @@ export function SeriesDetailScreen() {
         seriesId={seriesId ?? null}
         seriesName={detail.name}
         existing={ownReview ?? null}
+      />
+
+      <ActorDetailSheet
+        open={selectedActor !== null}
+        onClose={() => setSelectedActor(null)}
+        personId={selectedActor?.id ?? null}
+        personName={selectedActor?.name ?? ""}
       />
     </>
   );

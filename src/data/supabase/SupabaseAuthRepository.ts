@@ -176,4 +176,14 @@ export class SupabaseAuthRepository implements IAuthRepository {
 
     return () => data.subscription.unsubscribe();
   }
+
+  async deleteAccount(): Promise<void> {
+    const { error } = await supabase.rpc("delete_own_account");
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
+
+    await supabase.auth.signOut();
+  }
 }

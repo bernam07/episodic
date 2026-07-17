@@ -2,6 +2,7 @@ import { AppError } from "@/core/errors/AppError";
 import type { EpisodeStub } from "@/domain/entities/Airing";
 import type { CastMember } from "@/domain/entities/Cast";
 import type { Episode, Season } from "@/domain/entities/Episode";
+import type { PersonDetail } from "@/domain/entities/Person";
 import type { SeriesDetail, SeriesSummary } from "@/domain/entities/Series";
 import type { Genre, ITmdbRepository, SearchResult } from "@/domain/repositories/ITmdbRepository";
 import { supabase } from "../supabase/client";
@@ -204,5 +205,45 @@ export class TmdbRepository implements ITmdbRepository {
       profilePath: item.profile_path,
       order: item.order,
     }));
+  }
+
+  async getPersonDetail(personId: number): Promise<PersonDetail> {
+    type RawPerson = {
+      id: number;
+      name: string;
+      biography: string | null;
+      profile_path: string | null;
+      birthday: string | null;
+      place_of_birth: string | null;
+      known_for: {
+        tmdb_id: number;
+        name: string;
+        character: string;
+        poster_path: string | null;
+        first_air_date: string | null;
+        vote_average: number | null;
+        episode_count: number;
+      }[];
+    };
+
+    const raw = await this.invoke<RawPerson>(`person/${personId}`);
+
+    return {
+      id: raw.id,
+      name: raw.name,
+      biography: raw.biography,
+      profilePath: raw.profile_path,
+      birthday: raw.birthday,
+      placeOfBirth: raw.place_of_birth,
+      knownFor: (raw.known_for ?? []).map((item) => ({
+        tmdbId: item.tmdb_id,
+        name: item.name,
+        character: item.character,
+        posterPath: item.poster_path,
+        firstAirDate: item.first_air_date,
+        voteAverage: item.vote_average,
+        episodeCount: item.episode_count,
+      })),
+    };
   }
 }

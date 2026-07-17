@@ -226,6 +226,44 @@ async function handleSeason(tmdbId: string, seasonNumber: string) {
   }, 200, 3600);
 }
 
+async function handlePersonDetail(personId: string) {
+  const [details, credits] = await Promise.all([
+    tmdbFetch(`/person/${personId}`),
+    tmdbFetch(`/person/${personId}/tv_credits`),
+  ]);
+
+  const knownFor = ((credits.cast as Record<string, unknown>[]) ?? [])
+    .sort((a, b) => ((b.vote_count as number) ?? 0) - ((a.vote_count as number) ?? 0))
+    .filter(
+      (item, index, arr) =>
+        arr.findIndex((other) => other.id === item.id) === index,
+    )
+    .slice(0, 40)
+    .map((item) => ({
+      tmdb_id: item.id as number,
+      name: (item.name as string) ?? "",
+      character: (item.character as string) ?? "",
+      poster_path: (item.poster_path as string) ?? null,
+      first_air_date: (item.first_air_date as string) || null,
+      vote_average: (item.vote_average as number) ?? null,
+      episode_count: (item.episode_count as number) ?? 0,
+    }));
+
+  return json(
+    {
+      id: details.id as number,
+      name: (details.name as string) ?? "",
+      biography: (details.biography as string) ?? null,
+      profile_path: (details.profile_path as string) ?? null,
+      birthday: (details.birthday as string) || null,
+      place_of_birth: (details.place_of_birth as string) ?? null,
+      known_for: knownFor,
+    },
+    200,
+    86400,
+  );
+}
+
 async function handleCredits(tmdbId: string) {
   const data = await tmdbFetch(`/tv/${tmdbId}/credits`);
 
@@ -290,6 +328,10 @@ Deno.serve(async (req: Request) => {
 
     if (route[0] === "series" && route[1] && route[2] === "credits") {
       return await handleCredits(route[1]);
+    }
+
+    if (route[0] === "person" && route[1]) {
+      return await handlePersonDetail(route[1]);
     }
 
     return json({ error: "not_found" }, 404);

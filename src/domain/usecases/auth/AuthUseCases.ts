@@ -164,3 +164,11 @@ export class UploadAvatar {
     return this.auth.uploadAvatar(userId, file);
   }
 }
+
+export class DeleteAccount {
+  constructor(private readonly auth: IAuthRepository) {}
+
+  async execute(): Promise<void> {
+    return this.auth.deleteAccount();
+  }
+}

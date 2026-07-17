@@ -24,4 +24,7 @@ export const queryKeys = {
   followers: (username: string | null) => ["followers", username] as const,
   following: (username: string | null) => ["following", username] as const,
   credits: (tmdbId: number) => ["credits", tmdbId] as const,
+  personDetail: (personId: number) => ["person", personId] as const,
+  notifications: ["notifications"] as const,
+  unreadCount: ["unread-count"] as const,
 };
