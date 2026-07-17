@@ -25,4 +25,5 @@ export interface ITrackingRepository {
   setSeriesWatched(seriesId: string, episodes: WatchedEpisodeRef[]): Promise<number>;
   clearSeriesEpisodes(seriesId: string): Promise<number>;
   getContinueWatching(limit?: number): Promise<ContinueWatchingItem[]>;
+  toggleFavorite(seriesId: string): Promise<void>;
 }

@@ -11,9 +11,16 @@ export type SignUpInput = {
   username: string;
 };
 
+export type UpdateProfileInput = {
+  displayName: string;
+  bio: string | null;
+};
+
 export interface IAuthRepository {
   getCurrentUser(): Promise<AuthUser | null>;
   getProfile(userId: string): Promise<Profile | null>;
+  updateProfile(userId: string, input: UpdateProfileInput): Promise<Profile>;
+  uploadAvatar(userId: string, file: File): Promise<string>;
   signIn(input: SignInInput): Promise<AuthUser>;
   signUp(input: SignUpInput): Promise<AuthUser | null>;
   signOut(): Promise<void>;

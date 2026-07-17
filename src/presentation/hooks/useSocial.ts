@@ -37,6 +37,22 @@ export function useUserLibrary(userId: string | null) {
   });
 }
 
+export function useFollowers(username: string | null) {
+  return useQuery({
+    queryKey: queryKeys.followers(username),
+    queryFn: () => container.usecases.getFollowers.execute(username as string),
+    enabled: !!username,
+  });
+}
+
+export function useFollowing(username: string | null) {
+  return useQuery({
+    queryKey: queryKeys.following(username),
+    queryFn: () => container.usecases.getFollowing.execute(username as string),
+    enabled: !!username,
+  });
+}
+
 export function useToggleFollow() {
   const queryClient = useQueryClient();
 
@@ -48,6 +64,8 @@ export function useToggleFollow() {
       queryClient.invalidateQueries({ queryKey: ["profile-summary"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed });
       queryClient.invalidateQueries({ queryKey: ["user-library"] });
+      queryClient.invalidateQueries({ queryKey: ["followers"] });
+      queryClient.invalidateQueries({ queryKey: ["following"] });
     },
   });
 }

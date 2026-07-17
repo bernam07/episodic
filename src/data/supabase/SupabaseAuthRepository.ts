@@ -4,6 +4,7 @@ import type {
   IAuthRepository,
   SignInInput,
   SignUpInput,
+  UpdateProfileInput,
 } from "@/domain/repositories/IAuthRepository";
 import { supabase } from "./client";
 
@@ -25,7 +26,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
   async getProfile(userId: string): Promise<Profile | null> {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, username, display_name, avatar_url")
+      .select("id, username, display_name, avatar_url, bio")
       .eq("id", userId)
       .maybeSingle();
 
@@ -42,7 +43,55 @@ export class SupabaseAuthRepository implements IAuthRepository {
       username: data.username,
       displayName: data.display_name,
       avatarUrl: data.avatar_url,
+      bio: data.bio,
     };
+  }
+
+  async updateProfile(userId: string, input: UpdateProfileInput): Promise<Profile> {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ display_name: input.displayName, bio: input.bio })
+      .eq("id", userId)
+      .select("id, username, display_name, avatar_url, bio")
+      .single();
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
+
+    return {
+      id: data.id,
+      username: data.username,
+      displayName: data.display_name,
+      avatarUrl: data.avatar_url,
+      bio: data.bio,
+    };
+  }
+
+  async uploadAvatar(userId: string, file: File): Promise<string> {
+    const path = `${userId}/avatar`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
+
+    if (uploadError) {
+      throw new AppError("unknown", uploadError.message, uploadError);
+    }
+
+    const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(path);
+    const avatarUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: avatarUrl })
+      .eq("id", userId);
+
+    if (updateError) {
+      throw new AppError("unknown", updateError.message, updateError);
+    }
+
+    return avatarUrl;
   }
 
   async signIn({ identifier, password }: SignInInput): Promise<AuthUser> {

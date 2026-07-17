@@ -3,6 +3,7 @@ export type Profile = {
   username: string;
   displayName: string | null;
   avatarUrl: string | null;
+  bio: string | null;
 };
 
 export type AuthUser = {

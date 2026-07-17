@@ -1,5 +1,5 @@
 import { AppError } from "@/core/errors/AppError";
-import type { AuthUser } from "@/domain/entities/Profile";
+import type { AuthUser, Profile } from "@/domain/entities/Profile";
 import type {
   IAuthRepository,
   SignInInput,
@@ -10,6 +10,14 @@ import type { ISocialRepository } from "@/domain/repositories/ISocialRepository"
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,24}$/;
 const MIN_PASSWORD_LENGTH = 8;
+const MAX_DISPLAY_NAME_LENGTH = 40;
+export const MAX_BIO_LENGTH = 160;
+export const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+export function isValidAvatarFile(type: string, size: number): boolean {
+  return ALLOWED_AVATAR_TYPES.has(type) && size > 0 && size <= MAX_AVATAR_BYTES;
+}
 
 export function isValidUsername(username: string): boolean {
   return USERNAME_PATTERN.test(username.trim());
@@ -119,5 +127,40 @@ export class CheckUsernameAvailable {
     }
 
     return this.social.isUsernameAvailable(username.trim());
+  }
+}
+
+export class UpdateProfile {
+  constructor(private readonly auth: IAuthRepository) {}
+
+  async execute(userId: string, input: { displayName: string; bio: string }): Promise<Profile> {
+    const displayName = input.displayName.trim();
+    const bio = input.bio.trim();
+
+    if (!displayName) {
+      throw new AppError("validation", "Enter a display name.");
+    }
+
+    if (displayName.length > MAX_DISPLAY_NAME_LENGTH) {
+      throw new AppError("validation", `Display name must be ${MAX_DISPLAY_NAME_LENGTH} characters or fewer.`);
+    }
+
+    if (bio.length > MAX_BIO_LENGTH) {
+      throw new AppError("validation", `Bio must be ${MAX_BIO_LENGTH} characters or fewer.`);
+    }
+
+    return this.auth.updateProfile(userId, { displayName, bio: bio || null });
+  }
+}
+
+export class UploadAvatar {
+  constructor(private readonly auth: IAuthRepository) {}
+
+  async execute(userId: string, file: File): Promise<string> {
+    if (!isValidAvatarFile(file.type, file.size)) {
+      throw new AppError("validation", "Choose a JPG, PNG or WEBP image under 5MB.");
+    }
+
+    return this.auth.uploadAvatar(userId, file);
   }
 }

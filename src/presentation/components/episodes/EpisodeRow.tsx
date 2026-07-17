@@ -1,40 +1,50 @@
 import { hasAired, type Episode } from "@/domain/entities/Episode";
 import { stillUrl } from "@/data/tmdb/images";
+import { formatDate } from "@/presentation/utils/date";
 
 type EpisodeRowProps = {
   episode: Episode;
   watched: boolean;
   onToggle: (watched: boolean) => void;
+  onOpenDetail: () => void;
   disabled?: boolean;
 };
 
-export function EpisodeRow({ episode, watched, onToggle, disabled = false }: EpisodeRowProps) {
+export function EpisodeRow({ episode, watched, onToggle, onOpenDetail, disabled = false }: EpisodeRowProps) {
   const aired = hasAired(episode);
   const still = stillUrl(episode.stillPath);
+  const airDate = formatDate(episode.airDate);
 
   return (
     <div className="flex items-center gap-3 py-2.5">
-      <div className="relative h-[52px] w-[92px] shrink-0 overflow-hidden rounded-lg bg-ink-800">
-        {still ? (
-          <img
-            src={still}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className={`size-full object-cover ${watched ? "" : "opacity-60"}`}
-          />
-        ) : null}
-      </div>
+      <button
+        type="button"
+        onClick={onOpenDetail}
+        aria-label={`View details for episode ${episode.episodeNumber}, ${episode.name}`}
+        className="tap-none flex min-w-0 flex-1 items-center gap-3 text-left active:opacity-70"
+      >
+        <div className="relative h-13 w-23 shrink-0 overflow-hidden rounded-lg bg-ink-800">
+          {still ? (
+            <img
+              src={still}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className={`size-full object-cover ${watched ? "" : "opacity-60"}`}
+            />
+          ) : null}
+        </div>
 
-      <div className="min-w-0 flex-1">
-        <p className={`truncate text-[14px] font-medium ${watched ? "text-mist-100" : "text-mist-300"}`}>
-          {episode.episodeNumber}. {episode.name}
-        </p>
-        <p className="mt-0.5 text-[11px] text-mist-500">
-          {aired ? episode.airDate : "Not aired yet"}
-          {episode.runtime ? ` · ${episode.runtime} min` : ""}
-        </p>
-      </div>
+        <div className="min-w-0 flex-1">
+          <p className={`truncate text-[14px] font-medium ${watched ? "text-mist-100" : "text-mist-300"}`}>
+            {episode.episodeNumber}. {episode.name}
+          </p>
+          <p className="mt-0.5 text-[11px] text-mist-500">
+            {aired ? (airDate ?? episode.airDate) : "Not aired yet"}
+            {episode.runtime ? ` · ${episode.runtime} min` : ""}
+          </p>
+        </div>
+      </button>
 
       <button
         type="button"

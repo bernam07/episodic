@@ -2,6 +2,8 @@ import { airingStatus, describeWatchState, type WatchState } from "@/domain/enti
 import type { SeriesDetail } from "@/domain/entities/Series";
 import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
+import { formatDate } from "@/presentation/utils/date";
+import { plural } from "@/presentation/utils/plural";
 
 const AIRING_LABELS: Record<ReturnType<typeof airingStatus>, string> = {
   ended: "Ended",
@@ -10,24 +12,6 @@ const AIRING_LABELS: Record<ReturnType<typeof airingStatus>, string> = {
   planned: "Planned",
   unknown: "Status unknown",
 };
-
-function formatDate(value: string | null): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-}
-
-function plural(count: number, word: string): string {
-  return `${count} ${word}${count === 1 ? "" : "s"}`;
-}
 
 type Copy = {
   headline: string;

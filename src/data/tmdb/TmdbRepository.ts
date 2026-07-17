@@ -1,5 +1,6 @@
 import { AppError } from "@/core/errors/AppError";
 import type { EpisodeStub } from "@/domain/entities/Airing";
+import type { CastMember } from "@/domain/entities/Cast";
 import type { Episode, Season } from "@/domain/entities/Episode";
 import type { SeriesDetail, SeriesSummary } from "@/domain/entities/Series";
 import type { Genre, ITmdbRepository, SearchResult } from "@/domain/repositories/ITmdbRepository";
@@ -191,5 +192,17 @@ export class TmdbRepository implements ITmdbRepository {
       airDate: raw.air_date,
       episodes: (raw.episodes ?? []).map(toEpisode),
     };
+  }
+
+  async getCredits(tmdbId: number): Promise<CastMember[]> {
+    const raw = await this.invoke<{ cast: { id: number; name: string; character: string; profile_path: string | null; order: number }[] }>(`series/${tmdbId}/credits`);
+
+    return (raw.cast ?? []).map((item) => ({
+      id: item.id,
+      name: item.name,
+      character: item.character,
+      profilePath: item.profile_path,
+      order: item.order,
+    }));
   }
 }

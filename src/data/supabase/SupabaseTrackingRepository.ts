@@ -16,6 +16,7 @@ type ProgressRow = {
   poster_path: string | null;
   backdrop_path: string | null;
   status: SeriesStatus;
+  is_favorite: boolean;
   number_of_seasons: number;
   number_of_episodes: number;
   watched_episodes: number;
@@ -33,6 +34,7 @@ function toProgress(row: ProgressRow): SeriesProgress {
     posterPath: row.poster_path,
     backdropPath: row.backdrop_path,
     status: row.status,
+    isFavorite: row.is_favorite,
     numberOfSeasons: row.number_of_seasons,
     numberOfEpisodes: row.number_of_episodes,
     watchedEpisodes: row.watched_episodes,
@@ -87,7 +89,7 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
   async getStatus(seriesId: string): Promise<UserSeriesStatus | null> {
     const { data, error } = await supabase
       .from("user_series_status")
-      .select("id, user_id, series_id, status, started_at, completed_at")
+      .select("id, user_id, series_id, status, is_favorite, started_at, completed_at")
       .eq("series_id", seriesId)
       .maybeSingle();
 
@@ -104,6 +106,7 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       userId: data.user_id,
       seriesId: data.series_id,
       status: data.status,
+      isFavorite: data.is_favorite,
       startedAt: data.started_at,
       completedAt: data.completed_at,
     };
@@ -260,6 +263,14 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
     }
 
     return data ?? 0;
+  }
+
+  async toggleFavorite(seriesId: string): Promise<void> {
+    const { error } = await supabase.rpc("toggle_favorite", { p_series_id: seriesId });
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
   }
 
   async getContinueWatching(limit = 10): Promise<ContinueWatchingItem[]> {

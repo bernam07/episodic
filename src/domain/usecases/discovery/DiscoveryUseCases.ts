@@ -1,3 +1,4 @@
+import type { CastMember } from "@/domain/entities/Cast";
 import type { Season } from "@/domain/entities/Episode";
 import type { SeriesDetail } from "@/domain/entities/Series";
 import type { Genre, ITmdbRepository, SearchResult } from "@/domain/repositories/ITmdbRepository";
@@ -63,5 +64,13 @@ export class GetSeason {
 
   async execute(tmdbId: number, seasonNumber: number): Promise<Season> {
     return this.tmdb.getSeason(tmdbId, seasonNumber);
+  }
+}
+
+export class GetCredits {
+  constructor(private readonly tmdb: ITmdbRepository) {}
+
+  async execute(tmdbId: number): Promise<CastMember[]> {
+    return this.tmdb.getCredits(tmdbId);
   }
 }

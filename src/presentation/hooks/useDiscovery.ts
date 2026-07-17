@@ -80,3 +80,12 @@ export function useSeason(tmdbId: number, seasonNumber: number | null) {
     staleTime: 1000 * 60 * 60 * 12,
   });
 }
+
+export function useCredits(tmdbId: number) {
+  return useQuery({
+    queryKey: queryKeys.credits(tmdbId),
+    queryFn: () => container.usecases.getCredits.execute(tmdbId),
+    enabled: Number.isFinite(tmdbId) && tmdbId > 0,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+}

@@ -10,6 +10,8 @@ export interface ISocialRepository {
   getProfileSummary(username: string): Promise<ProfileSummary | null>;
   getFollowingFeed(limit?: number): Promise<FeedItem[]>;
   getUserLibrary(userId: string, limit?: number): Promise<UserLibraryItem[]>;
+  getFollowers(username: string, limit?: number): Promise<ProfileSearchResult[]>;
+  getFollowing(username: string, limit?: number): Promise<ProfileSearchResult[]>;
   follow(userId: string): Promise<void>;
   unfollow(userId: string): Promise<void>;
   isUsernameAvailable(username: string): Promise<boolean>;

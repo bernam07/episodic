@@ -9,6 +9,7 @@ import { useGenres, useInfiniteDiscover, useSearchSeries } from "@/presentation/
 import { useInfiniteScroll } from "@/presentation/hooks/useInfiniteScroll";
 import { useSearchProfiles } from "@/presentation/hooks/useSocial";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
+import { pluralize } from "@/presentation/utils/plural";
 
 type Tab = "series" | "users";
 
@@ -158,7 +159,8 @@ function UserResults({ query }: { query: string }) {
                 {profile.displayName || profile.username}
               </p>
               <p className="truncate text-[12px] text-mist-500">
-                @{profile.username} · {profile.seriesCount} series · {profile.followersCount} followers
+                @{profile.username} · {profile.seriesCount} series · {profile.followersCount}{" "}
+                {pluralize(profile.followersCount, "follower")}
               </p>
             </div>
             <FollowButton userId={profile.id} isFollowing={profile.isFollowing} />

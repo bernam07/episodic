@@ -46,6 +46,22 @@ export class GetUserLibrary {
   }
 }
 
+export class GetFollowers {
+  constructor(private readonly social: ISocialRepository) {}
+
+  async execute(username: string, limit = 60): Promise<ProfileSearchResult[]> {
+    return this.social.getFollowers(username, limit);
+  }
+}
+
+export class GetFollowing {
+  constructor(private readonly social: ISocialRepository) {}
+
+  async execute(username: string, limit = 60): Promise<ProfileSearchResult[]> {
+    return this.social.getFollowing(username, limit);
+  }
+}
+
 export class ToggleFollow {
   constructor(private readonly social: ISocialRepository) {}
 

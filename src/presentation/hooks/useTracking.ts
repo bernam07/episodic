@@ -120,6 +120,18 @@ export function useToggleEpisode(seriesId: string | null) {
   });
 }
 
+export function useToggleFavorite(seriesId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => container.usecases.toggleFavorite.execute(seriesId as string),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracking(seriesId) });
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
+}
+
 export function useToggleSeason(seriesId: string | null) {
   const invalidate = useTrackingInvalidator();
 

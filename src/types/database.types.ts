@@ -95,6 +95,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -103,6 +104,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id: string
@@ -111,6 +113,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -232,6 +235,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           id: string
+          is_favorite: boolean
           series_id: string
           started_at: string | null
           status: Database["public"]["Enums"]["series_watch_status"]
@@ -242,6 +246,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          is_favorite?: boolean
           series_id: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["series_watch_status"]
@@ -252,6 +257,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          is_favorite?: boolean
           series_id?: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["series_watch_status"]
@@ -281,6 +287,7 @@ export type Database = {
         Row: {
           backdrop_path: string | null
           completed_at: string | null
+          is_favorite: boolean | null
           name: string | null
           number_of_episodes: number | null
           number_of_seasons: number | null
@@ -330,6 +337,32 @@ export type Database = {
           watched_episodes: number
         }[]
       }
+      get_followers: {
+        Args: { p_limit?: number; p_username: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          followers_count: number
+          following_count: number
+          id: string
+          is_following: boolean
+          series_count: number
+          username: string
+        }[]
+      }
+      get_following: {
+        Args: { p_limit?: number; p_username: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          followers_count: number
+          following_count: number
+          id: string
+          is_following: boolean
+          series_count: number
+          username: string
+        }[]
+      }
       get_following_feed: {
         Args: { p_limit?: number }
         Returns: {
@@ -350,6 +383,7 @@ export type Database = {
         Args: { p_username: string }
         Returns: {
           avatar_url: string
+          bio: string
           display_name: string
           episodes_watched: number
           followers_count: number
@@ -374,6 +408,7 @@ export type Database = {
       get_user_library: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
+          is_favorite: boolean
           poster_path: string
           rating: number
           series_id: string
@@ -383,6 +418,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      toggle_favorite: { Args: { p_series_id: string }; Returns: undefined }
       search_profiles: {
         Args: { p_limit?: number; p_query: string }
         Returns: {

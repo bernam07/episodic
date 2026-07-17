@@ -145,3 +145,11 @@ export class GetContinueWatching {
     return this.tracking.getContinueWatching(limit);
   }
 }
+
+export class ToggleFavorite {
+  constructor(private readonly tracking: ITrackingRepository) {}
+
+  async execute(seriesId: string): Promise<void> {
+    return this.tracking.toggleFavorite(seriesId);
+  }
+}

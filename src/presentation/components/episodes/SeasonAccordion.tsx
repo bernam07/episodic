@@ -5,6 +5,7 @@ import type { SeasonProgress } from "@/domain/entities/Progress";
 import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useSeason } from "@/presentation/hooks/useDiscovery";
+import { EpisodeDetailSheet } from "./EpisodeDetailSheet";
 import { EpisodeRow } from "./EpisodeRow";
 
 type SeasonAccordionProps = {
@@ -27,6 +28,7 @@ export function SeasonAccordion({
   onToggleSeason,
 }: SeasonAccordionProps) {
   const [open, setOpen] = useState(false);
+  const [detailEpisode, setDetailEpisode] = useState<Episode | null>(null);
   const { data, isLoading } = useSeason(tmdbId, open ? season.seasonNumber : null);
 
   const watchedCount = progress?.watchedEpisodes ?? 0;
@@ -89,6 +91,7 @@ export function SeasonAccordion({
                     watched={watchedIds.has(episode.tmdbEpisodeId)}
                     disabled={!canTrack}
                     onToggle={(watched) => onToggleEpisode(episode, watched)}
+                    onOpenDetail={() => setDetailEpisode(episode)}
                   />
                 ))}
               </div>
@@ -96,6 +99,18 @@ export function SeasonAccordion({
           ) : null}
         </div>
       ) : null}
+
+      <EpisodeDetailSheet
+        episode={detailEpisode}
+        watched={detailEpisode ? watchedIds.has(detailEpisode.tmdbEpisodeId) : false}
+        canTrack={canTrack}
+        onToggle={(watched) => {
+          if (detailEpisode) {
+            onToggleEpisode(detailEpisode, watched);
+          }
+        }}
+        onClose={() => setDetailEpisode(null)}
+      />
     </div>
   );
 }

@@ -11,9 +11,12 @@ import {
   SignOut,
   SignUp,
   UpdatePassword,
+  UpdateProfile,
+  UploadAvatar,
 } from "@/domain/usecases/auth/AuthUseCases";
 import {
   DiscoverByGenre,
+  GetCredits,
   GetGenres,
   GetRecommendations,
   GetSeason,
@@ -29,6 +32,8 @@ import {
   SubmitReview,
 } from "@/domain/usecases/reviews/ReviewUseCases";
 import {
+  GetFollowers,
+  GetFollowing,
   GetFollowingFeed,
   GetProfileSummary,
   GetUserLibrary,
@@ -45,6 +50,7 @@ import {
   RemoveFromLibrary,
   SetSeriesStatus,
   ToggleEpisodeWatched,
+  ToggleFavorite,
   ToggleSeasonWatched,
 } from "@/domain/usecases/tracking/TrackingUseCases";
 
@@ -74,6 +80,8 @@ export const container = {
     requestPasswordReset: new RequestPasswordReset(authRepository),
     updatePassword: new UpdatePassword(authRepository),
     checkUsernameAvailable: new CheckUsernameAvailable(socialRepository),
+    updateProfile: new UpdateProfile(authRepository),
+    uploadAvatar: new UploadAvatar(authRepository),
 
     searchSeries: new SearchSeries(tmdbRepository),
     getTrending: new GetTrending(tmdbRepository),
@@ -82,6 +90,7 @@ export const container = {
     getRecommendations: new GetRecommendations(tmdbRepository),
     getSeriesDetail: new GetSeriesDetail(tmdbRepository),
     getSeason: new GetSeason(tmdbRepository),
+    getCredits: new GetCredits(tmdbRepository),
 
     ensureSeriesCached,
     collectAiredEpisodes,
@@ -92,6 +101,7 @@ export const container = {
     getWatchedEpisodes: new GetWatchedEpisodes(trackingRepository),
     toggleEpisodeWatched: new ToggleEpisodeWatched(trackingRepository),
     toggleSeasonWatched: new ToggleSeasonWatched(trackingRepository),
+    toggleFavorite: new ToggleFavorite(trackingRepository),
     getContinueWatching: new GetContinueWatching(trackingRepository),
 
     submitReview: new SubmitReview(reviewRepository),
@@ -104,6 +114,8 @@ export const container = {
     getProfileSummary: new GetProfileSummary(socialRepository),
     getFollowingFeed: new GetFollowingFeed(socialRepository),
     getUserLibrary: new GetUserLibrary(socialRepository),
+    getFollowers: new GetFollowers(socialRepository),
+    getFollowing: new GetFollowing(socialRepository),
     toggleFollow: new ToggleFollow(socialRepository),
   },
 } as const;

@@ -21,4 +21,7 @@ export const queryKeys = {
   followingFeed: ["following-feed"] as const,
   profileSummary: (username: string | null) => ["profile-summary", username] as const,
   userLibrary: (userId: string | null) => ["user-library", userId] as const,
+  followers: (username: string | null) => ["followers", username] as const,
+  following: (username: string | null) => ["following", username] as const,
+  credits: (tmdbId: number) => ["credits", tmdbId] as const,
 };

@@ -11,6 +11,7 @@ type AuthContextValue = {
   signOut: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -98,6 +99,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await container.usecases.updatePassword.execute(password);
   }, []);
 
+  const refreshProfile = useCallback(async () => {
+    if (!user) {
+      return;
+    }
+
+    const next = await container.repositories.auth.getProfile(user.id);
+    setProfile(next);
+  }, [user]);
+
   const value = useMemo(
     () => ({
       user,
@@ -108,8 +118,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       requestPasswordReset,
       updatePassword,
+      refreshProfile,
     }),
-    [user, profile, initialising, signIn, signUp, signOut, requestPasswordReset, updatePassword]
+    [
+      user,
+      profile,
+      initialising,
+      signIn,
+      signUp,
+      signOut,
+      requestPasswordReset,
+      updatePassword,
+      refreshProfile,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

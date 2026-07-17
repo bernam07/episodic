@@ -18,6 +18,30 @@ async function currentUserId(): Promise<string> {
   return data.session.user.id;
 }
 
+type ProfileSearchRow = {
+  id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  followers_count: number;
+  following_count: number;
+  series_count: number;
+  is_following: boolean;
+};
+
+function toProfileSearchResult(row: ProfileSearchRow): ProfileSearchResult {
+  return {
+    id: row.id,
+    username: row.username,
+    displayName: row.display_name,
+    avatarUrl: row.avatar_url,
+    followersCount: row.followers_count,
+    followingCount: row.following_count,
+    seriesCount: row.series_count,
+    isFollowing: row.is_following,
+  };
+}
+
 export class SupabaseSocialRepository implements ISocialRepository {
   async searchProfiles(query: string, limit = 20): Promise<ProfileSearchResult[]> {
     const { data, error } = await supabase.rpc("search_profiles", {
@@ -29,16 +53,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
       throw new AppError("unknown", error.message, error);
     }
 
-    return (data ?? []).map((row) => ({
-      id: row.id,
-      username: row.username,
-      displayName: row.display_name,
-      avatarUrl: row.avatar_url,
-      followersCount: row.followers_count,
-      followingCount: row.following_count,
-      seriesCount: row.series_count,
-      isFollowing: row.is_following,
-    }));
+    return (data ?? []).map(toProfileSearchResult);
   }
 
   async getProfileSummary(username: string): Promise<ProfileSummary | null> {
@@ -55,18 +70,38 @@ export class SupabaseSocialRepository implements ISocialRepository {
     }
 
     return {
-      id: row.id,
-      username: row.username,
-      displayName: row.display_name,
-      avatarUrl: row.avatar_url,
-      followersCount: row.followers_count,
-      followingCount: row.following_count,
-      seriesCount: row.series_count,
+      ...toProfileSearchResult(row),
+      bio: row.bio,
       episodesWatched: row.episodes_watched,
       reviewsCount: row.reviews_count,
-      isFollowing: row.is_following,
       isSelf: row.is_self,
     };
+  }
+
+  async getFollowers(username: string, limit = 60): Promise<ProfileSearchResult[]> {
+    const { data, error } = await supabase.rpc("get_followers", {
+      p_username: username,
+      p_limit: limit,
+    });
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
+
+    return (data ?? []).map(toProfileSearchResult);
+  }
+
+  async getFollowing(username: string, limit = 60): Promise<ProfileSearchResult[]> {
+    const { data, error } = await supabase.rpc("get_following", {
+      p_username: username,
+      p_limit: limit,
+    });
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
+
+    return (data ?? []).map(toProfileSearchResult);
   }
 
   async getFollowingFeed(limit = 40): Promise<FeedItem[]> {
@@ -107,6 +142,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
       seriesName: row.series_name,
       posterPath: row.poster_path,
       status: row.status,
+      isFavorite: row.is_favorite,
       rating: row.rating === null ? null : Number(row.rating),
       updatedAt: row.updated_at,
     }));

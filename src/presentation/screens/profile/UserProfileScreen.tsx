@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { SERIES_STATUS_LABELS, SERIES_STATUSES } from "@/domain/entities/SeriesStatus";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { FollowButton } from "@/presentation/components/social/FollowButton";
+import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
 import { FullScreenSpinner, Spinner } from "@/presentation/components/ui/Spinner";
 import { useProfileSummary, useUserLibrary } from "@/presentation/hooks/useSocial";
+import { pluralize } from "@/presentation/utils/plural";
 
 function StatTile({ value, label }: { value: number; label: string }) {
   return (
@@ -22,6 +25,7 @@ export function UserProfileScreen() {
   const { data: library, isLoading: libraryLoading } = useUserLibrary(
     summary && !summary.isSelf ? summary.id : null
   );
+  const [followMode, setFollowMode] = useState<"followers" | "following" | null>(null);
 
   if (isLoading) {
     return <FullScreenSpinner />;
@@ -80,19 +84,39 @@ export function UserProfileScreen() {
             </h1>
             <p className="truncate text-[13px] text-mist-500">@{summary.username}</p>
             <div className="mt-2 flex gap-4">
-              <span className="text-[12px] text-mist-400">
-                <strong className="font-bold text-mist-100">{summary.followersCount}</strong> followers
-              </span>
-              <span className="text-[12px] text-mist-400">
+              <button
+                type="button"
+                onClick={() => setFollowMode("followers")}
+                className="tap-none text-[12px] text-mist-400"
+              >
+                <strong className="font-bold text-mist-100">{summary.followersCount}</strong>{" "}
+                {pluralize(summary.followersCount, "follower")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFollowMode("following")}
+                className="tap-none text-[12px] text-mist-400"
+              >
                 <strong className="font-bold text-mist-100">{summary.followingCount}</strong> following
-              </span>
+              </button>
             </div>
           </div>
         </div>
 
+        {summary.bio ? (
+          <p className="mt-3 text-[14px] whitespace-pre-wrap text-mist-300">{summary.bio}</p>
+        ) : null}
+
         <div className="mt-4">
           <FollowButton userId={summary.id} isFollowing={summary.isFollowing} size="md" />
         </div>
+
+        <FollowListSheet
+          open={followMode !== null}
+          onClose={() => setFollowMode(null)}
+          username={summary.username}
+          mode={followMode ?? "followers"}
+        />
       </header>
 
       <section className="px-5">
@@ -111,40 +135,65 @@ export function UserProfileScreen() {
           </p>
         </div>
       ) : (
-        <section className="mt-7">
-          <div className="mb-3 flex items-center justify-between px-5">
-            <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">Library</h2>
-            <span className="text-[11px] text-mist-500">
-              {counts
-                .filter((entry) => entry.count > 0)
-                .map((entry) => `${entry.count} ${SERIES_STATUS_LABELS[entry.status].toLowerCase()}`)
-                .join(" · ")}
-            </span>
-          </div>
+        <>
+          {(() => {
+            const favorites = (library ?? []).filter((item) => item.isFavorite);
+            return favorites.length > 0 ? (
+              <section className="mt-7 px-5">
+                <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+                  Favorites
+                  <span className="ml-1.5 text-mist-600">{favorites.length}</span>
+                </h2>
+                <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5">
+                  {favorites.map((item) => (
+                    <SeriesCard
+                      key={item.seriesId}
+                      tmdbId={item.tmdbId}
+                      name={item.seriesName}
+                      posterPath={item.posterPath}
+                      status={item.status}
+                    />
+                  ))}
+                </div>
+              </section>
+            ) : null;
+          })()}
 
-          {libraryLoading ? (
-            <div className="flex h-40 items-center justify-center">
-              <Spinner />
+          <section className="mt-7">
+            <div className="mb-3 flex items-center justify-between px-5">
+              <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">Library</h2>
+              <span className="text-[11px] text-mist-500">
+                {counts
+                  .filter((entry) => entry.count > 0)
+                  .map((entry) => `${entry.count} ${SERIES_STATUS_LABELS[entry.status].toLowerCase()}`)
+                  .join(" · ")}
+              </span>
             </div>
-          ) : (library?.length ?? 0) === 0 ? (
-            <p className="px-5 pt-4 text-center text-[14px] text-mist-500">
-              Nothing in their library yet.
-            </p>
-          ) : (
-            <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-              {(library ?? []).map((item) => (
-                <SeriesCard
-                  key={item.seriesId}
-                  tmdbId={item.tmdbId}
-                  name={item.seriesName}
-                  posterPath={item.posterPath}
-                  status={item.status}
-                  caption={item.rating !== null ? `Rated ${item.rating.toFixed(1)}` : undefined}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+
+            {libraryLoading ? (
+              <div className="flex h-40 items-center justify-center">
+                <Spinner />
+              </div>
+            ) : (library?.length ?? 0) === 0 ? (
+              <p className="px-5 pt-4 text-center text-[14px] text-mist-500">
+                Nothing in their library yet.
+              </p>
+            ) : (
+              <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                {(library ?? []).map((item) => (
+                  <SeriesCard
+                    key={item.seriesId}
+                    tmdbId={item.tmdbId}
+                    name={item.seriesName}
+                    posterPath={item.posterPath}
+                    status={item.status}
+                    caption={item.rating !== null ? `Rated ${item.rating.toFixed(1)}` : undefined}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </>
       )}
     </>
   );

@@ -12,6 +12,7 @@ export type ProfileSearchResult = {
 };
 
 export type ProfileSummary = ProfileSearchResult & {
+  bio: string | null;
   episodesWatched: number;
   reviewsCount: number;
   isSelf: boolean;
@@ -37,6 +38,7 @@ export type UserLibraryItem = {
   seriesName: string;
   posterPath: string | null;
   status: SeriesStatus;
+  isFavorite: boolean;
   rating: number | null;
   updatedAt: string;
 };

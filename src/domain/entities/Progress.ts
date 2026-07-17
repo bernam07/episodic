@@ -7,6 +7,7 @@ export type SeriesProgress = {
   posterPath: string | null;
   backdropPath: string | null;
   status: SeriesStatus;
+  isFavorite: boolean;
   numberOfSeasons: number;
   numberOfEpisodes: number;
   watchedEpisodes: number;

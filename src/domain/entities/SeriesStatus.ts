@@ -14,6 +14,7 @@ export type UserSeriesStatus = {
   userId: string;
   seriesId: string;
   status: SeriesStatus;
+  isFavorite: boolean;
   startedAt: string | null;
   completedAt: string | null;
 };

@@ -226,6 +226,22 @@ async function handleSeason(tmdbId: string, seasonNumber: string) {
   }, 200, 3600);
 }
 
+async function handleCredits(tmdbId: string) {
+  const data = await tmdbFetch(`/tv/${tmdbId}/credits`);
+
+  const cast = ((data.cast as Record<string, unknown>[]) ?? [])
+    .slice(0, 20)
+    .map((item) => ({
+      id: item.id as number,
+      name: (item.name as string) ?? "",
+      character: (item.character as string) ?? "",
+      profile_path: (item.profile_path as string) ?? null,
+      order: (item.order as number) ?? 0,
+    }));
+
+  return json({ cast }, 200, 86400);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -270,6 +286,10 @@ Deno.serve(async (req: Request) => {
 
     if (route[0] === "series" && route[1] && route[2] === "season" && route[3]) {
       return await handleSeason(route[1], route[3]);
+    }
+
+    if (route[0] === "series" && route[1] && route[2] === "credits") {
+      return await handleCredits(route[1]);
     }
 
     return json({ error: "not_found" }, 404);

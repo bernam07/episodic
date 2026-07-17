@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { backdropUrl } from "@/data/tmdb/images";
+import { backdropUrl, profileUrl } from "@/data/tmdb/images";
 import { airedEpisodeCount } from "@/domain/entities/Airing";
 import type { Episode } from "@/domain/entities/Episode";
 import { releaseYear } from "@/domain/entities/Series";
@@ -16,7 +16,7 @@ import { RatingDisplay } from "@/presentation/components/ui/Rating";
 import { Sheet } from "@/presentation/components/ui/Sheet";
 import { FullScreenSpinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
-import { useSeriesDetail } from "@/presentation/hooks/useDiscovery";
+import { useCredits, useSeriesDetail } from "@/presentation/hooks/useDiscovery";
 import { useOwnReview, useSeriesReviews } from "@/presentation/hooks/useReviews";
 import {
   useLocalSeriesId,
@@ -25,6 +25,7 @@ import {
   useSeriesTracking,
   useSetSeriesStatus,
   useToggleEpisode,
+  useToggleFavorite,
   useToggleSeason,
   useWatchedEpisodes,
 } from "@/presentation/hooks/useTracking";
@@ -62,11 +63,13 @@ export function SeriesDetailScreen() {
   const { data: watchedIds } = useWatchedEpisodes(seriesId ?? null);
   const { data: reviews } = useSeriesReviews(seriesId ?? null);
   const { data: ownReview } = useOwnReview(seriesId ?? null);
+  const { data: cast } = useCredits(tmdbId);
 
   const setStatus = useSetSeriesStatus(tmdbId, detail);
   const removeFromLibrary = useRemoveFromLibrary(seriesId ?? null);
   const toggleEpisode = useToggleEpisode(seriesId ?? null);
   const toggleSeason = useToggleSeason(seriesId ?? null);
+  const toggleFavorite = useToggleFavorite(seriesId ?? null);
 
   if (isLoading || !detail) {
     return <FullScreenSpinner />;
@@ -77,6 +80,7 @@ export function SeriesDetailScreen() {
   const watched = watchedIds ?? new Set<number>();
   const totalWatched = seasonProgress?.reduce((sum, season) => sum + season.watchedEpisodes, 0) ?? 0;
   const airedEpisodes = airedEpisodeCount(detail);
+  const isFavorite = tracking?.isFavorite ?? false;
 
   async function handleStatusChange(status: SeriesStatus) {
     setPendingStatus(status);
@@ -145,6 +149,36 @@ export function SeriesDetailScreen() {
           >
             {tracking ? SERIES_STATUS_LABELS[tracking.status] : "Add to Library"}
           </Button>
+
+          {seriesId ? (
+            <button
+              type="button"
+              onClick={() => toggleFavorite.mutate()}
+              disabled={toggleFavorite.isPending}
+              aria-pressed={isFavorite}
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              className={`tap-none flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors active:opacity-70 ${
+                isFavorite
+                  ? "border-rose-500/40 bg-rose-500/10 text-rose-400"
+                  : "border-ink-700 bg-ink-800 text-mist-400"
+              }`}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="size-[22px]"
+                fill={isFavorite ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          ) : null}
+
           <Button
             variant="secondary"
             className="flex-1"
@@ -183,7 +217,42 @@ export function SeriesDetailScreen() {
             ))}
           </div>
         ) : null}
+      </div>
 
+      {cast && cast.length > 0 ? (
+        <section className="mt-7">
+          <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">Cast</h2>
+          <div className="no-scrollbar flex gap-4 overflow-x-auto px-5 pb-1">
+            {cast.map((member) => (
+              <div key={member.id} className="flex w-[68px] shrink-0 flex-col items-center gap-1.5">
+                <div className="size-[68px] overflow-hidden rounded-full bg-ink-800">
+                  {member.profilePath ? (
+                    <img
+                      src={profileUrl(member.profilePath) ?? undefined}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center text-[22px] text-mist-600">
+                      {member.name[0]}
+                    </div>
+                  )}
+                </div>
+                <p className="w-full truncate text-center text-[11px] font-medium text-mist-200">
+                  {member.name}
+                </p>
+                <p className="w-full truncate text-center text-[10px] text-mist-500">
+                  {member.character}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <div className="px-5">
         <section className="mt-7">
           <h2 className="mb-1 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">Seasons</h2>
           {!seriesId ? (

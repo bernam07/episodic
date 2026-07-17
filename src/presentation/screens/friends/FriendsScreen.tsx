@@ -7,6 +7,7 @@ import { RatingDisplay } from "@/presentation/components/ui/Rating";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useFollowingFeed } from "@/presentation/hooks/useSocial";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
+import { plural } from "@/presentation/utils/plural";
 
 function relativeTime(value: string): string {
   const then = new Date(value).getTime();
@@ -81,7 +82,7 @@ function FeedRow({ item }: { item: FeedItem }) {
 function FeedFooter({ count }: { count: number }) {
   return (
     <p className="px-5 py-8 text-center text-[12px] text-mist-500">
-      Recent activity from {count} {count === 1 ? "person" : "people"} you follow.
+      Recent activity from {plural(count, "person", "people")} you follow.
     </p>
   );
 }

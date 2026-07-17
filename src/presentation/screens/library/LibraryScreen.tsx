@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   SERIES_STATUS_LABELS,
   SERIES_STATUSES,
@@ -10,17 +10,24 @@ import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useLibrary } from "@/presentation/hooks/useTracking";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 
-type Filter = SeriesStatus | "all";
+type Filter = SeriesStatus | "all" | "favorites";
 
-const FILTERS: Filter[] = ["all", ...SERIES_STATUSES];
+const FILTERS: Filter[] = ["all", ...SERIES_STATUSES, "favorites"];
 
 const FILTER_LABELS: Record<Filter, string> = {
   all: "All",
   ...SERIES_STATUS_LABELS,
+  favorites: "Favorites",
 };
 
+const VALID_FILTERS = new Set<string>(FILTERS);
+
 export function LibraryScreen() {
-  const [filter, setFilter] = useState<Filter>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const paramValue = searchParams.get("status");
+  const filter: Filter =
+    paramValue && VALID_FILTERS.has(paramValue) ? (paramValue as Filter) : "all";
+
   const { data, isLoading } = useLibrary();
 
   const counts = useMemo(() => {
@@ -30,21 +37,31 @@ export function LibraryScreen() {
       watching: 0,
       watched: 0,
       abandoned: 0,
+      favorites: 0,
     };
 
     for (const item of data ?? []) {
       base[item.status] += 1;
+      if (item.isFavorite) base.favorites += 1;
     }
 
     return base;
   }, [data]);
 
   const visible = useMemo(() => {
-    if (!data) {
-      return [];
-    }
-    return filter === "all" ? data : data.filter((item) => item.status === filter);
+    if (!data) return [];
+    if (filter === "favorites") return data.filter((item) => item.isFavorite);
+    if (filter === "all") return data;
+    return data.filter((item) => item.status === filter);
   }, [data, filter]);
+
+  function setFilter(next: Filter) {
+    if (next === "all") {
+      setSearchParams({}, { replace: true });
+    } else {
+      setSearchParams({ status: next }, { replace: true });
+    }
+  }
 
   return (
     <>

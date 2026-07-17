@@ -167,8 +167,9 @@ check in the UI is convenience, not the guard.
 ## Toolchain gotchas (all already hit and resolved)
 
 - **TypeScript 7 removed `baseUrl`.** Paths resolve relative to the tsconfig. Don't re-add it.
-- **`erasableSyntaxOnly` is disabled** in `tsconfig.app.json` — it forbids constructor parameter
-  properties, which the DI relies on. esbuild handles them fine.
+- **`erasableSyntaxOnly` is left off `tsconfig.app.json`** (it's only `true` in
+  `tsconfig.node.json`, for `vite.config.ts`) — it forbids constructor parameter properties, which
+  the DI relies on. esbuild handles them fine.
 - **Use `gen_random_uuid()`, never `uuid_generate_v4()`.** Supabase installs `uuid-ossp` into the
   `extensions` schema, which is not on the search path during migrations → `42883`. The migrations
   need **zero Postgres extensions**; keep it that way, or schema-qualify.
