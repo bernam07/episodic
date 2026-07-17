@@ -65,8 +65,9 @@ TMDB secret. A fresh machine only needs `.env.local` + `supabase link`. Full set
 | `npm run build` | `tsc -b && vite build` |
 | `npm run preview` | Serve the production build — **required** to exercise the PWA/service worker |
 | `npm run typecheck` | Types only |
-| `npm test` | Run the Vitest unit suite (`tests/`) once |
+| `npm test` | Run the Vitest suite (`tests/`) once — domain units + PGlite schema tests |
 | `npm run test:watch` | Vitest in watch mode |
+| `npm run test:e2e` | Playwright smoke suite (builds, serves, drives `/auth`). Local only |
 | `supabase db push` | Apply migrations to the linked project |
 | `supabase gen types typescript --linked --schema public > src/types/database.types.ts` | Regenerate DB types — **run after every migration** |
 | `supabase functions deploy tmdb` / `auth-login` | Deploy Edge Functions |
@@ -131,6 +132,11 @@ every season from TMDB and checks off each **aired** episode (unaired episodes o
 series are deliberately left alone). The episodes are written **before** the status, so an
 explicit user choice always wins over the trigger — otherwise the trigger would see
 aired < total and downgrade it to `watching`. Order matters; don't reorder it.
+
+**Setting a series back to "Want to Watch" clears its check-ins.** `SetSeriesStatus` calls
+`clearSeriesEpisodes` for that status, so *want to watch* always means zero progress (no more
+"Want to Watch" at 100%). The status sheet warns first. This is the deliberate reverse of the
+Watched backfill.
 
 **"Up to date" ≠ "finished".** `domain/entities/Airing.ts` → `describeWatchState` distinguishes
 them. A returning series with every aired episode watched is *up to date* (shows next air date);
@@ -272,11 +278,24 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Domain unit tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 44
-tests over the pure functions (airing/watch-state logic, rating/username/email/avatar validators,
-plural, initials, releaseYear, hasAired). `tests/` is outside `src`, so `tsc -b` does not type-check
-it; Vitest transpiles via esbuild. `vitest.config.ts` is standalone (it does **not** load
-`vite.config.ts`, to avoid the PWA plugin) and re-declares the `@` alias.
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 74 tests:
+- `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
+  validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
+  (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
+- `tests/schema.test.ts` — the schema/RLS/social/notification/delete/hardening checks against real
+  Postgres via **PGlite**, using the shared harness in `tests/support/pglite.ts` (`createMigratedDb`
+  applies all migrations under the shim). Runs in CI — no browser, no live backend.
+
+`tests/` is outside `src`, so `tsc -b` does not type-check it; Vitest transpiles via esbuild.
+`vitest.config.ts` is standalone (does **not** load `vite.config.ts`, to avoid the PWA plugin) and
+re-declares the `@` alias.
+
+**Playwright smoke** (`tests/e2e/*.spec.ts`, `npm run test:e2e`) is an **unauthenticated** shell test
+(boots, redirects to `/auth`, form renders, PWA manifest, no overflow, no console errors). It creates
+no accounts, so it does not pollute the live project. `playwright.config.ts` forces **Chromium** on
+both the mobile (iPhone 15 Pro viewport) and desktop projects — the iPhone device descriptor defaults
+to WebKit, which is not installed; override with `browserName: "chromium"`. It is **local-only**, not
+in CI (it needs a build with real `.env.local` for the Supabase client to construct).
 
 **CI** (`.github/workflows/ci.yml`) runs `typecheck → test → build` on every push and PR (Node 24,
 `npm ci`). This exists specifically to catch the "committed a broken build / unpushed migration"
@@ -284,6 +303,11 @@ failures that have happened twice across machines. The build needs no secrets: `
 falls back to `""` for missing `VITE_*` vars (`env.VITE_… ?? ""`), so it compiles in CI. The
 lockfile carries the full cross-platform rollup binary set, so `npm ci` resolves on Linux even
 though it was generated on Windows.
+
+Trap when writing the PGlite schema tests on a **shared** db: RLS `select count(*)` returns rows the
+viewer can see including **their own**, so a follow-gating check must count the *other* user's rows
+(`where user_id = $bob`), not all visible rows. Blocks that assert on `follows`/`notifications` clean
+those tables in their own `beforeAll` — Vitest does not guarantee cross-`describe` execution order.
 
 ⚠️ **Schema (PGlite) and UI (Playwright) checks are still scratchpad-only** and not in the repo. The
 PGlite shim for schema work must grant usage on the `auth` schema and stub `storage.foldername(text)
@@ -311,6 +335,7 @@ screenshot before believing a red result.
 | `…090000_profile_editing_and_social_lists` | `bio` column on profiles, `avatars` storage bucket + RLS, updated `get_profile_summary` (adds `bio`), `get_followers` / `get_following` RPCs |
 | `…100000_favorites_and_cast` | `is_favorite` column on `user_series_status`, recreated `user_series_progress` view (adds `is_favorite`), `toggle_favorite` RPC, updated `get_user_library` (adds `is_favorite`) |
 | `…110000_notifications_and_delete_account` | `notifications` table + RLS, `notify_on_follow` / `notify_on_review` triggers, `get_notifications` / `mark_notifications_read` / `get_unread_notification_count`, `delete_own_account` |
+| `…120000_harden_series_cache` | `upsert_series_from_tmdb` → `security definer` (+ auth guard), drop the direct insert/update policies on `series`, revoke insert/update/delete from `authenticated`. The RPC is now the only write path into the cache |
 
 ## Edge Functions
 
@@ -347,12 +372,17 @@ screenshot before believing a red result.
 - **Test users pile up** (`*@episodic.app`) from verification runs. Delete in dashboard →
   Authentication → Users; deleting cascades cleanly now.
 - **Email confirmation is disabled** (`config.toml` → `[auth.email] enable_confirmations = false`).
-  Fine for dev; with social features live, anyone can register any address and start following
-  people. **Re-enable before this is public**, then `supabase config push`.
-- **`series` is a shared cache** any authenticated user can write to. No personal data there, but if
-  this goes public, make `upsert_series_from_tmdb` `security definer` and revoke direct writes.
-- **Status/progress can disagree**: switching a series from Watched back to Want to Watch leaves
-  episode check-ins intact, so the library can show "Want to Watch" on something at 100%. Left that
-  way rather than silently deleting history; more visible now that status badges are everywhere.
-- **Port the remaining verification scripts into `tests/`**: domain unit tests are done (Vitest,
-  `npm test`); the schema (PGlite) and UI (Playwright) suites still live only in a scratchpad.
+  Enabling it is coupled to `site_url`: confirmation emails link to `site_url`, which is still
+  `http://localhost:5173`. Before turning confirmations on, set `site_url` (and
+  `additional_redirect_urls`) to the **Vercel production URL**, otherwise real users get a localhost
+  confirmation link and cannot sign up. Then `supabase config push`.
+- **RESOLVED — `series` cache is now write-locked** (`…120000_harden_series_cache`):
+  `upsert_series_from_tmdb` is `security definer` and direct writes are revoked from `authenticated`.
+- **RESOLVED — status/progress consistency**: setting a series to *Want to Watch* now clears its
+  episode check-ins (`SetSeriesStatus` → `clearSeriesEpisodes`), and the status sheet warns
+  ("Resets your N watched episodes") before you do it. So a library entry can no longer read
+  "Want to Watch" at 100%.
+- **Port the remaining verification into `tests/`**: domain units, `SetSeriesStatus` orchestration,
+  and the PGlite schema/RLS/social/notification/delete suite are done (Vitest, in CI), plus an
+  unauthenticated Playwright smoke suite. Still scratchpad-only: the **full authenticated** UI flows
+  (signup → follow → feed → review → delete), because they need the live backend and create accounts.
