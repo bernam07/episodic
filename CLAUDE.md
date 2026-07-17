@@ -371,11 +371,15 @@ screenshot before believing a red result.
 
 - **Test users pile up** (`*@episodic.app`) from verification runs. Delete in dashboard →
   Authentication → Users; deleting cascades cleanly now.
-- **Email confirmation is disabled** (`config.toml` → `[auth.email] enable_confirmations = false`).
-  Enabling it is coupled to `site_url`: confirmation emails link to `site_url`, which is still
-  `http://localhost:5173`. Before turning confirmations on, set `site_url` (and
-  `additional_redirect_urls`) to the **Vercel production URL**, otherwise real users get a localhost
-  confirmation link and cannot sign up. Then `supabase config push`.
+- **Email confirmation is ENABLED** (`config.toml` → `[auth.email] enable_confirmations = true`,
+  pushed). `site_url` is `https://episodic-pt.vercel.app`; `additional_redirect_urls` allows that
+  domain and `http://localhost:5173/**`. Signup now returns no session — the auth screen shows a
+  "check your email to confirm" notice and switches to sign-in. Existing accounts (created while
+  confirmations were off) were auto-confirmed, so they still log in.
+  **Follow-up before real traffic:** Supabase's built-in email sender has a very low rate limit
+  (a handful of confirmation emails per hour — hitting it returns `email rate limit exceeded` /
+  429 on signup). Configure a custom SMTP provider (Resend/SendGrid/etc.) in the dashboard before
+  launch, or legitimate signups will be throttled.
 - **RESOLVED — `series` cache is now write-locked** (`…120000_harden_series_cache`):
   `upsert_series_from_tmdb` is `security definer` and direct writes are revoked from `authenticated`.
 - **RESOLVED — status/progress consistency**: setting a series to *Want to Watch* now clears its

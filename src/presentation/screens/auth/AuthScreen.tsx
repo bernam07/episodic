@@ -197,6 +197,10 @@ export function AuthScreen() {
         await signIn(identifier, password);
       } else if (mode === "signup") {
         await signUp(email, password, username);
+        setIdentifier(email);
+        setPassword("");
+        setMode("signin");
+        setNotice("Account created. Check your email to confirm it, then sign in.");
       } else {
         await requestPasswordReset(email);
         setNotice("If that email has an account, a reset link is on its way.");
