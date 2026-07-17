@@ -62,6 +62,10 @@ export class SetSeriesStatus {
       await this.tracking.setSeriesWatched(seriesId, episodes);
     }
 
+    if (status === "want_to_watch") {
+      await this.tracking.clearSeriesEpisodes(seriesId);
+    }
+
     await this.tracking.setStatus(seriesId, status);
     return seriesId;
   }

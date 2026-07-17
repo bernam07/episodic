@@ -303,6 +303,7 @@ export function SeriesDetailScreen() {
           pending={setStatus.isPending || removeFromLibrary.isPending}
           pendingStatus={pendingStatus}
           airedEpisodes={airedEpisodes}
+          watchedEpisodes={totalWatched}
           onChange={handleStatusChange}
           onRemove={seriesId ? handleRemove : undefined}
         />

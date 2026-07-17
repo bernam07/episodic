@@ -8,6 +8,7 @@ type StatusPickerProps = {
   pending?: boolean;
   pendingStatus?: SeriesStatus | null;
   airedEpisodes?: number;
+  watchedEpisodes?: number;
 };
 
 const DESCRIPTIONS: Record<SeriesStatus, string> = {
@@ -49,6 +50,7 @@ export function StatusPicker({
   pending = false,
   pendingStatus = null,
   airedEpisodes,
+  watchedEpisodes = 0,
 }: StatusPickerProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -56,8 +58,10 @@ export function StatusPicker({
         const active = value === status;
         const busy = pending && pendingStatus === status;
 
-        const description =
-          status === "watched" && airedEpisodes !== undefined && airedEpisodes > 0
+        const resetsProgress = status === "want_to_watch" && watchedEpisodes > 0;
+        const description = resetsProgress
+          ? `Resets your ${watchedEpisodes} watched ${watchedEpisodes === 1 ? "episode" : "episodes"}`
+          : status === "watched" && airedEpisodes !== undefined && airedEpisodes > 0
             ? `Marks all ${airedEpisodes} aired episodes as seen`
             : DESCRIPTIONS[status];
 
@@ -79,7 +83,11 @@ export function StatusPicker({
               <span className={`block text-[15px] font-semibold ${active ? "text-accent-300" : "text-mist-100"}`}>
                 {SERIES_STATUS_LABELS[status]}
               </span>
-              <span className="mt-0.5 block truncate text-[12px] text-mist-500">{description}</span>
+              <span
+                className={`mt-0.5 block truncate text-[12px] ${resetsProgress ? "text-star-500" : "text-mist-500"}`}
+              >
+                {description}
+              </span>
             </span>
 
             {busy ? (
