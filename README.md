@@ -1,5 +1,7 @@
 # Episodic
 
+[![CI](https://github.com/bernam07/episodic/actions/workflows/ci.yml/badge.svg)](https://github.com/bernam07/episodic/actions/workflows/ci.yml)
+
 A Letterboxd for television. Track series, check off episodes, rate what you finish,
 and follow what your friends are watching. A PWA built mobile-first for iPhone,
 installable to the home screen, and fully usable on desktop.

@@ -278,6 +278,13 @@ plural, initials, releaseYear, hasAired). `tests/` is outside `src`, so `tsc -b`
 it; Vitest transpiles via esbuild. `vitest.config.ts` is standalone (it does **not** load
 `vite.config.ts`, to avoid the PWA plugin) and re-declares the `@` alias.
 
+**CI** (`.github/workflows/ci.yml`) runs `typecheck → test → build` on every push and PR (Node 24,
+`npm ci`). This exists specifically to catch the "committed a broken build / unpushed migration"
+failures that have happened twice across machines. The build needs no secrets: `vite.config.ts`
+falls back to `""` for missing `VITE_*` vars (`env.VITE_… ?? ""`), so it compiles in CI. The
+lockfile carries the full cross-platform rollup binary set, so `npm ci` resolves on Linux even
+though it was generated on Windows.
+
 ⚠️ **Schema (PGlite) and UI (Playwright) checks are still scratchpad-only** and not in the repo. The
 PGlite shim for schema work must grant usage on the `auth` schema and stub `storage.foldername(text)
 returns text[]` (used by the avatars-bucket RLS), and must **not** install extensions. Porting these
