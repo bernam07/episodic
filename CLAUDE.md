@@ -5,6 +5,7 @@ what friends watch. Installable PWA, iPhone-first, fully usable on desktop.
 
 Repo: `github.com/bernam07/episodic` (private, MIT).
 Status: feature-complete and verified end-to-end against a live Supabase project.
+Deployed on Vercel.
 
 ---
 
@@ -50,8 +51,9 @@ TMDB secret. A fresh machine only needs `.env.local` + `supabase link`. Full set
 - **No Docker on the original dev machine**, so `supabase start` / local Postgres was never used.
   Everything targets the remote project directly. Schema changes were verified against PGlite
   (see Verification below) before `db push`.
-- Windows. Use forward slashes; `gh` CLI is not installed (repo was created via the GitHub API
-  using the token in the git credential manager).
+- Development also done in **GitHub Codespaces** (Linux). The Supabase CLI is available via
+  `npx supabase`. Authenticate with `export SUPABASE_ACCESS_TOKEN=...` since `supabase login`
+  requires a TTY.
 
 ---
 
@@ -92,11 +94,12 @@ src/
 │   ├── repositories/     interfaces the domain requires
 │   └── usecases/         orchestration + validation
 ├── data/                 implementations of those interfaces
-│   ├── supabase/         Postgres + Auth
+│   ├── supabase/         Postgres + Auth + Storage
 │   └── tmdb/             Edge Function client, image URL helpers
 ├── presentation/         React
 │   ├── di/container.ts   composition root
 │   ├── hooks/            TanStack Query wrappers over use cases
+│   ├── utils/            pure helpers (plural, date formatting)
 │   ├── components/, layout/, router/, screens/
 └── types/                generated Supabase types (do not hand-edit)
 ```
@@ -108,8 +111,7 @@ Routes: `/auth`, `/reset-password`, `/` (home), `/search`, `/library`, `/friends
 
 ## Data model — and why
 
-Five tables plus `follows`: `profiles`, `series`, `user_series_status`, `episode_tracking`,
-`reviews`, `follows`.
+Six tables: `profiles`, `series`, `user_series_status`, `episode_tracking`, `reviews`, `follows`.
 
 **There is deliberately no `episodes` table.** TMDB serves a whole season in one CDN-backed call
 and TanStack Query caches it client-side, so mirroring episode content into Postgres would only
@@ -132,6 +134,12 @@ aired < total and downgrade it to `watching`. Order matters; don't reorder it.
 them. A returning series with every aired episode watched is *up to date* (shows next air date);
 only an ended series with every episode watched is *finished*. Aired counts derive from TMDB's
 `last_episode_to_air` + `seasons_meta`.
+
+**Favorites** are stored as `is_favorite boolean` on `user_series_status`. Toggling uses the
+`toggle_favorite(p_series_id)` RPC, which flips the flag (and upserts with `want_to_watch` if
+the series isn't in the library yet). Favorites are exposed in `user_series_progress` (own
+library) and `get_user_library` (other users' libraries, follow-gated). They appear as a
+dedicated "Favorites" filter tab in the Library screen and as a poster grid section on profiles.
 
 ---
 
@@ -181,6 +189,11 @@ check in the UI is convenience, not the guard.
 - Tailwind IntelliSense reports `cssConflict` on `bg-x active:bg-y` — false positives, ignore.
   But a genuine conflict class exists: `pt-safe` + `pt-3` on the same element silently clobbers the
   safe-area inset. Use `pt-[calc(env(safe-area-inset-top)+0.75rem)]`.
+- **`CREATE OR REPLACE FUNCTION` cannot change a `RETURNS TABLE` column list.** When adding a
+  column to a function's return type, use `DROP FUNCTION ... ; CREATE FUNCTION ...` instead. This
+  bit `get_profile_summary` (adding `bio`) and `get_user_library` (adding `is_favorite`).
+- **Supabase CLI in Codespaces**: `supabase login` requires a TTY. Use
+  `export SUPABASE_ACCESS_TOKEN=<token>` then `npx supabase db push`.
 
 ## Bugs already fixed — do not reintroduce
 
@@ -196,7 +209,22 @@ check in the UI is convenience, not the guard.
 5. **Desktop horizontal overflow**: `main` had `w-full` *plus* a 240px sidebar margin → 1680px in a
    1440px window. The sidebar offset lives on a wrapper's padding now.
 6. `pt-safe` + `pt-3` conflict on the home header.
-7. `"1 people you follow"` pluralisation.
+7. `"1 people you follow"` pluralisation — fixed with shared `pluralize()` utility.
+
+---
+
+## Supabase Storage
+
+**Bucket: `avatars`** — public, 5 MB limit, `image/jpeg`, `image/png`, `image/webp` only.
+
+Each user's avatar is stored at `{userId}/avatar` (no extension, `upsert: true`). This fixed
+path means re-uploading overwrites the same object — no orphaned files. The public URL is
+cache-busted by appending `?t=Date.now()` to the URL stored in `profiles.avatar_url`, so every
+upload is seen by all viewers on next profile fetch.
+
+RLS on `storage.objects`:
+- Select: all authenticated users (avatars are public).
+- Insert/update/delete: own folder only (`(storage.foldername(name))[1] = auth.uid()::text`).
 
 ---
 
@@ -247,13 +275,32 @@ screenshot before believing a red result.
 | `…120400_fix_status_sync_on_cascade` | Cascade-delete fix (bug 3 above) |
 | `…120500_set_series_watched` | `set_series_watched`, `clear_series_episodes` |
 | `…120600_social` | `follows`, follow-gated library policy, `search_profiles`, `get_profile_summary`, `get_following_feed`, `get_user_library`, `username_available`, `handle_new_user` override |
+| `…090000_profile_editing_and_social_lists` | `bio` column on profiles, `avatars` storage bucket + RLS, updated `get_profile_summary` (adds `bio`), `get_followers` / `get_following` RPCs |
+| `…100000_favorites_and_cast` | `is_favorite` column on `user_series_status`, recreated `user_series_progress` view (adds `is_favorite`), `toggle_favorite` RPC, updated `get_user_library` (adds `is_favorite`) |
 
 ## Edge Functions
 
 | Function | `verify_jwt` | Routes |
 |---|---|---|
-| `tmdb` | `true` | `/search?q=`, `/trending`, `/genres`, `/discover?genre=`, `/series/:id`, `/series/:id/recommendations`, `/series/:id/season/:n` |
+| `tmdb` | `true` | `/search?q=`, `/trending`, `/genres`, `/discover?genre=`, `/series/:id`, `/series/:id/recommendations`, `/series/:id/season/:n`, `/series/:id/credits` |
 | `auth-login` | **`false`** | `POST` `{ identifier, password }` → `{ access_token, refresh_token }` |
+
+---
+
+## Key UI features
+
+- **Auth landing page**: Poster-wall backdrop from trending series, feature highlights, auth form.
+  Two-column layout on desktop (poster wall left, form right).
+- **Episode detail**: Tap any episode row → bottom sheet with still image, formatted air date,
+  runtime, TMDB rating, full description, mark-watched toggle.
+- **Cast rail**: Horizontal scroll of circular actor photos + name + character on series detail.
+  Data from `/series/:id/credits` edge function route (top 20).
+- **Profile editing**: EditProfileSheet — avatar upload (tap avatar, hidden file input), display
+  name, bio (160 chars with counter). Followers/following lists via FollowListSheet (tap counts).
+- **Favorites**: Heart toggle on series detail, "Favorites" tab in Library, poster grid on profiles.
+- **Library filter persistence**: Filter state stored in URL search params (`?status=watching`).
+  Navigating to series detail and pressing Back restores the active filter. Profile stat tiles
+  deep-link to the correct library filter.
 
 ---
 
@@ -270,4 +317,3 @@ screenshot before believing a red result.
   episode check-ins intact, so the library can show "Want to Watch" on something at 100%. Left that
   way rather than silently deleting history; more visible now that status badges are everywhere.
 - **Port the verification scripts into `tests/`** (see warning above).
-- Avatars are initials-only; `profiles.avatar_url` exists but nothing uploads to it.
