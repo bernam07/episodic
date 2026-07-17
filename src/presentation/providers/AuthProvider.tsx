@@ -12,6 +12,7 @@ type AuthContextValue = {
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -108,6 +109,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(next);
   }, [user]);
 
+  const deleteAccount = useCallback(async () => {
+    await container.usecases.deleteAccount.execute();
+    setUser(null);
+    setProfile(null);
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -119,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestPasswordReset,
       updatePassword,
       refreshProfile,
+      deleteAccount,
     }),
     [
       user,
@@ -130,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestPasswordReset,
       updatePassword,
       refreshProfile,
+      deleteAccount,
     ]
   );
 

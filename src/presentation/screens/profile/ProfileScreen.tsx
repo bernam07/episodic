@@ -4,6 +4,7 @@ import { SERIES_STATUS_LABELS, SERIES_STATUSES } from "@/domain/entities/SeriesS
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { Avatar } from "@/presentation/components/social/Avatar";
+import { DeleteAccountSheet } from "@/presentation/components/social/DeleteAccountSheet";
 import { EditProfileSheet } from "@/presentation/components/social/EditProfileSheet";
 import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
 import { Button } from "@/presentation/components/ui/Button";
@@ -183,7 +184,8 @@ function OwnReviews() {
 }
 
 export function ProfileScreen() {
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
     <>
@@ -193,10 +195,25 @@ export function ProfileScreen() {
       <OwnReviews />
 
       <div className="mt-10 px-5">
-        <Button variant="danger" fullWidth onClick={() => void signOut()}>
+        <Button variant="secondary" fullWidth onClick={() => void signOut()}>
           Sign Out
         </Button>
+        <button
+          type="button"
+          onClick={() => setDeleteOpen(true)}
+          className="tap-none mt-3 min-h-[44px] w-full text-[13px] font-medium text-mist-500 active:text-danger-500"
+        >
+          Delete account
+        </button>
       </div>
+
+      {profile ? (
+        <DeleteAccountSheet
+          open={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+          username={profile.username}
+        />
+      ) : null}
     </>
   );
 }
