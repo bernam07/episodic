@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { posterUrl, profileUrl } from "@/data/tmdb/images";
+import { profileUrl } from "@/data/tmdb/images";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { Sheet } from "@/presentation/components/ui/Sheet";
 import { Spinner } from "@/presentation/components/ui/Spinner";

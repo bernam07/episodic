@@ -92,6 +92,58 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          read: boolean
+          series_id: string | null
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          series_id?: string | null
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          series_id?: string | null
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -323,6 +375,7 @@ export type Database = {
     }
     Functions: {
       clear_series_episodes: { Args: { p_series_id: string }; Returns: number }
+      delete_own_account: { Args: never; Returns: undefined }
       generate_unique_username: { Args: { p_seed: string }; Returns: string }
       get_continue_watching: {
         Args: { p_limit?: number }
@@ -379,6 +432,23 @@ export type Database = {
           username: string
         }[]
       }
+      get_notifications: {
+        Args: { p_limit?: number }
+        Returns: {
+          actor_avatar_url: string
+          actor_display_name: string
+          actor_id: string
+          actor_username: string
+          created_at: string
+          id: string
+          read: boolean
+          series_id: string
+          series_name: string
+          series_poster_path: string
+          series_tmdb_id: number
+          type: Database["public"]["Enums"]["notification_type"]
+        }[]
+      }
       get_profile_summary: {
         Args: { p_username: string }
         Returns: {
@@ -405,6 +475,7 @@ export type Database = {
           watched_episodes: number
         }[]
       }
+      get_unread_notification_count: { Args: never; Returns: number }
       get_user_library: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
@@ -418,7 +489,7 @@ export type Database = {
           updated_at: string
         }[]
       }
-      toggle_favorite: { Args: { p_series_id: string }; Returns: undefined }
+      mark_notifications_read: { Args: never; Returns: undefined }
       search_profiles: {
         Args: { p_limit?: number; p_query: string }
         Returns: {
@@ -445,10 +516,12 @@ export type Database = {
         Args: { p_episodes: Json; p_series_id: string }
         Returns: number
       }
+      toggle_favorite: { Args: { p_series_id: string }; Returns: undefined }
       upsert_series_from_tmdb: { Args: { p_payload: Json }; Returns: string }
       username_available: { Args: { p_username: string }; Returns: boolean }
     }
     Enums: {
+      notification_type: "follow" | "review"
       series_watch_status:
         | "want_to_watch"
         | "watching"
@@ -581,6 +654,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      notification_type: ["follow", "review"],
       series_watch_status: [
         "want_to_watch",
         "watching",
