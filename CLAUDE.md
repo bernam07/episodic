@@ -65,6 +65,8 @@ TMDB secret. A fresh machine only needs `.env.local` + `supabase link`. Full set
 | `npm run build` | `tsc -b && vite build` |
 | `npm run preview` | Serve the production build — **required** to exercise the PWA/service worker |
 | `npm run typecheck` | Types only |
+| `npm test` | Run the Vitest unit suite (`tests/`) once |
+| `npm run test:watch` | Vitest in watch mode |
 | `supabase db push` | Apply migrations to the linked project |
 | `supabase gen types typescript --linked --schema public > src/types/database.types.ts` | Regenerate DB types — **run after every migration** |
 | `supabase functions deploy tmdb` / `auth-login` | Deploy Edge Functions |
@@ -170,6 +172,26 @@ this is intentional and must stay.
 inside the signup transaction, the auth user rolls back too — no orphans. The live availability
 check in the UI is convenience, not the guard.
 
+**Deleting your own account** goes through the `delete_own_account()` RPC (`security definer`), which
+deletes the `profiles` row and then the `auth.users` row for `auth.uid()`. Everything else — status,
+tracking, reviews, follows, and the notifications the user generated for others — cascades via FK
+`on delete cascade`. Verified on PGlite that this does **not** hit the FK re-insert trap of bug 3.
+The UI (`DeleteAccountSheet`) requires typing your username to confirm, then `AuthProvider` clears
+`user`/`profile` and `ProtectedRoute` redirects to `/auth`.
+
+---
+
+## Notifications
+
+A `notifications` table with two `security definer` triggers:
+- `notify_on_follow` — inserts a `follow` row for the followed user.
+- `notify_on_review` — inserts a `review` row for each follower of the reviewer (excluding self).
+
+RLS: a user can only select/update their own rows. `get_notifications` returns actor + series data
+joined in; `get_unread_notification_count` drives the bell badge on the home header;
+`mark_notifications_read` is called when the `NotificationSheet` opens. There is no `/notifications`
+route — it is a sheet opened from the bell, same pattern as `EditProfileSheet`.
+
 ---
 
 ## Toolchain gotchas (all already hit and resolved)
@@ -250,12 +272,16 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Counts as of last session:** 32 schema checks, 24 social-schema checks, 24 domain unit checks
-(airing logic, run via `npx esbuild ... --bundle --platform=node` then node), 13 live auth checks,
-40 UI checks.
+**Domain unit tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 44
+tests over the pure functions (airing/watch-state logic, rating/username/email/avatar validators,
+plural, initials, releaseYear, hasAired). `tests/` is outside `src`, so `tsc -b` does not type-check
+it; Vitest transpiles via esbuild. `vitest.config.ts` is standalone (it does **not** load
+`vite.config.ts`, to avoid the PWA plugin) and re-declares the `@` alias.
 
-⚠️ **These scripts lived in a session scratchpad and are gone.** They are not in the repo. If
-schema or auth changes, they need rewriting. Porting them into `tests/` is an open task.
+⚠️ **Schema (PGlite) and UI (Playwright) checks are still scratchpad-only** and not in the repo. The
+PGlite shim for schema work must grant usage on the `auth` schema and stub `storage.foldername(text)
+returns text[]` (used by the avatars-bucket RLS), and must **not** install extensions. Porting these
+into `tests/` (needs a DB harness / a preview-server fixture) is still open.
 
 Recurring trap when writing Playwright checks: **strict-mode violations read as failures.**
 `text=Library` matches both a heading and the nav tab; `"Watching"` matches Abandoned's
@@ -277,6 +303,7 @@ screenshot before believing a red result.
 | `…120600_social` | `follows`, follow-gated library policy, `search_profiles`, `get_profile_summary`, `get_following_feed`, `get_user_library`, `username_available`, `handle_new_user` override |
 | `…090000_profile_editing_and_social_lists` | `bio` column on profiles, `avatars` storage bucket + RLS, updated `get_profile_summary` (adds `bio`), `get_followers` / `get_following` RPCs |
 | `…100000_favorites_and_cast` | `is_favorite` column on `user_series_status`, recreated `user_series_progress` view (adds `is_favorite`), `toggle_favorite` RPC, updated `get_user_library` (adds `is_favorite`) |
+| `…110000_notifications_and_delete_account` | `notifications` table + RLS, `notify_on_follow` / `notify_on_review` triggers, `get_notifications` / `mark_notifications_read` / `get_unread_notification_count`, `delete_own_account` |
 
 ## Edge Functions
 
@@ -301,6 +328,10 @@ screenshot before believing a red result.
 - **Library filter persistence**: Filter state stored in URL search params (`?status=watching`).
   Navigating to series detail and pressing Back restores the active filter. Profile stat tiles
   deep-link to the correct library filter.
+- **Notifications**: Bell on the home header with an unread badge, opening `NotificationSheet`
+  (follow + review activity). Marked read on open.
+- **Delete account**: Danger action at the bottom of the profile; `DeleteAccountSheet` gates it
+  behind typing the username, then signs out and redirects to `/auth`.
 
 ---
 
@@ -316,4 +347,5 @@ screenshot before believing a red result.
 - **Status/progress can disagree**: switching a series from Watched back to Want to Watch leaves
   episode check-ins intact, so the library can show "Want to Watch" on something at 100%. Left that
   way rather than silently deleting history; more visible now that status badges are everywhere.
-- **Port the verification scripts into `tests/`** (see warning above).
+- **Port the remaining verification scripts into `tests/`**: domain unit tests are done (Vitest,
+  `npm test`); the schema (PGlite) and UI (Playwright) suites still live only in a scratchpad.
