@@ -64,7 +64,9 @@ $$;
 
 grant execute on function public.toggle_favorite(uuid) to authenticated;
 
-create or replace function public.get_user_library(p_user_id uuid, p_limit integer default 60)
+drop function if exists public.get_user_library(uuid, integer);
+
+create function public.get_user_library(p_user_id uuid, p_limit integer default 60)
 returns table (
   series_id uuid,
   tmdb_id integer,
