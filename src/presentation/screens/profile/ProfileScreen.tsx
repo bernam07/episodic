@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { computeLibraryStats } from "@/domain/entities/LibraryStats";
 import { SERIES_STATUS_LABELS, SERIES_STATUSES } from "@/domain/entities/SeriesStatus";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
@@ -100,19 +101,15 @@ function Stats() {
   }
 
   const library = data ?? [];
-  const episodes = library.reduce((sum, item) => sum + item.watchedEpisodes, 0);
-  const rated = library.filter((item) => item.userRating !== null);
-  const averageRating =
-    rated.length > 0
-      ? (rated.reduce((sum, item) => sum + (item.userRating ?? 0), 0) / rated.length).toFixed(1)
-      : "—";
+  const stats = computeLibraryStats(library);
 
   return (
     <section className="px-5">
-      <div className="grid grid-cols-3 gap-3">
-        <StatTile value={episodes} label="episodes watched" />
-        <StatTile value={library.length} label="series tracked" />
-        <StatTile value={averageRating} label="average rating" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatTile value={stats.episodesWatched} label="episodes watched" />
+        <StatTile value={stats.seriesTracked} label="series tracked" />
+        <StatTile value={stats.averageRating ?? "—"} label="average rating" />
+        <StatTile value={stats.favorites} label="favorites" />
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">

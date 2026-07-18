@@ -209,6 +209,16 @@ route — it is a sheet opened from the bell, same pattern as `EditProfileSheet`
 
 ---
 
+## Build / code-splitting
+
+Routes are lazy-loaded (`React.lazy` + a `Suspense` fallback in `AppRouter`), and
+`vite.config.ts` `build.rollupOptions.output.manualChunks` splits vendors into `react`,
+`supabase`, `query` and `vendor` chunks. This dropped the entry chunk from ~592 KB to ~37 KB
+(biggest chunk is now the ~225 KB react vendor) and removed the >500 KB chunk warning. The point
+is caching: app-code redeploys keep the vendor chunks cached, and screens load on navigation.
+Screen components use **named** exports, so each lazy import maps it to default:
+`lazy(() => import("…").then((m) => ({ default: m.Screen })))`.
+
 ## Toolchain gotchas (all already hit and resolved)
 
 - **TypeScript 7 removed `baseUrl`.** Paths resolve relative to the tsconfig. Don't re-add it.
@@ -287,7 +297,7 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 79 tests:
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 85 tests:
 - `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
   validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
   (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
