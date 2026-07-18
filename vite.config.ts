@@ -17,6 +17,27 @@ export default defineConfig(({ mode }) => {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id: string) {
+            if (!id.includes("node_modules")) {
+              return undefined;
+            }
+            if (id.includes("@supabase")) {
+              return "supabase";
+            }
+            if (id.includes("@tanstack")) {
+              return "query";
+            }
+            if (id.includes("react-router") || id.includes("react-dom") || id.includes("/react/") || id.includes("scheduler")) {
+              return "react";
+            }
+            return "vendor";
+          },
+        },
+      },
+    },
     plugins: [
     react(),
     tailwindcss(),
