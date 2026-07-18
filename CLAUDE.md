@@ -143,6 +143,15 @@ them. A returning series with every aired episode watched is *up to date* (shows
 only an ended series with every episode watched is *finished*. Aired counts derive from TMDB's
 `last_episode_to_air` + `seasons_meta`.
 
+**"Up Next" / `aired_episodes`.** `series.aired_episodes` stores the aired-episode count (computed
+in the `tmdb` edge function from `last_episode_to_air`, mirroring `airedEpisodeCount`; the client
+also sends it via `cacheSeries`). The `get_up_next` RPC uses it: for each *watching* series it
+expands `seasons_meta` into an ordered episode list, finds the first **unwatched** episode whose
+ordinal ≤ `aired_episodes` (so it never suggests an unaired episode and correctly fills gaps if you
+watched out of order), and returns its season/episode number. The Home "Up Next" rail shows that
+episode with a one-tap check-off: `useMarkUpNext` fetches the season (TanStack-cached) to resolve
+the `tmdb_episode_id`, then marks it — because Postgres stores counts, not episode IDs.
+
 **Favorites** are stored as `is_favorite boolean` on `user_series_status`. Toggling uses the
 `toggle_favorite(p_series_id)` RPC, which flips the flag (and upserts with `want_to_watch` if
 the series isn't in the library yet). Favorites are exposed in `user_series_progress` (own
@@ -278,11 +287,11 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 74 tests:
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 79 tests:
 - `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
   validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
   (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
-- `tests/schema.test.ts` — the schema/RLS/social/notification/delete/hardening checks against real
+- `tests/schema.test.ts` — the schema/RLS/social/notification/delete/hardening/up-next checks against real
   Postgres via **PGlite**, using the shared harness in `tests/support/pglite.ts` (`createMigratedDb`
   applies all migrations under the shim). Runs in CI — no browser, no live backend.
 
@@ -336,6 +345,7 @@ screenshot before believing a red result.
 | `…100000_favorites_and_cast` | `is_favorite` column on `user_series_status`, recreated `user_series_progress` view (adds `is_favorite`), `toggle_favorite` RPC, updated `get_user_library` (adds `is_favorite`) |
 | `…110000_notifications_and_delete_account` | `notifications` table + RLS, `notify_on_follow` / `notify_on_review` triggers, `get_notifications` / `mark_notifications_read` / `get_unread_notification_count`, `delete_own_account` |
 | `…120000_harden_series_cache` | `upsert_series_from_tmdb` → `security definer` (+ auth guard), drop the direct insert/update policies on `series`, revoke insert/update/delete from `authenticated`. The RPC is now the only write path into the cache |
+| `…090000_up_next` (2026-07-18) | `aired_episodes` column on `series` (backfilled = total for ended series), `upsert_series_from_tmdb` stores it, `get_up_next` RPC |
 
 ## Edge Functions
 
@@ -360,6 +370,8 @@ screenshot before believing a red result.
 - **Library filter persistence**: Filter state stored in URL search params (`?status=watching`).
   Navigating to series detail and pressing Back restores the active filter. Profile stat tiles
   deep-link to the correct library filter.
+- **Up Next**: Home rail showing the next unwatched aired episode of each *watching* series
+  (`get_up_next`), with a one-tap check-off that advances to the following episode.
 - **Notifications**: Bell on the home header with an unread badge, opening `NotificationSheet`
   (follow + review activity). Marked read on open.
 - **Delete account**: Danger action at the bottom of the profile; `DeleteAccountSheet` gates it
