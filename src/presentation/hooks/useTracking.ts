@@ -21,6 +21,47 @@ export function useContinueWatching() {
   });
 }
 
+export function useUpNext() {
+  return useQuery({
+    queryKey: queryKeys.upNext,
+    queryFn: () => container.usecases.getUpNext.execute(20),
+    staleTime: 1000 * 30,
+  });
+}
+
+export function useMarkUpNext() {
+  const queryClient = useQueryClient();
+  const invalidate = useTrackingInvalidator();
+
+  return useMutation({
+    mutationFn: async (item: {
+      seriesId: string;
+      tmdbId: number;
+      nextSeason: number;
+      nextEpisode: number;
+    }) => {
+      const season = await queryClient.fetchQuery({
+        queryKey: queryKeys.season(item.tmdbId, item.nextSeason),
+        queryFn: () => container.usecases.getSeason.execute(item.tmdbId, item.nextSeason),
+        staleTime: 1000 * 60 * 60 * 12,
+      });
+
+      const episode = season.episodes.find((candidate) => candidate.episodeNumber === item.nextEpisode);
+
+      if (!episode) {
+        return;
+      }
+
+      await container.repositories.tracking.markEpisode(item.seriesId, {
+        tmdbEpisodeId: episode.tmdbEpisodeId,
+        seasonNumber: item.nextSeason,
+        episodeNumber: item.nextEpisode,
+      });
+    },
+    onSuccess: (_result, item) => invalidate(item.seriesId),
+  });
+}
+
 export function useLocalSeriesId(tmdbId: number) {
   return useQuery({
     queryKey: ["local-series-id", tmdbId],
@@ -62,6 +103,7 @@ function useTrackingInvalidator() {
     queryClient.invalidateQueries({ queryKey: queryKeys.watchedEpisodes(seriesId) });
     queryClient.invalidateQueries({ queryKey: ["library"] });
     queryClient.invalidateQueries({ queryKey: queryKeys.continueWatching });
+    queryClient.invalidateQueries({ queryKey: queryKeys.upNext });
   };
 }
 

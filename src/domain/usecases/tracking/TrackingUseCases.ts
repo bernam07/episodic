@@ -3,6 +3,7 @@ import type {
   ContinueWatchingItem,
   SeasonProgress,
   SeriesProgress,
+  UpNextItem,
   WatchedEpisodeRef,
 } from "@/domain/entities/Progress";
 import type { SeriesDetail } from "@/domain/entities/Series";
@@ -147,6 +148,14 @@ export class GetContinueWatching {
 
   async execute(limit = 10): Promise<ContinueWatchingItem[]> {
     return this.tracking.getContinueWatching(limit);
+  }
+}
+
+export class GetUpNext {
+  constructor(private readonly tracking: ITrackingRepository) {}
+
+  async execute(limit = 20): Promise<UpNextItem[]> {
+    return this.tracking.getUpNext(limit);
   }
 }
 

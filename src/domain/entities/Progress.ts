@@ -40,3 +40,16 @@ export type WatchedEpisodeRef = {
   seasonNumber: number;
   episodeNumber: number;
 };
+
+export type UpNextItem = {
+  seriesId: string;
+  tmdbId: number;
+  name: string;
+  posterPath: string | null;
+  nextSeason: number;
+  nextEpisode: number;
+  watchedEpisodes: number;
+  airedEpisodes: number;
+  numberOfEpisodes: number;
+  lastWatchedAt: string | null;
+};

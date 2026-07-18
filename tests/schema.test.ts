@@ -415,3 +415,103 @@ describe("delete_own_account", () => {
     expect(rejected).toBe(true);
   });
 });
+
+describe("get_up_next", () => {
+  const EDDIE = "55555555-5555-5555-5555-555555555555";
+  let seriesId: string;
+
+  const PAYLOAD = {
+    tmdb_id: 9999,
+    name: "Test Show",
+    number_of_seasons: 2,
+    number_of_episodes: 6,
+    aired_episodes: 5,
+    genres: ["Drama"],
+    seasons_meta: [
+      { season_number: 1, episode_count: 3 },
+      { season_number: 2, episode_count: 3 },
+    ],
+  };
+
+  async function watch(season: number, episode: number, epId: number) {
+    await db.query(
+      `insert into public.episode_tracking (user_id, series_id, tmdb_episode_id, season_number, episode_number)
+       values ($1, $2, $3, $4, $5) on conflict (user_id, tmdb_episode_id) do nothing`,
+      [EDDIE, seriesId, epId, season, episode]
+    );
+  }
+
+  async function upNext() {
+    await asAuthenticated(db, EDDIE);
+    const r = await db.query<{ next_season: number; next_episode: number; tmdb_id: number }>(
+      `select next_season, next_episode, tmdb_id from public.get_up_next(20)`
+    );
+    await reset(db);
+    return r.rows;
+  }
+
+  beforeAll(async () => {
+    await createAuthUser(db, EDDIE, "eddie");
+    await asAuthenticated(db, EDDIE);
+    const r = await db.query<{ id: string }>(`select public.upsert_series_from_tmdb($1::jsonb) as id;`, [
+      JSON.stringify(PAYLOAD),
+    ]);
+    seriesId = r.rows[0].id;
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status) values ($1, $2, 'watching')`,
+      [EDDIE, seriesId]
+    );
+    await reset(db);
+  });
+
+  it("suggests the next episode in order after the last watched", async () => {
+    await asAuthenticated(db, EDDIE);
+    await watch(1, 1, 1001);
+    await watch(1, 2, 1002);
+    await reset(db);
+    const rows = await upNext();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ next_season: 1, next_episode: 3 });
+  });
+
+  it("fills a gap when episodes were watched out of order", async () => {
+    await asAuthenticated(db, EDDIE);
+    await db.query(`delete from public.episode_tracking where user_id = $1`, [EDDIE]);
+    await watch(1, 1, 1001);
+    await watch(1, 3, 1003);
+    await reset(db);
+    const rows = await upNext();
+    expect(rows[0]).toMatchObject({ next_season: 1, next_episode: 2 });
+  });
+
+  it("crosses into the next season", async () => {
+    await asAuthenticated(db, EDDIE);
+    await db.query(`delete from public.episode_tracking where user_id = $1`, [EDDIE]);
+    await watch(1, 1, 1001);
+    await watch(1, 2, 1002);
+    await watch(1, 3, 1003);
+    await reset(db);
+    const rows = await upNext();
+    expect(rows[0]).toMatchObject({ next_season: 2, next_episode: 1 });
+  });
+
+  it("never suggests an unaired episode (up to date once all aired are watched)", async () => {
+    await asAuthenticated(db, EDDIE);
+    await db.query(`delete from public.episode_tracking where user_id = $1`, [EDDIE]);
+    await watch(1, 1, 1001);
+    await watch(1, 2, 1002);
+    await watch(1, 3, 1003);
+    await watch(2, 1, 2001);
+    await watch(2, 2, 2002);
+    await reset(db);
+    const rows = await upNext();
+    expect(rows).toHaveLength(0);
+  });
+
+  it("only includes another user's series when they are watching it, scoped per viewer", async () => {
+    await asAuthenticated(db, BOB);
+    const rows = await db.query(`select * from public.get_up_next(20)`);
+    await reset(db);
+    expect(rows.rows.every((r: { tmdb_id: number }) => r.tmdb_id !== 9999)).toBe(true);
+  });
+});

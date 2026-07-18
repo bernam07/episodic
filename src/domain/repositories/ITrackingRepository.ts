@@ -2,6 +2,7 @@ import type {
   ContinueWatchingItem,
   SeasonProgress,
   SeriesProgress,
+  UpNextItem,
   WatchedEpisodeRef,
 } from "../entities/Progress";
 import type { SeriesStatus, UserSeriesStatus } from "../entities/SeriesStatus";
@@ -25,5 +26,6 @@ export interface ITrackingRepository {
   setSeriesWatched(seriesId: string, episodes: WatchedEpisodeRef[]): Promise<number>;
   clearSeriesEpisodes(seriesId: string): Promise<number>;
   getContinueWatching(limit?: number): Promise<ContinueWatchingItem[]>;
+  getUpNext(limit?: number): Promise<UpNextItem[]>;
   toggleFavorite(seriesId: string): Promise<void>;
 }

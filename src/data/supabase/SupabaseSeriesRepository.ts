@@ -1,4 +1,5 @@
 import { AppError } from "@/core/errors/AppError";
+import { airedEpisodeCount } from "@/domain/entities/Airing";
 import type { SeriesDetail } from "@/domain/entities/Series";
 import type { ISeriesRepository } from "@/domain/repositories/ISeriesRepository";
 import { supabase } from "./client";
@@ -15,6 +16,7 @@ export class SupabaseSeriesRepository implements ISeriesRepository {
       last_air_date: detail.lastAirDate,
       number_of_seasons: detail.numberOfSeasons,
       number_of_episodes: detail.numberOfEpisodes,
+      aired_episodes: airedEpisodeCount(detail),
       vote_average: detail.voteAverage,
       genres: detail.genres,
       tmdb_status: detail.tmdbStatus,

@@ -1,6 +1,7 @@
 import { AppError } from "@/core/errors/AppError";
 import type {
   ContinueWatchingItem,
+  UpNextItem,
   SeasonProgress,
   SeriesProgress,
   WatchedEpisodeRef,
@@ -288,6 +289,27 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       watchedEpisodes: row.watched_episodes,
       numberOfEpisodes: row.number_of_episodes,
       progressPercent: Number(row.progress_percent),
+      lastWatchedAt: row.last_watched_at,
+    }));
+  }
+
+  async getUpNext(limit = 20): Promise<UpNextItem[]> {
+    const { data, error } = await supabase.rpc("get_up_next", { p_limit: limit });
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
+
+    return (data ?? []).map((row) => ({
+      seriesId: row.series_id,
+      tmdbId: row.tmdb_id,
+      name: row.name,
+      posterPath: row.poster_path,
+      nextSeason: row.next_season,
+      nextEpisode: row.next_episode,
+      watchedEpisodes: row.watched_episodes,
+      airedEpisodes: row.aired_episodes,
+      numberOfEpisodes: row.number_of_episodes,
       lastWatchedAt: row.last_watched_at,
     }));
   }

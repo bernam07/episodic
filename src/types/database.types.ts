@@ -224,6 +224,7 @@ export type Database = {
       }
       series: {
         Row: {
+          aired_episodes: number
           backdrop_path: string | null
           created_at: string
           first_air_date: string | null
@@ -243,6 +244,7 @@ export type Database = {
           vote_average: number | null
         }
         Insert: {
+          aired_episodes?: number
           backdrop_path?: string | null
           created_at?: string
           first_air_date?: string | null
@@ -262,6 +264,7 @@ export type Database = {
           vote_average?: number | null
         }
         Update: {
+          aired_episodes?: number
           backdrop_path?: string | null
           created_at?: string
           first_air_date?: string | null
@@ -476,6 +479,21 @@ export type Database = {
         }[]
       }
       get_unread_notification_count: { Args: never; Returns: number }
+      get_up_next: {
+        Args: { p_limit?: number }
+        Returns: {
+          aired_episodes: number
+          last_watched_at: string
+          name: string
+          next_episode: number
+          next_season: number
+          number_of_episodes: number
+          poster_path: string
+          series_id: string
+          tmdb_id: number
+          watched_episodes: number
+        }[]
+      }
       get_user_library: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {

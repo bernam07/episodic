@@ -104,6 +104,21 @@ function mapSeriesDetail(item: Record<string, unknown>) {
 
   const trackableEpisodes = seasons.reduce((total, season) => total + season.episode_count, 0);
 
+  const last = item.last_episode_to_air as TmdbEpisodeStub | null;
+  const endedStatus = ["ended", "canceled", "cancelled"].includes(
+    ((item.status as string) ?? "").trim().toLowerCase()
+  );
+
+  let airedEpisodes: number;
+  if (last) {
+    const priorSeasons = seasons
+      .filter((season) => season.season_number < last.season_number)
+      .reduce((total, season) => total + season.episode_count, 0);
+    airedEpisodes = Math.min(priorSeasons + last.episode_number, trackableEpisodes);
+  } else {
+    airedEpisodes = endedStatus ? trackableEpisodes : 0;
+  }
+
   return {
     tmdb_id: item.id as number,
     name: (item.name as string) ?? "",
@@ -114,11 +129,12 @@ function mapSeriesDetail(item: Record<string, unknown>) {
     last_air_date: (item.last_air_date as string) || null,
     number_of_seasons: seasons.length,
     number_of_episodes: trackableEpisodes,
+    aired_episodes: airedEpisodes,
     vote_average: (item.vote_average as number) ?? null,
     genres: ((item.genres as TmdbGenre[]) ?? []).map((genre) => genre.name),
     tmdb_status: (item.status as string) ?? null,
     in_production: (item.in_production as boolean) ?? false,
-    last_episode_to_air: mapEpisodeStub(item.last_episode_to_air as TmdbEpisodeStub | null),
+    last_episode_to_air: mapEpisodeStub(last),
     next_episode_to_air: mapEpisodeStub(item.next_episode_to_air as TmdbEpisodeStub | null),
     seasons_meta: seasons,
   };

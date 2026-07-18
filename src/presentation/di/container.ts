@@ -52,6 +52,7 @@ import {
   CollectAiredEpisodes,
   EnsureSeriesCached,
   GetContinueWatching,
+  GetUpNext,
   GetLibrary,
   GetSeasonProgress,
   GetWatchedEpisodes,
@@ -115,6 +116,7 @@ export const container = {
     toggleSeasonWatched: new ToggleSeasonWatched(trackingRepository),
     toggleFavorite: new ToggleFavorite(trackingRepository),
     getContinueWatching: new GetContinueWatching(trackingRepository),
+    getUpNext: new GetUpNext(trackingRepository),
 
     submitReview: new SubmitReview(reviewRepository),
     getSeriesReviews: new GetSeriesReviews(reviewRepository),
