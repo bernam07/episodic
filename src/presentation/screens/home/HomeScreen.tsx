@@ -118,7 +118,13 @@ function RecommendationsRail() {
 
   const { data: recs } = useRecommendations(seedTmdbId);
 
-  if (!recs || recs.results.length === 0) {
+  const inLibrary = useMemo(() => new Set((library ?? []).map((item) => item.tmdbId)), [library]);
+  const suggestions = useMemo(
+    () => (recs?.results ?? []).filter((item) => !inLibrary.has(item.tmdbId)).slice(0, 15),
+    [recs, inLibrary]
+  );
+
+  if (suggestions.length === 0) {
     return null;
   }
 
@@ -128,7 +134,7 @@ function RecommendationsRail() {
         Recommended for You
       </h2>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
-        {recs.results.slice(0, 15).map((item) => (
+        {suggestions.map((item) => (
           <Link
             key={item.tmdbId}
             to={`/series/${item.tmdbId}`}
