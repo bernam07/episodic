@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { computeLibraryStats } from "@/domain/entities/LibraryStats";
 import { ListsSection } from "@/presentation/components/lists/ListsSection";
-import { SERIES_STATUS_LABELS, SERIES_STATUSES } from "@/domain/entities/SeriesStatus";
+import { SERIES_STATUS_LABELS, SERIES_STATUSES, type SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
-import { SeriesCard } from "@/presentation/components/series/SeriesCard";
+import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { DeleteAccountSheet } from "@/presentation/components/social/DeleteAccountSheet";
 import { DiarySection } from "@/presentation/components/social/DiarySection";
@@ -19,11 +19,18 @@ import { useProfileSummary } from "@/presentation/hooks/useSocial";
 import { useLibrary } from "@/presentation/hooks/useTracking";
 import { pluralize } from "@/presentation/utils/plural";
 
-function StatTile({ value, label }: { value: number | string; label: string }) {
+const STATUS_DOTS: Record<SeriesStatus, string> = {
+  want_to_watch: "bg-sky-400",
+  watching: "bg-accent-400",
+  watched: "bg-emerald-400",
+  abandoned: "bg-mist-500",
+};
+
+function SecondaryStat({ value, label }: { value: number | string; label: string }) {
   return (
-    <div className="rounded-card bg-ink-850 px-3 py-3.5 text-center">
-      <p className="text-[20px] leading-none font-bold tabular-nums text-mist-100">{value}</p>
-      <p className="mt-1 text-[11px] text-mist-500">{label}</p>
+    <div className="px-2 py-1 text-center">
+      <p className="text-[19px] leading-none font-bold tabular-nums text-mist-100">{value}</p>
+      <p className="mt-1 text-[10px] tracking-wide text-mist-500 uppercase">{label}</p>
     </div>
   );
 }
@@ -108,20 +115,34 @@ function Stats() {
 
   return (
     <section className="px-5">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile value={stats.episodesWatched} label="episodes watched" />
-        <StatTile value={stats.seriesTracked} label="series tracked" />
-        <StatTile value={stats.averageRating ?? "—"} label="average rating" />
-        <StatTile value={stats.favorites} label="favorites" />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent-600/25 via-ink-850 to-ink-850 p-5 ring-1 ring-white/5 ring-inset">
+        <div className="pointer-events-none absolute -top-10 -right-10 size-32 rounded-full bg-accent-500/10 blur-2xl" />
+        <p className="text-[12px] font-medium tracking-wide text-mist-400 uppercase">Episodes watched</p>
+        <p className="mt-1 text-[44px] leading-none font-bold tabular-nums text-mist-100">
+          {stats.episodesWatched}
+        </p>
+
+        <div className="mt-5 grid grid-cols-3 divide-x divide-white/5 rounded-xl bg-ink-950/40 py-3">
+          <SecondaryStat value={stats.seriesTracked} label="Series" />
+          <SecondaryStat value={stats.finished} label="Finished" />
+          <SecondaryStat value={stats.averageRating ?? "—"} label="Avg ★" />
+        </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {SERIES_STATUSES.map((status) => (
-          <Link key={status} to={`/library?status=${status}`} className="tap-none active:opacity-70">
-            <StatTile
-              value={library.filter((item) => item.status === status).length}
-              label={SERIES_STATUS_LABELS[status]}
-            />
+          <Link
+            key={status}
+            to={`/library?status=${status}`}
+            className="tap-none flex items-center gap-2 rounded-xl bg-ink-850 px-3 py-2.5 active:bg-ink-800"
+          >
+            <span className={`size-2 shrink-0 rounded-full ${STATUS_DOTS[status]}`} />
+            <span className="min-w-0 flex-1 truncate text-[12px] text-mist-400">
+              {SERIES_STATUS_LABELS[status]}
+            </span>
+            <span className="text-[14px] font-bold tabular-nums text-mist-100">
+              {library.filter((item) => item.status === status).length}
+            </span>
           </Link>
         ))}
       </div>
@@ -136,20 +157,26 @@ function Favorites() {
   if (favorites.length === 0) return null;
 
   return (
-    <section className="mt-7 px-5">
-      <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+    <section className="mt-8">
+      <h2 className="mb-3 flex items-center gap-1.5 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+        <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 text-rose-400">
+          <path d="M12 21.23l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
+        </svg>
         Favorites
-        <span className="ml-1.5 text-mist-600">{favorites.length}</span>
+        <span className="text-mist-600">{favorites.length}</span>
       </h2>
-      <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5">
+      <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
         {favorites.map((item) => (
-          <SeriesCard
+          <Link
             key={item.seriesId}
-            tmdbId={item.tmdbId}
-            name={item.name}
-            posterPath={item.posterPath}
-            status={item.status}
-          />
+            to={`/series/${item.tmdbId}`}
+            className="tap-none w-[116px] shrink-0 active:opacity-70"
+          >
+            <div className="overflow-hidden rounded-xl ring-1 ring-white/10">
+              <SeriesPoster path={item.posterPath} alt={item.name} />
+            </div>
+            <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
+          </Link>
         ))}
       </div>
     </section>
