@@ -1,4 +1,4 @@
-export const SERIES_STATUSES = ["want_to_watch", "watching", "watched", "abandoned"] as const;
+export const SERIES_STATUSES = ["watching", "want_to_watch", "watched", "abandoned"] as const;
 
 export type SeriesStatus = (typeof SERIES_STATUSES)[number];
 
