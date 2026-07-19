@@ -1,16 +1,43 @@
+import { env } from "@/core/config/env";
 import { toUserMessage } from "@/core/errors/AppError";
-import { pushSupported, usePushEnabled, useTogglePush } from "@/presentation/hooks/usePush";
+import { usePushEnabled, useTogglePush } from "@/presentation/hooks/usePush";
+
+type PushStatus = "ok" | "no-key" | "ios-install" | "unsupported";
+
+function pushStatus(): PushStatus {
+  if (typeof window === "undefined") {
+    return "unsupported";
+  }
+
+  const hasApis =
+    "serviceWorker" in navigator && "PushManager" in window && typeof Notification !== "undefined";
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone =
+    window.matchMedia?.("(display-mode: standalone)").matches ||
+    (navigator as unknown as { standalone?: boolean }).standalone === true;
+
+  if (!hasApis) {
+    return isIOS && !standalone ? "ios-install" : "unsupported";
+  }
+
+  return env.vapidPublicKey ? "ok" : "no-key";
+}
+
+const REASONS: Record<Exclude<PushStatus, "ok">, string> = {
+  "ios-install": "On iPhone, add Episodic to your Home Screen and open it from there to enable push.",
+  "no-key": "Push isn’t configured for this build (missing VAPID key).",
+  unsupported: "This browser doesn’t support push notifications.",
+};
 
 export function PushToggle() {
+  const status = pushStatus();
   const { data: enabled } = usePushEnabled();
   const toggle = useTogglePush();
 
-  if (!pushSupported()) {
-    return null;
-  }
-
-  const on = enabled ?? false;
-  const denied = typeof Notification !== "undefined" && Notification.permission === "denied";
+  const on = status === "ok" && (enabled ?? false);
+  const denied =
+    status === "ok" && typeof Notification !== "undefined" && Notification.permission === "denied";
+  const disabled = status !== "ok" || toggle.isPending || denied;
 
   return (
     <div className="rounded-card bg-ink-850 px-4 py-3.5">
@@ -25,9 +52,9 @@ export function PushToggle() {
           type="button"
           role="switch"
           aria-checked={on}
-          disabled={toggle.isPending || denied}
+          disabled={disabled}
           onClick={() => toggle.mutate(!on)}
-          className={`tap-none relative h-6 w-10 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+          className={`tap-none relative h-6 w-10 shrink-0 rounded-full transition-colors disabled:opacity-40 ${
             on ? "bg-accent-600" : "bg-ink-700"
           }`}
         >
@@ -39,6 +66,9 @@ export function PushToggle() {
         </button>
       </div>
 
+      {status !== "ok" ? (
+        <p className="mt-2 text-[12px] text-mist-500">{REASONS[status]}</p>
+      ) : null}
       {denied ? (
         <p className="mt-2 text-[12px] text-mist-500">
           Notifications are blocked in your browser settings for this site.

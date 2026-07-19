@@ -99,17 +99,19 @@ export function DiarySection({ userId }: { userId: string | null }) {
     return null;
   }
 
+  const events = data.slice(0, 12);
+
   return (
     <section className="mt-8 px-5">
       <h2 className="mb-4 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
         Recent Activity
       </h2>
       <ul>
-        {data.map((event, index) => (
+        {events.map((event, index) => (
           <EventCard
             key={`${event.eventType}-${event.seriesId}-${event.occurredAt}`}
             event={event}
-            last={index === data.length - 1}
+            last={index === events.length - 1}
           />
         ))}
       </ul>

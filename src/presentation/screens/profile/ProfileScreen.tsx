@@ -10,8 +10,7 @@ import { DeleteAccountSheet } from "@/presentation/components/social/DeleteAccou
 import { DiarySection } from "@/presentation/components/social/DiarySection";
 import { EditProfileSheet } from "@/presentation/components/social/EditProfileSheet";
 import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
-import { PushToggle } from "@/presentation/components/social/PushToggle";
-import { Button } from "@/presentation/components/ui/Button";
+import { SettingsSheet } from "@/presentation/components/social/SettingsSheet";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useOwnReviews } from "@/presentation/hooks/useReviews";
@@ -35,7 +34,7 @@ function SecondaryStat({ value, label }: { value: number | string; label: string
   );
 }
 
-function Header() {
+function Header({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { profile, user } = useAuth();
   const { data: summary } = useProfileSummary(profile?.username ?? null);
   const [editOpen, setEditOpen] = useState(false);
@@ -57,21 +56,38 @@ function Header() {
           {profile ? <p className="truncate text-[13px] text-mist-500">@{profile.username}</p> : null}
           <p className="mt-0.5 truncate text-[12px] text-mist-500">{user?.email}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setEditOpen(true)}
-          aria-label="Edit profile"
-          className="tap-none flex size-10 shrink-0 items-center justify-center rounded-full text-mist-300 active:bg-ink-800"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
-            <path
-              d="M4 20l4.3-.9L19.6 7.8a1.5 1.5 0 0 0 0-2.1l-1.3-1.3a1.5 1.5 0 0 0-2.1 0L4.9 15.7z"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path d="M14.5 6.5l3 3" strokeLinecap="round" />
-          </svg>
-        </button>
+        <div className="flex shrink-0 items-center">
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            aria-label="Edit profile"
+            className="tap-none flex size-10 items-center justify-center rounded-full text-mist-300 active:bg-ink-800"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+              <path
+                d="M4 20l4.3-.9L19.6 7.8a1.5 1.5 0 0 0 0-2.1l-1.3-1.3a1.5 1.5 0 0 0-2.1 0L4.9 15.7z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path d="M14.5 6.5l3 3" strokeLinecap="round" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Settings"
+            className="tap-none flex size-10 items-center justify-center rounded-full text-mist-300 active:bg-ink-800"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {profile?.bio ? <p className="mt-3 text-[14px] whitespace-pre-wrap text-mist-300">{profile.bio}</p> : null}
@@ -211,34 +227,29 @@ function OwnReviews() {
 }
 
 export function ProfileScreen() {
-  const { signOut, profile, user } = useAuth();
+  const { profile, user } = useAuth();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
     <>
-      <Header />
+      <Header onOpenSettings={() => setSettingsOpen(true)} />
       <Stats />
       <Favorites />
       <ListsSection userId={user?.id ?? null} isOwn />
       <DiarySection userId={user?.id ?? null} />
       <OwnReviews />
 
-      <div className="mt-10 px-5">
-        <PushToggle />
-      </div>
+      <div className="h-6" />
 
-      <div className="mt-4 px-5">
-        <Button variant="secondary" fullWidth onClick={() => void signOut()}>
-          Sign Out
-        </Button>
-        <button
-          type="button"
-          onClick={() => setDeleteOpen(true)}
-          className="tap-none mt-3 min-h-[44px] w-full text-[13px] font-medium text-mist-500 active:text-danger-500"
-        >
-          Delete account
-        </button>
-      </div>
+      <SettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onDeleteAccount={() => {
+          setSettingsOpen(false);
+          setDeleteOpen(true);
+        }}
+      />
 
       {profile ? (
         <DeleteAccountSheet
