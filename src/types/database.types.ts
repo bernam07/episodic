@@ -511,22 +511,6 @@ export type Database = {
           username: string
         }[]
       }
-      get_following_feed: {
-        Args: { p_limit?: number }
-        Returns: {
-          avatar_url: string
-          display_name: string
-          poster_path: string
-          rating: number
-          series_id: string
-          series_name: string
-          status: Database["public"]["Enums"]["series_watch_status"]
-          tmdb_id: number
-          updated_at: string
-          user_id: string
-          username: string
-        }[]
-      }
       get_friends_feed: {
         Args: { p_limit?: number }
         Returns: {

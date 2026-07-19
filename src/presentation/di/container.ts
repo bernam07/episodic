@@ -59,7 +59,6 @@ import {
 import {
   GetFollowers,
   GetFollowing,
-  GetFollowingFeed,
   GetProfileSummary,
   GetUserLibrary,
   SearchProfiles,
@@ -148,7 +147,6 @@ export const container = {
 
     searchProfiles: new SearchProfiles(socialRepository),
     getProfileSummary: new GetProfileSummary(socialRepository),
-    getFollowingFeed: new GetFollowingFeed(socialRepository),
     getUserLibrary: new GetUserLibrary(socialRepository),
     getFollowers: new GetFollowers(socialRepository),
     getFollowing: new GetFollowing(socialRepository),

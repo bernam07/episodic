@@ -1,5 +1,4 @@
 import type {
-  FeedItem,
   ProfileSearchResult,
   ProfileSummary,
   UserLibraryItem,
@@ -27,14 +26,6 @@ export class GetProfileSummary {
 
   async execute(username: string): Promise<ProfileSummary | null> {
     return this.social.getProfileSummary(username);
-  }
-}
-
-export class GetFollowingFeed {
-  constructor(private readonly social: ISocialRepository) {}
-
-  async execute(limit = 40): Promise<FeedItem[]> {
-    return this.social.getFollowingFeed(limit);
   }
 }
 

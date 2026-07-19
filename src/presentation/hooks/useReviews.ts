@@ -62,7 +62,6 @@ export function useDeleteReview() {
       queryClient.invalidateQueries({ queryKey: queryKeys.ownReview(seriesId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.ownReviews });
       queryClient.invalidateQueries({ queryKey: ["library"] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed });
       queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });
       queryClient.invalidateQueries({ queryKey: ["diary"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.ratingSummary(seriesId) });

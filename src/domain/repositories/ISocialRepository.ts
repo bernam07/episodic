@@ -1,5 +1,4 @@
 import type {
-  FeedItem,
   ProfileSearchResult,
   ProfileSummary,
   UserLibraryItem,
@@ -8,7 +7,6 @@ import type {
 export interface ISocialRepository {
   searchProfiles(query: string, limit?: number): Promise<ProfileSearchResult[]>;
   getProfileSummary(username: string): Promise<ProfileSummary | null>;
-  getFollowingFeed(limit?: number): Promise<FeedItem[]>;
   getUserLibrary(userId: string, limit?: number): Promise<UserLibraryItem[]>;
   getFollowers(username: string, limit?: number): Promise<ProfileSearchResult[]>;
   getFollowing(username: string, limit?: number): Promise<ProfileSearchResult[]>;

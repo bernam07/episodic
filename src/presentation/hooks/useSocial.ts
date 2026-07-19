@@ -13,14 +13,6 @@ export function useSearchProfiles(query: string) {
   });
 }
 
-export function useFollowingFeed() {
-  return useQuery({
-    queryKey: queryKeys.followingFeed,
-    queryFn: () => container.usecases.getFollowingFeed.execute(40),
-    staleTime: 1000 * 30,
-  });
-}
-
 export function useProfileSummary(username: string | null) {
   return useQuery({
     queryKey: queryKeys.profileSummary(username),
@@ -62,7 +54,7 @@ export function useToggleFollow() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["search-profiles"] });
       queryClient.invalidateQueries({ queryKey: ["profile-summary"] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed });
+      queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });
       queryClient.invalidateQueries({ queryKey: ["user-library"] });
       queryClient.invalidateQueries({ queryKey: ["followers"] });
       queryClient.invalidateQueries({ queryKey: ["following"] });

@@ -173,8 +173,9 @@ RPCs decide *which* user_ids reach it: `get_friends_feed` passes the users you f
 yourself), `get_user_diary(p_user_id)` passes `[p_user_id]` only if you are that user or follow them,
 else `[]`. So the same follow-gating as libraries, enforced in Postgres. The **Friends** tab renders
 the feed; profiles (own + others, follow-gated) render a "Recent Activity" diary via the shared
-`ActivityRow` (`showActor={false}` on diaries). The Friends tab now uses `get_friends_feed`; the old
-`get_following_feed` (status-snapshot) is dead code but left in place.
+`ActivityRow` (`showActor={false}` on diaries). The Friends tab uses `get_friends_feed`; the old
+status-snapshot `get_following_feed` (RPC + `FeedItem` type + `GetFollowingFeed` use case) was
+removed in `…130000_drop_following_feed`.
 
 **Lists are public/private, not follow-gated.** `lists` + `list_items` (composite PK
 `(list_id, series_id)`). RLS: a list (and its items) is selectable when `not is_private or
@@ -407,6 +408,7 @@ screenshot before believing a red result.
 | `…100000_community_ratings` (2026-07-19) | `get_series_rating_summary(series_id)` → grouped `(rating, count)` buckets (`security invoker`; reviews are `select_all`) |
 | `…110000_onboarding` (2026-07-19) | `profiles.onboarded boolean` (existing rows backfilled `true`); gates the first-run add-series flow |
 | `…120000_lists` (2026-07-19) | `lists` + `list_items` tables, public/private RLS, `handle_updated_at` + `touch_list_updated_at` triggers, `get_user_lists` / `get_list` / `get_list_items` RPCs (all `security invoker`, privacy via RLS) |
+| `…130000_drop_following_feed` (2026-07-19) | drops the dead `get_following_feed` RPC (superseded by the activity feed) |
 
 ## Edge Functions
 

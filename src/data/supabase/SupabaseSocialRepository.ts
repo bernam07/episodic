@@ -1,6 +1,5 @@
 import { AppError } from "@/core/errors/AppError";
 import type {
-  FeedItem,
   ProfileSearchResult,
   ProfileSummary,
   UserLibraryItem,
@@ -102,28 +101,6 @@ export class SupabaseSocialRepository implements ISocialRepository {
     }
 
     return (data ?? []).map(toProfileSearchResult);
-  }
-
-  async getFollowingFeed(limit = 40): Promise<FeedItem[]> {
-    const { data, error } = await supabase.rpc("get_following_feed", { p_limit: limit });
-
-    if (error) {
-      throw new AppError("unknown", error.message, error);
-    }
-
-    return (data ?? []).map((row) => ({
-      userId: row.user_id,
-      username: row.username,
-      displayName: row.display_name,
-      avatarUrl: row.avatar_url,
-      seriesId: row.series_id,
-      tmdbId: row.tmdb_id,
-      seriesName: row.series_name,
-      posterPath: row.poster_path,
-      status: row.status,
-      rating: row.rating === null ? null : Number(row.rating),
-      updatedAt: row.updated_at,
-    }));
   }
 
   async getUserLibrary(userId: string, limit = 60): Promise<UserLibraryItem[]> {
