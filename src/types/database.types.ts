@@ -92,6 +92,77 @@ export type Database = {
           },
         ]
       }
+      list_items: {
+        Row: {
+          added_at: string
+          list_id: string
+          series_id: string
+        }
+        Insert: {
+          added_at?: string
+          list_id: string
+          series_id: string
+        }
+        Update: {
+          added_at?: string
+          list_id?: string
+          series_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_items_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_private: boolean
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_private?: boolean
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_private?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lists_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           actor_id: string
@@ -151,6 +222,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          onboarded: boolean
           updated_at: string
           username: string
         }
@@ -160,6 +232,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          onboarded?: boolean
           updated_at?: string
           username: string
         }
@@ -169,6 +242,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          onboarded?: boolean
           updated_at?: string
           username?: string
         }
@@ -471,6 +545,32 @@ export type Database = {
           username: string
         }[]
       }
+      get_list: {
+        Args: { p_list_id: string }
+        Returns: {
+          description: string
+          id: string
+          is_own: boolean
+          is_private: boolean
+          item_count: number
+          owner_avatar_url: string
+          owner_display_name: string
+          owner_id: string
+          owner_username: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      get_list_items: {
+        Args: { p_list_id: string }
+        Returns: {
+          added_at: string
+          poster_path: string
+          series_id: string
+          series_name: string
+          tmdb_id: number
+        }[]
+      }
       get_notifications: {
         Args: { p_limit?: number }
         Returns: {
@@ -512,6 +612,13 @@ export type Database = {
           season_number: number
           total_episodes: number
           watched_episodes: number
+        }[]
+      }
+      get_series_rating_summary: {
+        Args: { p_series_id: string }
+        Returns: {
+          count: number
+          rating: number
         }[]
       }
       get_unread_notification_count: { Args: never; Returns: number }
@@ -558,6 +665,18 @@ export type Database = {
           series_name: string
           status: Database["public"]["Enums"]["series_watch_status"]
           tmdb_id: number
+          updated_at: string
+        }[]
+      }
+      get_user_lists: {
+        Args: { p_user_id: string }
+        Returns: {
+          description: string
+          id: string
+          is_private: boolean
+          item_count: number
+          poster_paths: string[]
+          title: string
           updated_at: string
         }[]
       }

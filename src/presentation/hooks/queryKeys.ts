@@ -19,6 +19,7 @@ export const queryKeys = {
   seriesReviews: (seriesId: string | null) => ["reviews", seriesId] as const,
   ownReview: (seriesId: string | null) => ["own-review", seriesId] as const,
   ownReviews: ["own-reviews"] as const,
+  ratingSummary: (seriesId: string | null) => ["rating-summary", seriesId] as const,
   followingFeed: ["following-feed"] as const,
   friendsFeed: ["friends-feed"] as const,
   userDiary: (userId: string | null) => ["diary", userId] as const,
@@ -30,4 +31,7 @@ export const queryKeys = {
   personDetail: (personId: number) => ["person", personId] as const,
   notifications: ["notifications"] as const,
   unreadCount: ["unread-count"] as const,
+  userLists: (userId: string | null) => ["lists", userId] as const,
+  list: (listId: string | null) => ["list", listId] as const,
+  listItems: (listId: string | null) => ["list-items", listId] as const,
 };

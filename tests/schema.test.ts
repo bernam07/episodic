@@ -652,3 +652,103 @@ describe("activity feed", () => {
     expect(await diary(CAROL, GRETA)).toHaveLength(0);
   });
 });
+
+describe("community rating summary", () => {
+  let seriesId: string;
+
+  beforeAll(async () => {
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{ id: string }>(`select public.upsert_series_from_tmdb($1::jsonb) as id;`, [
+      JSON.stringify({ ...BREAKING_BAD, tmdb_id: 7777, name: "Rated Show" }),
+    ]);
+    seriesId = r.rows[0].id;
+    await reset(db);
+  });
+
+  it("groups reviews into rating buckets", async () => {
+    await asAuthenticated(db, ALICE);
+    await db.query(`insert into public.reviews (user_id, series_id, rating) values ($1, $2, 4.5)`, [ALICE, seriesId]);
+    await reset(db);
+    await asAuthenticated(db, BOB);
+    await db.query(`insert into public.reviews (user_id, series_id, rating) values ($1, $2, 4.5)`, [BOB, seriesId]);
+    await reset(db);
+    await asAuthenticated(db, CAROL);
+    await db.query(`insert into public.reviews (user_id, series_id, rating) values ($1, $2, 3.0)`, [CAROL, seriesId]);
+
+    const r = await db.query<{ rating: number; count: number }>(
+      `select rating, count from public.get_series_rating_summary($1) order by rating`,
+      [seriesId]
+    );
+    await reset(db);
+
+    expect(r.rows.map((row) => ({ rating: Number(row.rating), count: row.count }))).toEqual([
+      { rating: 3, count: 1 },
+      { rating: 4.5, count: 2 },
+    ]);
+  });
+});
+
+describe("lists", () => {
+  let seriesId: string;
+  let publicList: string;
+  let privateList: string;
+
+  beforeAll(async () => {
+    seriesId = await seedSeries();
+    await asAuthenticated(db, ALICE);
+    const pub = await db.query<{ id: string }>(
+      `insert into public.lists (user_id, title, is_private) values ($1, 'Best sci-fi', false) returning id`,
+      [ALICE]
+    );
+    publicList = pub.rows[0].id;
+    const priv = await db.query<{ id: string }>(
+      `insert into public.lists (user_id, title, is_private) values ($1, 'Guilty pleasures', true) returning id`,
+      [ALICE]
+    );
+    privateList = priv.rows[0].id;
+    await db.query(`insert into public.list_items (list_id, series_id) values ($1, $2)`, [publicList, seriesId]);
+    await reset(db);
+  });
+
+  it("exposes item count and posters to the owner", async () => {
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{ id: string; item_count: number; poster_paths: string[] }>(
+      `select id, item_count, poster_paths from public.get_user_lists($1)`,
+      [ALICE]
+    );
+    await reset(db);
+    expect(r.rows).toHaveLength(2);
+    expect(r.rows.find((row) => row.id === publicList)?.item_count).toBe(1);
+  });
+
+  it("hides private lists from other viewers", async () => {
+    await asAuthenticated(db, BOB);
+    const lists = await db.query<{ id: string }>(`select id from public.get_user_lists($1)`, [ALICE]);
+    const one = await db.query(`select id from public.get_list($1)`, [privateList]);
+    await reset(db);
+    expect(lists.rows.map((row) => row.id)).toEqual([publicList]);
+    expect(one.rows).toHaveLength(0);
+  });
+
+  it("lets non-owners read a public list and its items", async () => {
+    await asAuthenticated(db, BOB);
+    const meta = await db.query(`select id, is_own from public.get_list($1)`, [publicList]);
+    const items = await db.query(`select series_id from public.get_list_items($1)`, [publicList]);
+    await reset(db);
+    expect(meta.rows).toHaveLength(1);
+    expect((meta.rows[0] as { is_own: boolean }).is_own).toBe(false);
+    expect(items.rows).toHaveLength(1);
+  });
+
+  it("forbids adding items to someone else's list", async () => {
+    await asAuthenticated(db, BOB);
+    let rejected = false;
+    try {
+      await db.query(`insert into public.list_items (list_id, series_id) values ($1, $2)`, [privateList, seriesId]);
+    } catch {
+      rejected = true;
+    }
+    await reset(db);
+    expect(rejected).toBe(true);
+  });
+});

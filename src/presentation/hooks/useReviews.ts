@@ -26,6 +26,14 @@ export function useOwnReviews() {
   });
 }
 
+export function useRatingSummary(seriesId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.ratingSummary(seriesId),
+    queryFn: () => container.usecases.getRatingSummary.execute(seriesId as string),
+    enabled: !!seriesId,
+  });
+}
+
 export function useSubmitReview(seriesId: string | null) {
   const queryClient = useQueryClient();
 
@@ -39,6 +47,7 @@ export function useSubmitReview(seriesId: string | null) {
       queryClient.invalidateQueries({ queryKey: ["library"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });
       queryClient.invalidateQueries({ queryKey: ["diary"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ratingSummary(seriesId) });
     },
   });
 }
@@ -56,6 +65,7 @@ export function useDeleteReview() {
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed });
       queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });
       queryClient.invalidateQueries({ queryKey: ["diary"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ratingSummary(seriesId) });
     },
   });
 }

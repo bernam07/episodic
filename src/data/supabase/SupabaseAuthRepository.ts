@@ -26,7 +26,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
   async getProfile(userId: string): Promise<Profile | null> {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, username, display_name, avatar_url, bio")
+      .select("id, username, display_name, avatar_url, bio, onboarded")
       .eq("id", userId)
       .maybeSingle();
 
@@ -44,6 +44,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
       displayName: data.display_name,
       avatarUrl: data.avatar_url,
       bio: data.bio,
+      onboarded: data.onboarded,
     };
   }
 
@@ -52,7 +53,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
       .from("profiles")
       .update({ display_name: input.displayName, bio: input.bio })
       .eq("id", userId)
-      .select("id, username, display_name, avatar_url, bio")
+      .select("id, username, display_name, avatar_url, bio, onboarded")
       .single();
 
     if (error) {
@@ -65,7 +66,16 @@ export class SupabaseAuthRepository implements IAuthRepository {
       displayName: data.display_name,
       avatarUrl: data.avatar_url,
       bio: data.bio,
+      onboarded: data.onboarded,
     };
+  }
+
+  async completeOnboarding(userId: string): Promise<void> {
+    const { error } = await supabase.from("profiles").update({ onboarded: true }).eq("id", userId);
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
   }
 
   async uploadAvatar(userId: string, file: File): Promise<string> {

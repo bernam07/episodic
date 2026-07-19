@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { SERIES_STATUS_LABELS, SERIES_STATUSES } from "@/domain/entities/SeriesStatus";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { Avatar } from "@/presentation/components/social/Avatar";
+import { ListsSection } from "@/presentation/components/lists/ListsSection";
 import { DiarySection } from "@/presentation/components/social/DiarySection";
 import { FollowButton } from "@/presentation/components/social/FollowButton";
 import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
@@ -127,6 +128,8 @@ export function UserProfileScreen() {
           <StatTile value={summary.reviewsCount} label="reviews" />
         </div>
       </section>
+
+      <ListsSection userId={summary.id} isOwn={false} />
 
       {!summary.isFollowing ? (
         <div className="mx-5 mt-6 rounded-card border border-ink-700 bg-ink-850 p-5 text-center">

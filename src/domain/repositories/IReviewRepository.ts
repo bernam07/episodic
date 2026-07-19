@@ -1,3 +1,4 @@
+import type { RatingBucket } from "../entities/RatingSummary";
 import type { Review } from "../entities/Review";
 
 export type SubmitReviewInput = {
@@ -13,4 +14,5 @@ export interface IReviewRepository {
   getOwn(): Promise<Review[]>;
   submit(input: SubmitReviewInput): Promise<Review>;
   remove(seriesId: string): Promise<void>;
+  getRatingSummary(seriesId: string): Promise<RatingBucket[]>;
 }

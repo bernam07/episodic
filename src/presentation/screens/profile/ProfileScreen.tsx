@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { computeLibraryStats } from "@/domain/entities/LibraryStats";
+import { ListsSection } from "@/presentation/components/lists/ListsSection";
 import { SERIES_STATUS_LABELS, SERIES_STATUSES } from "@/domain/entities/SeriesStatus";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
@@ -190,6 +191,7 @@ export function ProfileScreen() {
       <Header />
       <Stats />
       <Favorites />
+      <ListsSection userId={user?.id ?? null} isOwn />
       <DiarySection userId={user?.id ?? null} />
       <OwnReviews />
 

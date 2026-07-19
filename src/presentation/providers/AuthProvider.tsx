@@ -12,6 +12,7 @@ type AuthContextValue = {
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  completeOnboarding: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 };
 
@@ -109,6 +110,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(next);
   }, [user]);
 
+  const completeOnboarding = useCallback(async () => {
+    if (!user) {
+      return;
+    }
+
+    await container.repositories.auth.completeOnboarding(user.id);
+    setProfile((current) => (current ? { ...current, onboarded: true } : current));
+  }, [user]);
+
   const deleteAccount = useCallback(async () => {
     await container.usecases.deleteAccount.execute();
     setUser(null);
@@ -126,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestPasswordReset,
       updatePassword,
       refreshProfile,
+      completeOnboarding,
       deleteAccount,
     }),
     [
@@ -138,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestPasswordReset,
       updatePassword,
       refreshProfile,
+      completeOnboarding,
       deleteAccount,
     ]
   );

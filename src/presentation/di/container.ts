@@ -1,5 +1,6 @@
 import { SupabaseActivityRepository } from "@/data/supabase/SupabaseActivityRepository";
 import { SupabaseAuthRepository } from "@/data/supabase/SupabaseAuthRepository";
+import { SupabaseListRepository } from "@/data/supabase/SupabaseListRepository";
 import { SupabaseNotificationRepository } from "@/data/supabase/SupabaseNotificationRepository";
 import { SupabaseReviewRepository } from "@/data/supabase/SupabaseReviewRepository";
 import { SupabaseSeriesRepository } from "@/data/supabase/SupabaseSeriesRepository";
@@ -10,6 +11,16 @@ import {
   GetFriendsFeed as GetActivityFeed,
   GetUserDiary,
 } from "@/domain/usecases/activity/ActivityUseCases";
+import {
+  AddToList,
+  CreateList,
+  DeleteList,
+  GetList,
+  GetListItems,
+  GetUserLists,
+  RemoveFromList,
+  UpdateList,
+} from "@/domain/usecases/lists/ListUseCases";
 import {
   CheckUsernameAvailable,
   DeleteAccount,
@@ -41,6 +52,7 @@ import {
   DeleteReview,
   GetOwnReview,
   GetOwnReviews,
+  GetRatingSummary,
   GetSeriesReviews,
   SubmitReview,
 } from "@/domain/usecases/reviews/ReviewUseCases";
@@ -76,6 +88,7 @@ const reviewRepository = new SupabaseReviewRepository();
 const socialRepository = new SupabaseSocialRepository();
 const notificationRepository = new SupabaseNotificationRepository();
 const activityRepository = new SupabaseActivityRepository();
+const listRepository = new SupabaseListRepository();
 
 const ensureSeriesCached = new EnsureSeriesCached(tmdbRepository, seriesRepository);
 const collectAiredEpisodes = new CollectAiredEpisodes(tmdbRepository);
@@ -90,6 +103,7 @@ export const container = {
     social: socialRepository,
     notifications: notificationRepository,
     activity: activityRepository,
+    lists: listRepository,
   },
   usecases: {
     signIn: new SignIn(authRepository),
@@ -130,6 +144,7 @@ export const container = {
     getOwnReview: new GetOwnReview(reviewRepository),
     getOwnReviews: new GetOwnReviews(reviewRepository),
     deleteReview: new DeleteReview(reviewRepository),
+    getRatingSummary: new GetRatingSummary(reviewRepository),
 
     searchProfiles: new SearchProfiles(socialRepository),
     getProfileSummary: new GetProfileSummary(socialRepository),
@@ -145,5 +160,14 @@ export const container = {
 
     getActivityFeed: new GetActivityFeed(activityRepository),
     getUserDiary: new GetUserDiary(activityRepository),
+
+    getUserLists: new GetUserLists(listRepository),
+    getList: new GetList(listRepository),
+    getListItems: new GetListItems(listRepository),
+    createList: new CreateList(listRepository),
+    updateList: new UpdateList(listRepository),
+    deleteList: new DeleteList(listRepository),
+    addToList: new AddToList(listRepository, ensureSeriesCached),
+    removeFromList: new RemoveFromList(listRepository),
   },
 } as const;

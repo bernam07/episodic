@@ -1,4 +1,5 @@
 import { AppError } from "@/core/errors/AppError";
+import type { RatingBucket } from "@/domain/entities/RatingSummary";
 import type { Review } from "@/domain/entities/Review";
 import type { IReviewRepository, SubmitReviewInput } from "@/domain/repositories/IReviewRepository";
 import { supabase } from "./client";
@@ -142,5 +143,15 @@ export class SupabaseReviewRepository implements IReviewRepository {
     if (error) {
       throw new AppError("unknown", error.message, error);
     }
+  }
+
+  async getRatingSummary(seriesId: string): Promise<RatingBucket[]> {
+    const { data, error } = await supabase.rpc("get_series_rating_summary", { p_series_id: seriesId });
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
+
+    return (data ?? []).map((row) => ({ rating: Number(row.rating), count: row.count }));
   }
 }

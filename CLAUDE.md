@@ -176,6 +176,29 @@ the feed; profiles (own + others, follow-gated) render a "Recent Activity" diary
 `ActivityRow` (`showActor={false}` on diaries). The Friends tab now uses `get_friends_feed`; the old
 `get_following_feed` (status-snapshot) is dead code but left in place.
 
+**Lists are public/private, not follow-gated.** `lists` + `list_items` (composite PK
+`(list_id, series_id)`). RLS: a list (and its items) is selectable when `not is_private or
+auth.uid() = user_id`; writes are owner-only. So public lists are visible to everyone — unlike
+libraries, which are follow-gated — matching Letterboxd. The read RPCs are `security invoker`, so
+RLS does the privacy filtering for free (`get_user_lists` returns only public lists to non-owners,
+`get_list` returns zero rows for a private list you don't own). `touch_list_updated_at` bumps the
+parent list's `updated_at` on item add/remove so lists sort by recent activity. **Adding a series
+to a list ensures it's cached first** (`AddToList` → `EnsureSeriesCached`), because a series only in
+a list — never added to any library — would otherwise have no `series` row; `addItem` upserts with
+`ignoreDuplicates` so re-adding is a no-op. Lists show as a grid on profiles (own + others' public),
+open at `/list/:id`, and series are added from the detail screen's `AddToListSheet`.
+
+**Community rating summary.** `get_series_rating_summary(series_id)` returns grouped
+`(rating, count)` buckets; `summarizeRatings` (pure) expands them to the full 10 half-star buckets +
+weighted average + total, rendered as a histogram on the series page. It's `security invoker` and
+safe because `reviews` is `select_all` — the aggregate exposes nothing the client couldn't already read.
+
+**Onboarding is add-series-only** (no "follow people" step — deliberately cut). `profiles.onboarded`
+gates it; existing rows were backfilled `true`, so only new signups see it. `OnboardingGate` (a
+layout route inside `ProtectedRoute`) renders `OnboardingScreen` full-screen — outside `AppShell`, so
+no bottom nav — whenever `profile.onboarded === false`; tapping posters adds them as `want_to_watch`,
+then "Continue"/"Skip" calls `completeOnboarding` (sets the flag + optimistically flips it locally).
+
 **Favorites** are stored as `is_favorite boolean` on `user_series_status`. Toggling uses the
 `toggle_favorite(p_series_id)` RPC, which flips the flag (and upserts with `want_to_watch` if
 the series isn't in the library yet). Favorites are exposed in `user_series_progress` (own
@@ -321,11 +344,11 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 93 tests:
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 103 tests:
 - `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
   validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
   (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
-- `tests/schema.test.ts` — the schema/RLS/social/notification/delete/hardening/up-next/activity-feed checks against real
+- `tests/schema.test.ts` — the schema/RLS/social/notification/delete/hardening/up-next/activity-feed/ratings/lists checks against real
   Postgres via **PGlite**, using the shared harness in `tests/support/pglite.ts` (`createMigratedDb`
   applies all migrations under the shim). Runs in CI — no browser, no live backend.
 
@@ -381,6 +404,9 @@ screenshot before believing a red result.
 | `…120000_harden_series_cache` | `upsert_series_from_tmdb` → `security definer` (+ auth guard), drop the direct insert/update policies on `series`, revoke insert/update/delete from `authenticated`. The RPC is now the only write path into the cache |
 | `…090000_up_next` (2026-07-18) | `aired_episodes` column on `series` (backfilled = total for ended series), `upsert_series_from_tmdb` stores it, `get_up_next` RPC |
 | `…090000_activity_feed` (2026-07-19) | `_activity_events(user_ids, limit)` internal event engine (`security definer`, not granted), `get_friends_feed` (followed users) + `get_user_diary(user_id)` (follow-gated) RPCs |
+| `…100000_community_ratings` (2026-07-19) | `get_series_rating_summary(series_id)` → grouped `(rating, count)` buckets (`security invoker`; reviews are `select_all`) |
+| `…110000_onboarding` (2026-07-19) | `profiles.onboarded boolean` (existing rows backfilled `true`); gates the first-run add-series flow |
+| `…120000_lists` (2026-07-19) | `lists` + `list_items` tables, public/private RLS, `handle_updated_at` + `touch_list_updated_at` triggers, `get_user_lists` / `get_list` / `get_list_items` RPCs (all `security invoker`, privacy via RLS) |
 
 ## Edge Functions
 
@@ -410,6 +436,11 @@ screenshot before believing a red result.
 - **Activity feed / Diary**: the **Friends** tab is a chronological milestone feed of the people you
   follow (started / finished / rated / "watched N episodes of"); profiles show the same events as a
   "Recent Activity" diary (own + follow-gated others). Backfills collapse to one line — see Data model.
+- **Lists**: custom public/private collections. "Lists" section on every profile (own has a New-list
+  action), list detail at `/list/:id` (owner can manage/remove/edit/delete), and an "Add to list"
+  sheet on the series detail screen. See Data model for the privacy + caching rules.
+- **Community ratings**: a half-star histogram (average + total) on the series page, above reviews.
+- **Onboarding**: first-run, add-series-only poster picker for new signups (`OnboardingScreen`).
 - **Notifications**: Bell on the home header with an unread badge, opening `NotificationSheet`
   (follow + review activity). Marked read on open.
 - **Delete account**: Danger action at the bottom of the profile; `DeleteAccountSheet` gates it

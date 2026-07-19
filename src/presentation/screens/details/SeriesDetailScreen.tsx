@@ -7,6 +7,8 @@ import { releaseYear } from "@/domain/entities/Series";
 import { SERIES_STATUS_LABELS, type SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { ActorDetailSheet } from "@/presentation/components/actors/ActorDetailSheet";
 import { SeasonAccordion } from "@/presentation/components/episodes/SeasonAccordion";
+import { AddToListSheet } from "@/presentation/components/lists/AddToListSheet";
+import { RatingSummaryCard } from "@/presentation/components/reviews/RatingSummaryCard";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { ReviewSheet } from "@/presentation/components/reviews/ReviewSheet";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
@@ -18,7 +20,7 @@ import { Sheet } from "@/presentation/components/ui/Sheet";
 import { FullScreenSpinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useCredits, useSeriesDetail } from "@/presentation/hooks/useDiscovery";
-import { useOwnReview, useSeriesReviews } from "@/presentation/hooks/useReviews";
+import { useOwnReview, useRatingSummary, useSeriesReviews } from "@/presentation/hooks/useReviews";
 import {
   useLocalSeriesId,
   useRemoveFromLibrary,
@@ -55,6 +57,7 @@ export function SeriesDetailScreen() {
 
   const [statusSheetOpen, setStatusSheetOpen] = useState(false);
   const [reviewSheetOpen, setReviewSheetOpen] = useState(false);
+  const [addToListOpen, setAddToListOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<SeriesStatus | null>(null);
   const [selectedActor, setSelectedActor] = useState<{ id: number; name: string } | null>(null);
 
@@ -65,6 +68,7 @@ export function SeriesDetailScreen() {
   const { data: watchedIds } = useWatchedEpisodes(seriesId ?? null);
   const { data: reviews } = useSeriesReviews(seriesId ?? null);
   const { data: ownReview } = useOwnReview(seriesId ?? null);
+  const { data: ratingSummary } = useRatingSummary(seriesId ?? null);
   const { data: cast } = useCredits(tmdbId);
 
   const setStatus = useSetSeriesStatus(tmdbId, detail);
@@ -181,6 +185,17 @@ export function SeriesDetailScreen() {
             </button>
           ) : null}
 
+          <button
+            type="button"
+            onClick={() => setAddToListOpen(true)}
+            aria-label="Add to list"
+            className="tap-none flex size-11 shrink-0 items-center justify-center rounded-xl border border-ink-700 bg-ink-800 text-mist-400 transition-colors active:opacity-70"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[22px]">
+              <path d="M4 6h11M4 12h11M4 18h7M17 15v6M14 18h6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
           <Button
             variant="secondary"
             className="flex-1"
@@ -285,6 +300,11 @@ export function SeriesDetailScreen() {
 
         <section className="mt-7">
           <h2 className="mb-1 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">Reviews</h2>
+          {ratingSummary && ratingSummary.total > 0 ? (
+            <div className="mb-4 mt-2">
+              <RatingSummaryCard summary={ratingSummary} />
+            </div>
+          ) : null}
           <ReviewList
             reviews={reviews ?? []}
             currentUserId={user?.id}
@@ -322,6 +342,13 @@ export function SeriesDetailScreen() {
         onClose={() => setSelectedActor(null)}
         personId={selectedActor?.id ?? null}
         personName={selectedActor?.name ?? ""}
+      />
+
+      <AddToListSheet
+        open={addToListOpen}
+        onClose={() => setAddToListOpen(false)}
+        tmdbId={tmdbId}
+        detail={detail}
       />
     </>
   );

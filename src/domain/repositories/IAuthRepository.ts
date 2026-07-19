@@ -20,6 +20,7 @@ export interface IAuthRepository {
   getCurrentUser(): Promise<AuthUser | null>;
   getProfile(userId: string): Promise<Profile | null>;
   updateProfile(userId: string, input: UpdateProfileInput): Promise<Profile>;
+  completeOnboarding(userId: string): Promise<void>;
   uploadAvatar(userId: string, file: File): Promise<string>;
   signIn(input: SignInInput): Promise<AuthUser>;
   signUp(input: SignUpInput): Promise<AuthUser | null>;

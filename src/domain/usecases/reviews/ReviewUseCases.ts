@@ -1,4 +1,5 @@
 import { AppError } from "@/core/errors/AppError";
+import { summarizeRatings, type RatingSummary } from "@/domain/entities/RatingSummary";
 import { isValidRating, type Review } from "@/domain/entities/Review";
 import type { IReviewRepository, SubmitReviewInput } from "@/domain/repositories/IReviewRepository";
 
@@ -51,5 +52,14 @@ export class DeleteReview {
 
   async execute(seriesId: string): Promise<void> {
     return this.reviews.remove(seriesId);
+  }
+}
+
+export class GetRatingSummary {
+  constructor(private readonly reviews: IReviewRepository) {}
+
+  async execute(seriesId: string): Promise<RatingSummary> {
+    const buckets = await this.reviews.getRatingSummary(seriesId);
+    return summarizeRatings(buckets);
   }
 }

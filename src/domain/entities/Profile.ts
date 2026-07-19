@@ -4,6 +4,7 @@ export type Profile = {
   displayName: string | null;
   avatarUrl: string | null;
   bio: string | null;
+  onboarded: boolean;
 };
 
 export type AuthUser = {
