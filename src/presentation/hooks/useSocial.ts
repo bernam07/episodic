@@ -21,10 +21,10 @@ export function useProfileSummary(username: string | null) {
   });
 }
 
-export function useUserLibrary(userId: string | null) {
+export function useUserLibrary(userId: string | null, limit = 500) {
   return useQuery({
     queryKey: queryKeys.userLibrary(userId),
-    queryFn: () => container.usecases.getUserLibrary.execute(userId as string),
+    queryFn: () => container.usecases.getUserLibrary.execute(userId as string, limit),
     enabled: !!userId,
   });
 }
