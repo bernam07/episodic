@@ -176,6 +176,19 @@ export function useToggleFavorite(seriesId: string | null) {
   });
 }
 
+export function useBumpRewatch(seriesId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (delta: number) =>
+      container.repositories.tracking.bumpRewatch(seriesId as string, delta),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracking(seriesId) });
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
+}
+
 export function useToggleSeason(seriesId: string | null) {
   const invalidate = useTrackingInvalidator();
 

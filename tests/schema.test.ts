@@ -753,6 +753,44 @@ describe("lists", () => {
   });
 });
 
+describe("bump_rewatch", () => {
+  let seriesId: string;
+
+  beforeAll(async () => {
+    seriesId = await seedSeries();
+    await asAuthenticated(db, CAROL);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status) values ($1, $2, 'watched')
+       on conflict (user_id, series_id) do update set status = 'watched'`,
+      [CAROL, seriesId]
+    );
+    await reset(db);
+  });
+
+  it("increments and clamps the rewatch count at zero", async () => {
+    await asAuthenticated(db, CAROL);
+    const up = await db.query<{ bump_rewatch: number }>(`select public.bump_rewatch($1, 1)`, [seriesId]);
+    const up2 = await db.query<{ bump_rewatch: number }>(`select public.bump_rewatch($1, 1)`, [seriesId]);
+    const down = await db.query<{ bump_rewatch: number }>(`select public.bump_rewatch($1, -5)`, [seriesId]);
+    await reset(db);
+
+    expect(up.rows[0].bump_rewatch).toBe(1);
+    expect(up2.rows[0].bump_rewatch).toBe(2);
+    expect(down.rows[0].bump_rewatch).toBe(0);
+  });
+
+  it("surfaces the count through the progress view", async () => {
+    await asAuthenticated(db, CAROL);
+    await db.query(`select public.bump_rewatch($1, 3)`, [seriesId]);
+    const r = await db.query<{ rewatch_count: number }>(
+      `select rewatch_count from public.user_series_progress where series_id = $1`,
+      [seriesId]
+    );
+    await reset(db);
+    expect(r.rows[0].rewatch_count).toBe(3);
+  });
+});
+
 describe("push subscriptions", () => {
   it("keeps a subscription visible only to its owner", async () => {
     await asAuthenticated(db, ALICE);

@@ -15,6 +15,7 @@ export type UserSeriesStatus = {
   seriesId: string;
   status: SeriesStatus;
   isFavorite: boolean;
+  rewatchCount: number;
   startedAt: string | null;
   completedAt: string | null;
 };

@@ -403,6 +403,7 @@ export type Database = {
           created_at: string
           id: string
           is_favorite: boolean
+          rewatch_count: number
           series_id: string
           started_at: string | null
           status: Database["public"]["Enums"]["series_watch_status"]
@@ -414,6 +415,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_favorite?: boolean
+          rewatch_count?: number
           series_id: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["series_watch_status"]
@@ -425,6 +427,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_favorite?: boolean
+          rewatch_count?: number
           series_id?: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["series_watch_status"]
@@ -461,6 +464,7 @@ export type Database = {
           poster_path: string | null
           progress_percent: number | null
           remaining_episodes: number | null
+          rewatch_count: number | null
           series_id: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["series_watch_status"] | null
@@ -506,6 +510,10 @@ export type Database = {
           tmdb_id: number
           username: string
         }[]
+      }
+      bump_rewatch: {
+        Args: { p_delta: number; p_series_id: string }
+        Returns: number
       }
       clear_series_episodes: { Args: { p_series_id: string }; Returns: number }
       delete_own_account: { Args: never; Returns: undefined }

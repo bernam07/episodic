@@ -201,6 +201,13 @@ layout route inside `ProtectedRoute`) renders `OnboardingScreen` full-screen —
 no bottom nav — whenever `profile.onboarded === false`; tapping posters adds them as `want_to_watch`,
 then "Continue"/"Skip" calls `completeOnboarding` (sets the flag + optimistically flips it locally).
 
+**Rewatches are a count, not a status.** `user_series_status.rewatch_count` (independent of `status`
+and `is_favorite`), bumped via `bump_rewatch(series_id, delta)` (clamps ≥ 0, own-row only). Exposed
+in the `user_series_progress` view + `getStatus`; the series page has a +/− stepper (shown once the
+series is in the library), and the Library has a "Rewatched" filter (`rewatch_count > 0`). Because
+only a count is stored (no per-rewatch timestamp), rewatches deliberately do **not** appear in the
+activity/diary feed.
+
 **Favorites** are stored as `is_favorite boolean` on `user_series_status`. Toggling uses the
 `toggle_favorite(p_series_id)` RPC, which flips the flag (and upserts with `want_to_watch` if
 the series isn't in the library yet). Favorites are exposed in `user_series_progress` (own
@@ -346,7 +353,7 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 104 tests:
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 106 tests:
 - `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
   validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
   (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
@@ -411,6 +418,7 @@ screenshot before believing a red result.
 | `…120000_lists` (2026-07-19) | `lists` + `list_items` tables, public/private RLS, `handle_updated_at` + `touch_list_updated_at` triggers, `get_user_lists` / `get_list` / `get_list_items` RPCs (all `security invoker`, privacy via RLS) |
 | `…130000_drop_following_feed` (2026-07-19) | drops the dead `get_following_feed` RPC (superseded by the activity feed) |
 | `…140000_push_subscriptions` (2026-07-19) | `push_subscriptions` table (endpoint-unique) + own-only RLS for Web Push |
+| `…150000_rewatch_count` (2026-07-19) | `user_series_status.rewatch_count`, `rewatch_count` added to `user_series_progress` view, `bump_rewatch(series_id, delta)` RPC (clamps ≥ 0) |
 
 ## Edge Functions
 

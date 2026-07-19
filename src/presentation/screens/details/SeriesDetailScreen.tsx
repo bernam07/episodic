@@ -22,6 +22,7 @@ import { useAuth } from "@/presentation/hooks/useAuth";
 import { useCredits, useSeriesDetail } from "@/presentation/hooks/useDiscovery";
 import { useOwnReview, useRatingSummary, useSeriesReviews } from "@/presentation/hooks/useReviews";
 import {
+  useBumpRewatch,
   useLocalSeriesId,
   useRemoveFromLibrary,
   useSeasonProgress,
@@ -76,6 +77,7 @@ export function SeriesDetailScreen() {
   const toggleEpisode = useToggleEpisode(seriesId ?? null);
   const toggleSeason = useToggleSeason(seriesId ?? null);
   const toggleFavorite = useToggleFavorite(seriesId ?? null);
+  const bumpRewatch = useBumpRewatch(seriesId ?? null);
 
   if (isLoading || !detail) {
     return <FullScreenSpinner />;
@@ -210,6 +212,48 @@ export function SeriesDetailScreen() {
           <div className="mt-3 flex items-center gap-2">
             <RatingDisplay value={ownReview.rating} />
             <span className="text-[12px] text-mist-500">Your rating</span>
+          </div>
+        ) : null}
+
+        {tracking ? (
+          <div className="mt-3 flex items-center gap-3 rounded-xl bg-ink-850 px-4 py-2.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-mist-400">
+              <path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="min-w-0 flex-1 text-[13px] text-mist-300">
+              {(tracking.rewatchCount ?? 0) > 0 ? (
+                <>
+                  Rewatched <span className="font-semibold text-mist-100">{tracking.rewatchCount}×</span>
+                </>
+              ) : (
+                "Log a rewatch"
+              )}
+            </span>
+            {(tracking.rewatchCount ?? 0) > 0 ? (
+              <button
+                type="button"
+                onClick={() => bumpRewatch.mutate(-1)}
+                disabled={bumpRewatch.isPending}
+                aria-label="Remove a rewatch"
+                className="tap-none flex size-8 items-center justify-center rounded-full border border-ink-600 text-mist-400 active:bg-ink-700 disabled:opacity-50"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+                  <path d="M5 12h14" strokeLinecap="round" />
+                </svg>
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => bumpRewatch.mutate(1)}
+              disabled={bumpRewatch.isPending}
+              aria-label="Add a rewatch"
+              className="tap-none flex size-8 items-center justify-center rounded-full bg-accent-600 text-white active:bg-accent-500 disabled:opacity-50"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
         ) : null}
 

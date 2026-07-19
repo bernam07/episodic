@@ -10,14 +10,15 @@ import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useLibrary } from "@/presentation/hooks/useTracking";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 
-type Filter = SeriesStatus | "all" | "favorites";
+type Filter = SeriesStatus | "all" | "favorites" | "rewatched";
 
-const FILTERS: Filter[] = ["all", ...SERIES_STATUSES, "favorites"];
+const FILTERS: Filter[] = ["all", ...SERIES_STATUSES, "favorites", "rewatched"];
 
 const FILTER_LABELS: Record<Filter, string> = {
   all: "All",
   ...SERIES_STATUS_LABELS,
   favorites: "Favorites",
+  rewatched: "Rewatched",
 };
 
 const VALID_FILTERS = new Set<string>(FILTERS);
@@ -38,11 +39,13 @@ export function LibraryScreen() {
       watched: 0,
       abandoned: 0,
       favorites: 0,
+      rewatched: 0,
     };
 
     for (const item of data ?? []) {
       base[item.status] += 1;
       if (item.isFavorite) base.favorites += 1;
+      if (item.rewatchCount > 0) base.rewatched += 1;
     }
 
     return base;
@@ -51,6 +54,7 @@ export function LibraryScreen() {
   const visible = useMemo(() => {
     if (!data) return [];
     if (filter === "favorites") return data.filter((item) => item.isFavorite);
+    if (filter === "rewatched") return data.filter((item) => item.rewatchCount > 0);
     if (filter === "all") return data;
     return data.filter((item) => item.status === filter);
   }, [data, filter]);
