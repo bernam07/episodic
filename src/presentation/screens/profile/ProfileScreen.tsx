@@ -10,6 +10,7 @@ import { DeleteAccountSheet } from "@/presentation/components/social/DeleteAccou
 import { DiarySection } from "@/presentation/components/social/DiarySection";
 import { EditProfileSheet } from "@/presentation/components/social/EditProfileSheet";
 import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
+import { PushToggle } from "@/presentation/components/social/PushToggle";
 import { Button } from "@/presentation/components/ui/Button";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
@@ -196,6 +197,10 @@ export function ProfileScreen() {
       <OwnReviews />
 
       <div className="mt-10 px-5">
+        <PushToggle />
+      </div>
+
+      <div className="mt-4 px-5">
         <Button variant="secondary" fullWidth onClick={() => void signOut()}>
           Sign Out
         </Button>

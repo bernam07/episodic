@@ -51,7 +51,10 @@ export function useToggleFollow() {
   return useMutation({
     mutationFn: ({ userId, follow }: { userId: string; follow: boolean }) =>
       container.usecases.toggleFollow.execute(userId, follow),
-    onSuccess: () => {
+    onSuccess: (_result, { userId, follow }) => {
+      if (follow) {
+        void container.repositories.push.notifyFollow(userId).catch(() => {});
+      }
       queryClient.invalidateQueries({ queryKey: ["search-profiles"] });
       queryClient.invalidateQueries({ queryKey: ["profile-summary"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });

@@ -1,6 +1,7 @@
 import { SupabaseActivityRepository } from "@/data/supabase/SupabaseActivityRepository";
 import { SupabaseAuthRepository } from "@/data/supabase/SupabaseAuthRepository";
 import { SupabaseListRepository } from "@/data/supabase/SupabaseListRepository";
+import { SupabasePushRepository } from "@/data/supabase/SupabasePushRepository";
 import { SupabaseNotificationRepository } from "@/data/supabase/SupabaseNotificationRepository";
 import { SupabaseReviewRepository } from "@/data/supabase/SupabaseReviewRepository";
 import { SupabaseSeriesRepository } from "@/data/supabase/SupabaseSeriesRepository";
@@ -88,6 +89,7 @@ const socialRepository = new SupabaseSocialRepository();
 const notificationRepository = new SupabaseNotificationRepository();
 const activityRepository = new SupabaseActivityRepository();
 const listRepository = new SupabaseListRepository();
+const pushRepository = new SupabasePushRepository();
 
 const ensureSeriesCached = new EnsureSeriesCached(tmdbRepository, seriesRepository);
 const collectAiredEpisodes = new CollectAiredEpisodes(tmdbRepository);
@@ -103,6 +105,7 @@ export const container = {
     notifications: notificationRepository,
     activity: activityRepository,
     lists: listRepository,
+    push: pushRepository,
   },
   usecases: {
     signIn: new SignIn(authRepository),

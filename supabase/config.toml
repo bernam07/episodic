@@ -45,3 +45,6 @@ verify_jwt = true
 
 [functions.auth-login]
 verify_jwt = false
+
+[functions.push]
+verify_jwt = true

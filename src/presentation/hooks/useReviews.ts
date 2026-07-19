@@ -41,6 +41,9 @@ export function useSubmitReview(seriesId: string | null) {
     mutationFn: (input: Omit<SubmitReviewInput, "seriesId">) =>
       container.usecases.submitReview.execute({ ...input, seriesId: seriesId as string }),
     onSuccess: () => {
+      if (seriesId) {
+        void container.repositories.push.notifyReview(seriesId).catch(() => {});
+      }
       queryClient.invalidateQueries({ queryKey: queryKeys.seriesReviews(seriesId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.ownReview(seriesId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.ownReviews });

@@ -29,6 +29,7 @@ Fill it from **Supabase dashboard → Project Settings → API**:
 |---|---|
 | `VITE_SUPABASE_URL` | Project URL |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Publishable (anon) key |
+| `VITE_VAPID_PUBLIC_KEY` | Web Push public key — not secret; the real value is in `.env.example` |
 
 The publishable key is safe in the client — RLS is what protects data. **Never** put the
 Supabase secret key or the TMDB key in a `VITE_*` variable; anything so prefixed is inlined
@@ -70,7 +71,7 @@ TMDB secret. A fresh machine only needs `.env.local` + `supabase link`. Full set
 | `npm run test:e2e` | Playwright smoke suite (builds, serves, drives `/auth`). Local only |
 | `supabase db push` | Apply migrations to the linked project |
 | `supabase gen types typescript --linked --schema public > src/types/database.types.ts` | Regenerate DB types — **run after every migration** |
-| `supabase functions deploy tmdb` / `auth-login` | Deploy Edge Functions |
+| `supabase functions deploy tmdb` / `auth-login` / `push` | Deploy Edge Functions |
 | `supabase config push` | Apply `config.toml` (auth settings) to the project |
 
 ---
@@ -345,7 +346,7 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 103 tests:
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 104 tests:
 - `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
   validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
   (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
@@ -409,6 +410,7 @@ screenshot before believing a red result.
 | `…110000_onboarding` (2026-07-19) | `profiles.onboarded boolean` (existing rows backfilled `true`); gates the first-run add-series flow |
 | `…120000_lists` (2026-07-19) | `lists` + `list_items` tables, public/private RLS, `handle_updated_at` + `touch_list_updated_at` triggers, `get_user_lists` / `get_list` / `get_list_items` RPCs (all `security invoker`, privacy via RLS) |
 | `…130000_drop_following_feed` (2026-07-19) | drops the dead `get_following_feed` RPC (superseded by the activity feed) |
+| `…140000_push_subscriptions` (2026-07-19) | `push_subscriptions` table (endpoint-unique) + own-only RLS for Web Push |
 
 ## Edge Functions
 
@@ -416,6 +418,26 @@ screenshot before believing a red result.
 |---|---|---|
 | `tmdb` | `true` | `/search?q=`, `/trending`, `/genres`, `/discover?genre=`, `/series/:id`, `/series/:id/recommendations`, `/series/:id/season/:n`, `/series/:id/credits` |
 | `auth-login` | **`false`** | `POST` `{ identifier, password }` → `{ access_token, refresh_token }` |
+| `push` | `true` | `POST` `{ type: "follow", followingId }` or `{ type: "review", seriesId }` → sends Web Push to recipients |
+
+**Web Push.** VAPID-signed browser push, additive to the in-app `notifications` bell. Pieces:
+- **Keys**: VAPID keypair. Public key is **not secret** — lives in `VITE_VAPID_PUBLIC_KEY` (committed in
+  `.env.example`, inlined via `vite.config.ts` `define`, read by `env.vapidPublicKey`). Private key +
+  subject are Supabase **secrets** (`VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) used only in the edge function.
+- **Subscriptions**: `push_subscriptions` (endpoint-unique, own-only RLS). The client subscribes via the
+  service worker's `pushManager`, then upserts the subscription; the edge function reads all recipients'
+  subs with the **service role**.
+- **Delivery is client-triggered, not a DB trigger** (no `pg_net`/webhooks — keeps the zero-extensions
+  rule). After a follow/review succeeds, the hook fire-and-forgets `push.notifyFollow(followingId)` /
+  `push.notifyReview(seriesId)`; the `push` function resolves recipients server-side (a follow → that one
+  user; a review → the reviewer's followers, fanned out server-side so the client never enumerates them),
+  fetches their subs, and sends via `npm:web-push`. Dead subs (404/410) are deleted.
+- **Service worker**: the Workbox `generateSW` output `importScripts('/push-sw.js')` (in `public/`, wired
+  through `workbox.importScripts`) — that file holds the `push` + `notificationclick` handlers. Custom SW
+  code without abandoning the generated caching. **Push only works in `preview`/production** (the SW is
+  disabled in `dev`), and on iOS only inside the **installed** PWA (iOS 16.4+).
+- **UI**: a `PushToggle` in the profile settings (hidden unless `pushSupported()`), requests permission +
+  subscribes on enable, unsubscribes + deletes the row on disable.
 
 ---
 

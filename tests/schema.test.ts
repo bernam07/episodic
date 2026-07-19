@@ -752,3 +752,23 @@ describe("lists", () => {
     expect(rejected).toBe(true);
   });
 });
+
+describe("push subscriptions", () => {
+  it("keeps a subscription visible only to its owner", async () => {
+    await asAuthenticated(db, ALICE);
+    await db.query(
+      `insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+       values ($1, 'https://push.example/alice', 'p', 'a')`,
+      [ALICE]
+    );
+    const own = await db.query(`select count(*)::int as n from public.push_subscriptions`);
+    await reset(db);
+
+    await asAuthenticated(db, BOB);
+    const other = await db.query(`select count(*)::int as n from public.push_subscriptions`);
+    await reset(db);
+
+    expect((own.rows[0] as { n: number }).n).toBe(1);
+    expect((other.rows[0] as { n: number }).n).toBe(0);
+  });
+});

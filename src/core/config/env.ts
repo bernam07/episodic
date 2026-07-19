@@ -1,6 +1,7 @@
 type Env = {
   supabaseUrl: string;
   supabasePublishableKey: string;
+  vapidPublicKey: string;
 };
 
 function required(name: string, value: string | undefined): string {
@@ -16,4 +17,5 @@ export const env: Env = {
     "VITE_SUPABASE_PUBLISHABLE_KEY",
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
   ),
+  vapidPublicKey: import.meta.env.VITE_VAPID_PUBLIC_KEY ?? "",
 };
