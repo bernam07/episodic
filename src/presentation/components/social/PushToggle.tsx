@@ -54,13 +54,13 @@ export function PushToggle() {
           aria-checked={on}
           disabled={disabled}
           onClick={() => toggle.mutate(!on)}
-          className={`tap-none relative h-6 w-10 shrink-0 rounded-full transition-colors disabled:opacity-40 ${
+          className={`tap-none inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0 transition-colors disabled:opacity-40 ${
             on ? "bg-accent-600" : "bg-ink-700"
           }`}
         >
           <span
-            className={`absolute top-0.5 size-5 rounded-full bg-white transition-transform ${
-              on ? "translate-x-[18px]" : "translate-x-0.5"
+            className={`size-5 rounded-full bg-white transition-transform ${
+              on ? "translate-x-[22px]" : "translate-x-0.5"
             }`}
           />
         </button>
