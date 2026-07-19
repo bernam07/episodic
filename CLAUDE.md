@@ -152,6 +152,30 @@ watched out of order), and returns its season/episode number. The Home "Up Next"
 episode with a one-tap check-off: `useMarkUpNext` fetches the season (TanStack-cached) to resolve
 the `tmdb_episode_id`, then marks it — because Postgres stores counts, not episode IDs.
 
+**Activity feed / Diary are built from *milestones*, never raw episode rows.** This is the whole
+trick to a diary that survives someone adding a series they watched a year ago (which backfills
+hundreds of `episode_tracking` rows all stamped `now()`). The `_activity_events` engine derives four
+event types and *collapses the noise*:
+- **started** — `user_series_status.started_at`
+- **finished** — `user_series_status.completed_at`
+- **rated** — `reviews` (carries rating + body)
+- **progress** — `episode_tracking` **grouped by (user, series, day)** → "watched N episodes of X",
+  so a week of Up Next one-taps is one line, not seven.
+
+Two suppression rules kill the backfill flood: a **progress** event is dropped when a **finished**
+milestone exists for the same series on the same day (so marking a whole series watched reads as one
+"Finished X", not "watched 400 episodes"); and a **started** event is dropped when it finished the
+same day (a binge-add reads as just "Finished X"). Everything is dated by when it was *logged*
+(Letterboxd-style) — there is deliberately **no** custom "I watched this earlier" date in v1.
+
+`_activity_events` is `security definer` and **not granted** (revoked from `public`); the two public
+RPCs decide *which* user_ids reach it: `get_friends_feed` passes the users you follow (never
+yourself), `get_user_diary(p_user_id)` passes `[p_user_id]` only if you are that user or follow them,
+else `[]`. So the same follow-gating as libraries, enforced in Postgres. The **Friends** tab renders
+the feed; profiles (own + others, follow-gated) render a "Recent Activity" diary via the shared
+`ActivityRow` (`showActor={false}` on diaries). The Friends tab now uses `get_friends_feed`; the old
+`get_following_feed` (status-snapshot) is dead code but left in place.
+
 **Favorites** are stored as `is_favorite boolean` on `user_series_status`. Toggling uses the
 `toggle_favorite(p_series_id)` RPC, which flips the flag (and upserts with `want_to_watch` if
 the series isn't in the library yet). Favorites are exposed in `user_series_progress` (own
@@ -297,11 +321,11 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 85 tests:
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 93 tests:
 - `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
   validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
   (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
-- `tests/schema.test.ts` — the schema/RLS/social/notification/delete/hardening/up-next checks against real
+- `tests/schema.test.ts` — the schema/RLS/social/notification/delete/hardening/up-next/activity-feed checks against real
   Postgres via **PGlite**, using the shared harness in `tests/support/pglite.ts` (`createMigratedDb`
   applies all migrations under the shim). Runs in CI — no browser, no live backend.
 
@@ -356,6 +380,7 @@ screenshot before believing a red result.
 | `…110000_notifications_and_delete_account` | `notifications` table + RLS, `notify_on_follow` / `notify_on_review` triggers, `get_notifications` / `mark_notifications_read` / `get_unread_notification_count`, `delete_own_account` |
 | `…120000_harden_series_cache` | `upsert_series_from_tmdb` → `security definer` (+ auth guard), drop the direct insert/update policies on `series`, revoke insert/update/delete from `authenticated`. The RPC is now the only write path into the cache |
 | `…090000_up_next` (2026-07-18) | `aired_episodes` column on `series` (backfilled = total for ended series), `upsert_series_from_tmdb` stores it, `get_up_next` RPC |
+| `…090000_activity_feed` (2026-07-19) | `_activity_events(user_ids, limit)` internal event engine (`security definer`, not granted), `get_friends_feed` (followed users) + `get_user_diary(user_id)` (follow-gated) RPCs |
 
 ## Edge Functions
 
@@ -382,6 +407,9 @@ screenshot before believing a red result.
   deep-link to the correct library filter.
 - **Up Next**: Home rail showing the next unwatched aired episode of each *watching* series
   (`get_up_next`), with a one-tap check-off that advances to the following episode.
+- **Activity feed / Diary**: the **Friends** tab is a chronological milestone feed of the people you
+  follow (started / finished / rated / "watched N episodes of"); profiles show the same events as a
+  "Recent Activity" diary (own + follow-gated others). Backfills collapse to one line — see Data model.
 - **Notifications**: Bell on the home header with an unread badge, opening `NotificationSheet`
   (follow + review activity). Marked read on open.
 - **Delete account**: Danger action at the bottom of the profile; `DeleteAccountSheet` gates it

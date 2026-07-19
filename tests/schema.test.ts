@@ -515,3 +515,140 @@ describe("get_up_next", () => {
     expect(rows.rows.every((r: { tmdb_id: number }) => r.tmdb_id !== 9999)).toBe(true);
   });
 });
+
+describe("activity feed", () => {
+  const FRANK = "66666666-6666-6666-6666-666666666666";
+  const GRETA = "77777777-7777-7777-7777-777777777777";
+  let seriesId: string;
+
+  const SHOW = {
+    tmdb_id: 8888,
+    name: "Diary Show",
+    number_of_seasons: 1,
+    number_of_episodes: 4,
+    aired_episodes: 4,
+    genres: ["Drama"],
+    seasons_meta: [{ season_number: 1, episode_count: 4 }],
+  };
+
+  type Event = {
+    event_type: string;
+    actor_id: string;
+    episode_count: number | null;
+    rating: string | null;
+  };
+
+  async function watchOn(user: string, epId: number, episode: number, day: string) {
+    await db.query(
+      `insert into public.episode_tracking (user_id, series_id, tmdb_episode_id, season_number, episode_number, watched_at)
+       values ($1, $2, $3, 1, $4, $5) on conflict (user_id, tmdb_episode_id) do nothing`,
+      [user, seriesId, epId, episode, day]
+    );
+  }
+
+  async function feed(viewer: string): Promise<Event[]> {
+    await asAuthenticated(db, viewer);
+    const r = await db.query<Event>(
+      `select event_type, actor_id, episode_count, rating from public.get_friends_feed(50)`
+    );
+    await reset(db);
+    return r.rows;
+  }
+
+  async function diary(viewer: string, target: string): Promise<Event[]> {
+    await asAuthenticated(db, viewer);
+    const r = await db.query<Event>(
+      `select event_type, actor_id, episode_count, rating from public.get_user_diary($1, 50)`,
+      [target]
+    );
+    await reset(db);
+    return r.rows;
+  }
+
+  beforeAll(async () => {
+    await db.exec(`delete from public.follows;`);
+    await createAuthUser(db, FRANK, "frank");
+    await createAuthUser(db, GRETA, "greta");
+    await asAuthenticated(db, GRETA);
+    const r = await db.query<{ id: string }>(`select public.upsert_series_from_tmdb($1::jsonb) as id;`, [
+      JSON.stringify(SHOW),
+    ]);
+    seriesId = r.rows[0].id;
+    await reset(db);
+    await db.query(`insert into public.follows (follower_id, following_id) values ($1, $2)`, [FRANK, GRETA]);
+  });
+
+  afterEach(async () => {
+    await db.exec(
+      `delete from public.episode_tracking where series_id = '${seriesId}';
+       delete from public.reviews where series_id = '${seriesId}';
+       delete from public.user_series_status where series_id = '${seriesId}';`
+    );
+  });
+
+  it("collapses same-day check-ins into one progress event carrying the count", async () => {
+    await asAuthenticated(db, GRETA);
+    await watchOn(GRETA, 8001, 1, "2026-07-10T10:00:00Z");
+    await watchOn(GRETA, 8002, 2, "2026-07-10T11:00:00Z");
+    await watchOn(GRETA, 8003, 3, "2026-07-10T12:00:00Z");
+    await reset(db);
+
+    const progress = (await feed(FRANK)).filter((e) => e.event_type === "progress");
+    expect(progress).toHaveLength(1);
+    expect(progress[0].episode_count).toBe(3);
+  });
+
+  it("suppresses progress and started on the day a backfill marks a series finished", async () => {
+    await asAuthenticated(db, GRETA);
+    await watchOn(GRETA, 8001, 1, "2026-07-11T10:00:00Z");
+    await watchOn(GRETA, 8002, 2, "2026-07-11T10:01:00Z");
+    await watchOn(GRETA, 8003, 3, "2026-07-11T10:02:00Z");
+    await watchOn(GRETA, 8004, 4, "2026-07-11T10:03:00Z");
+    await reset(db);
+    await db.query(
+      `update public.user_series_status
+         set status = 'watched', started_at = '2026-07-11T08:00:00Z', completed_at = '2026-07-11T12:00:00Z'
+       where user_id = $1 and series_id = $2`,
+      [GRETA, seriesId]
+    );
+
+    const rows = await feed(FRANK);
+    expect(rows.filter((e) => e.event_type === "progress")).toHaveLength(0);
+    expect(rows.filter((e) => e.event_type === "started")).toHaveLength(0);
+    expect(rows.filter((e) => e.event_type === "finished")).toHaveLength(1);
+  });
+
+  it("emits a rated event carrying the score", async () => {
+    await db.query(`insert into public.reviews (user_id, series_id, rating, body) values ($1, $2, 4.5, 'Great')`, [
+      GRETA,
+      seriesId,
+    ]);
+
+    const rated = (await feed(FRANK)).filter((e) => e.event_type === "rated");
+    expect(rated).toHaveLength(1);
+    expect(Number(rated[0].rating)).toBe(4.5);
+  });
+
+  it("friends feed shows followed users' events but never the viewer's own", async () => {
+    await asAuthenticated(db, GRETA);
+    await watchOn(GRETA, 8001, 1, "2026-07-12T10:00:00Z");
+    await reset(db);
+    await asAuthenticated(db, FRANK);
+    await watchOn(FRANK, 8101, 1, "2026-07-12T10:00:00Z");
+    await reset(db);
+
+    const rows = await feed(FRANK);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((e) => e.actor_id === GRETA)).toBe(true);
+  });
+
+  it("diary is visible to the owner and followers, hidden from everyone else", async () => {
+    await asAuthenticated(db, GRETA);
+    await watchOn(GRETA, 8001, 1, "2026-07-13T10:00:00Z");
+    await reset(db);
+
+    expect((await diary(GRETA, GRETA)).length).toBeGreaterThan(0);
+    expect((await diary(FRANK, GRETA)).length).toBeGreaterThan(0);
+    expect(await diary(CAROL, GRETA)).toHaveLength(0);
+  });
+});

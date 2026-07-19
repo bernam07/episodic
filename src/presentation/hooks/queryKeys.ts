@@ -20,6 +20,8 @@ export const queryKeys = {
   ownReview: (seriesId: string | null) => ["own-review", seriesId] as const,
   ownReviews: ["own-reviews"] as const,
   followingFeed: ["following-feed"] as const,
+  friendsFeed: ["friends-feed"] as const,
+  userDiary: (userId: string | null) => ["diary", userId] as const,
   profileSummary: (username: string | null) => ["profile-summary", username] as const,
   userLibrary: (userId: string | null) => ["user-library", userId] as const,
   followers: (username: string | null) => ["followers", username] as const,

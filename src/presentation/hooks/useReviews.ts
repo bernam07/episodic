@@ -37,6 +37,8 @@ export function useSubmitReview(seriesId: string | null) {
       queryClient.invalidateQueries({ queryKey: queryKeys.ownReview(seriesId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.ownReviews });
       queryClient.invalidateQueries({ queryKey: ["library"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });
+      queryClient.invalidateQueries({ queryKey: ["diary"] });
     },
   });
 }
@@ -52,6 +54,8 @@ export function useDeleteReview() {
       queryClient.invalidateQueries({ queryKey: queryKeys.ownReviews });
       queryClient.invalidateQueries({ queryKey: ["library"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed });
+      queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });
+      queryClient.invalidateQueries({ queryKey: ["diary"] });
     },
   });
 }

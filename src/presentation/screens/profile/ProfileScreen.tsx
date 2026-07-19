@@ -6,6 +6,7 @@ import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { DeleteAccountSheet } from "@/presentation/components/social/DeleteAccountSheet";
+import { DiarySection } from "@/presentation/components/social/DiarySection";
 import { EditProfileSheet } from "@/presentation/components/social/EditProfileSheet";
 import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
 import { Button } from "@/presentation/components/ui/Button";
@@ -181,7 +182,7 @@ function OwnReviews() {
 }
 
 export function ProfileScreen() {
-  const { signOut, profile } = useAuth();
+  const { signOut, profile, user } = useAuth();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
@@ -189,6 +190,7 @@ export function ProfileScreen() {
       <Header />
       <Stats />
       <Favorites />
+      <DiarySection userId={user?.id ?? null} />
       <OwnReviews />
 
       <div className="mt-10 px-5">

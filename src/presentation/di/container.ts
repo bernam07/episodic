@@ -1,3 +1,4 @@
+import { SupabaseActivityRepository } from "@/data/supabase/SupabaseActivityRepository";
 import { SupabaseAuthRepository } from "@/data/supabase/SupabaseAuthRepository";
 import { SupabaseNotificationRepository } from "@/data/supabase/SupabaseNotificationRepository";
 import { SupabaseReviewRepository } from "@/data/supabase/SupabaseReviewRepository";
@@ -5,6 +6,10 @@ import { SupabaseSeriesRepository } from "@/data/supabase/SupabaseSeriesReposito
 import { SupabaseSocialRepository } from "@/data/supabase/SupabaseSocialRepository";
 import { SupabaseTrackingRepository } from "@/data/supabase/SupabaseTrackingRepository";
 import { TmdbRepository } from "@/data/tmdb/TmdbRepository";
+import {
+  GetFriendsFeed as GetActivityFeed,
+  GetUserDiary,
+} from "@/domain/usecases/activity/ActivityUseCases";
 import {
   CheckUsernameAvailable,
   DeleteAccount,
@@ -70,6 +75,7 @@ const trackingRepository = new SupabaseTrackingRepository();
 const reviewRepository = new SupabaseReviewRepository();
 const socialRepository = new SupabaseSocialRepository();
 const notificationRepository = new SupabaseNotificationRepository();
+const activityRepository = new SupabaseActivityRepository();
 
 const ensureSeriesCached = new EnsureSeriesCached(tmdbRepository, seriesRepository);
 const collectAiredEpisodes = new CollectAiredEpisodes(tmdbRepository);
@@ -83,6 +89,7 @@ export const container = {
     reviews: reviewRepository,
     social: socialRepository,
     notifications: notificationRepository,
+    activity: activityRepository,
   },
   usecases: {
     signIn: new SignIn(authRepository),
@@ -135,5 +142,8 @@ export const container = {
     getNotifications: new GetNotifications(notificationRepository),
     getUnreadCount: new GetUnreadCount(notificationRepository),
     markNotificationsRead: new MarkNotificationsRead(notificationRepository),
+
+    getActivityFeed: new GetActivityFeed(activityRepository),
+    getUserDiary: new GetUserDiary(activityRepository),
   },
 } as const;

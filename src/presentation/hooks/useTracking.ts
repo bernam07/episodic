@@ -104,6 +104,8 @@ function useTrackingInvalidator() {
     queryClient.invalidateQueries({ queryKey: ["library"] });
     queryClient.invalidateQueries({ queryKey: queryKeys.continueWatching });
     queryClient.invalidateQueries({ queryKey: queryKeys.upNext });
+    queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });
+    queryClient.invalidateQueries({ queryKey: ["diary"] });
   };
 }
 

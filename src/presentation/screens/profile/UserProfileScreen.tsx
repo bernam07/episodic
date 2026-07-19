@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { SERIES_STATUS_LABELS, SERIES_STATUSES } from "@/domain/entities/SeriesStatus";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { Avatar } from "@/presentation/components/social/Avatar";
+import { DiarySection } from "@/presentation/components/social/DiarySection";
 import { FollowButton } from "@/presentation/components/social/FollowButton";
 import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
 import { FullScreenSpinner, Spinner } from "@/presentation/components/ui/Spinner";
@@ -193,6 +194,8 @@ export function UserProfileScreen() {
               </div>
             )}
           </section>
+
+          <DiarySection userId={summary.id} />
         </>
       )}
     </>

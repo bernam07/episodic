@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -377,6 +377,24 @@ export type Database = {
       }
     }
     Functions: {
+      _activity_events: {
+        Args: { p_limit?: number; p_user_ids: string[] }
+        Returns: {
+          actor_id: string
+          avatar_url: string
+          display_name: string
+          episode_count: number
+          event_type: string
+          occurred_at: string
+          poster_path: string
+          rating: number
+          review_body: string
+          series_id: string
+          series_name: string
+          tmdb_id: number
+          username: string
+        }[]
+      }
       clear_series_episodes: { Args: { p_series_id: string }; Returns: number }
       delete_own_account: { Args: never; Returns: undefined }
       generate_unique_username: { Args: { p_seed: string }; Returns: string }
@@ -432,6 +450,24 @@ export type Database = {
           tmdb_id: number
           updated_at: string
           user_id: string
+          username: string
+        }[]
+      }
+      get_friends_feed: {
+        Args: { p_limit?: number }
+        Returns: {
+          actor_id: string
+          avatar_url: string
+          display_name: string
+          episode_count: number
+          event_type: string
+          occurred_at: string
+          poster_path: string
+          rating: number
+          review_body: string
+          series_id: string
+          series_name: string
+          tmdb_id: number
           username: string
         }[]
       }
@@ -492,6 +528,24 @@ export type Database = {
           series_id: string
           tmdb_id: number
           watched_episodes: number
+        }[]
+      }
+      get_user_diary: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          actor_id: string
+          avatar_url: string
+          display_name: string
+          episode_count: number
+          event_type: string
+          occurred_at: string
+          poster_path: string
+          rating: number
+          review_body: string
+          series_id: string
+          series_name: string
+          tmdb_id: number
+          username: string
         }[]
       }
       get_user_library: {
