@@ -298,6 +298,15 @@ Screen components use **named** exports, so each lazy import maps it to default:
 - **Supabase CLI in Codespaces**: `supabase login` requires a TTY. Use
   `export SUPABASE_ACCESS_TOKEN=<token>` then `npx supabase db push`.
 
+## Own-library queries MUST filter by `auth.uid()`
+
+`user_series_status` select is **follow-gated** (a follower can read the followed user's rows — needed
+for viewing profiles). So any query against `user_series_status` or the `user_series_progress` view that
+is meant to be *your own* library **must** add `.eq("user_id", currentUserId)` — RLS alone is not enough,
+or a follower's own Library/series-detail leaks the followed user's entries. This bit `getLibrary`,
+`getStatus`, and `getSeriesProgress` (fixed 2026-07-19). `episode_tracking` is own-only by RLS, so its
+queries don't need the filter.
+
 ## Bugs already fixed — do not reintroduce
 
 1. `uuid_generate_v4()` → `gen_random_uuid()` (extension not resolvable).
@@ -353,7 +362,7 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 106 tests:
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 107 tests:
 - `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
   validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
   (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
@@ -419,6 +428,7 @@ screenshot before believing a red result.
 | `…130000_drop_following_feed` (2026-07-19) | drops the dead `get_following_feed` RPC (superseded by the activity feed) |
 | `…140000_push_subscriptions` (2026-07-19) | `push_subscriptions` table (endpoint-unique) + own-only RLS for Web Push |
 | `…150000_rewatch_count` (2026-07-19) | `user_series_status.rewatch_count`, `rewatch_count` added to `user_series_progress` view, `bump_rewatch(series_id, delta)` RPC (clamps ≥ 0) |
+| `…160000_user_favorites` (2026-07-19) | `get_user_favorites(user_id)` RPC — favorites for a profile without the 60-row library truncation |
 
 ## Edge Functions
 

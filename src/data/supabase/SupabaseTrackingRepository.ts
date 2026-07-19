@@ -60,7 +60,13 @@ async function currentUserId(): Promise<string> {
 
 export class SupabaseTrackingRepository implements ITrackingRepository {
   async getLibrary(status?: SeriesStatus): Promise<SeriesProgress[]> {
-    let query = supabase.from("user_series_progress").select("*").order("updated_at", { ascending: false });
+    const userId = await currentUserId();
+
+    let query = supabase
+      .from("user_series_progress")
+      .select("*")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
 
     if (status) {
       query = query.eq("status", status);
@@ -76,9 +82,12 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
   }
 
   async getSeriesProgress(seriesId: string): Promise<SeriesProgress | null> {
+    const userId = await currentUserId();
+
     const { data, error } = await supabase
       .from("user_series_progress")
       .select("*")
+      .eq("user_id", userId)
       .eq("series_id", seriesId)
       .maybeSingle();
 
@@ -90,9 +99,12 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
   }
 
   async getStatus(seriesId: string): Promise<UserSeriesStatus | null> {
+    const userId = await currentUserId();
+
     const { data, error } = await supabase
       .from("user_series_status")
       .select("id, user_id, series_id, status, is_favorite, rewatch_count, started_at, completed_at")
+      .eq("user_id", userId)
       .eq("series_id", seriesId)
       .maybeSingle();
 

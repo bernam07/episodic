@@ -125,6 +125,28 @@ export class SupabaseSocialRepository implements ISocialRepository {
     }));
   }
 
+  async getUserFavorites(userId: string, limit = 60): Promise<UserLibraryItem[]> {
+    const { data, error } = await supabase.rpc("get_user_favorites", {
+      p_user_id: userId,
+      p_limit: limit,
+    });
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
+
+    return (data ?? []).map((row) => ({
+      seriesId: row.series_id,
+      tmdbId: row.tmdb_id,
+      seriesName: row.series_name,
+      posterPath: row.poster_path,
+      status: row.status,
+      isFavorite: true,
+      rating: null,
+      updatedAt: row.updated_at,
+    }));
+  }
+
   async follow(userId: string): Promise<void> {
     const followerId = await currentUserId();
 

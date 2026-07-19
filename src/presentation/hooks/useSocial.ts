@@ -29,6 +29,14 @@ export function useUserLibrary(userId: string | null) {
   });
 }
 
+export function useUserFavorites(userId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.userFavorites(userId),
+    queryFn: () => container.usecases.getUserFavorites.execute(userId as string),
+    enabled: !!userId,
+  });
+}
+
 export function useFollowers(username: string | null) {
   return useQuery({
     queryKey: queryKeys.followers(username),

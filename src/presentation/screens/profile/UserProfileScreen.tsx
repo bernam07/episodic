@@ -8,7 +8,7 @@ import { DiarySection } from "@/presentation/components/social/DiarySection";
 import { FollowButton } from "@/presentation/components/social/FollowButton";
 import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
 import { FullScreenSpinner, Spinner } from "@/presentation/components/ui/Spinner";
-import { useProfileSummary, useUserLibrary } from "@/presentation/hooks/useSocial";
+import { useProfileSummary, useUserFavorites, useUserLibrary } from "@/presentation/hooks/useSocial";
 import { pluralize } from "@/presentation/utils/plural";
 
 function StatTile({ value, label }: { value: number; label: string }) {
@@ -26,6 +26,9 @@ export function UserProfileScreen() {
   const { data: summary, isLoading } = useProfileSummary(username ?? null);
   const { data: library, isLoading: libraryLoading } = useUserLibrary(
     summary && !summary.isSelf ? summary.id : null
+  );
+  const { data: favorites } = useUserFavorites(
+    summary && !summary.isSelf && summary.isFollowing ? summary.id : null
   );
   const [followMode, setFollowMode] = useState<"followers" | "following" | null>(null);
 
@@ -140,28 +143,25 @@ export function UserProfileScreen() {
         </div>
       ) : (
         <>
-          {(() => {
-            const favorites = (library ?? []).filter((item) => item.isFavorite);
-            return favorites.length > 0 ? (
-              <section className="mt-7 px-5">
-                <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-                  Favorites
-                  <span className="ml-1.5 text-mist-600">{favorites.length}</span>
-                </h2>
-                <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5">
-                  {favorites.map((item) => (
-                    <SeriesCard
-                      key={item.seriesId}
-                      tmdbId={item.tmdbId}
-                      name={item.seriesName}
-                      posterPath={item.posterPath}
-                      status={item.status}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null;
-          })()}
+          {favorites && favorites.length > 0 ? (
+            <section className="mt-7 px-5">
+              <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+                Favorites
+                <span className="ml-1.5 text-mist-600">{favorites.length}</span>
+              </h2>
+              <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5">
+                {favorites.map((item) => (
+                  <SeriesCard
+                    key={item.seriesId}
+                    tmdbId={item.tmdbId}
+                    name={item.seriesName}
+                    posterPath={item.posterPath}
+                    status={item.status}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="mt-7">
             <div className="mb-3 flex items-center justify-between px-5">

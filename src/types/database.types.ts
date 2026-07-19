@@ -685,6 +685,17 @@ export type Database = {
           username: string
         }[]
       }
+      get_user_favorites: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          poster_path: string
+          series_id: string
+          series_name: string
+          status: Database["public"]["Enums"]["series_watch_status"]
+          tmdb_id: number
+          updated_at: string
+        }[]
+      }
       get_user_library: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {

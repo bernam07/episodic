@@ -688,6 +688,37 @@ describe("community rating summary", () => {
   });
 });
 
+describe("get_user_favorites", () => {
+  let seriesId: string;
+
+  beforeAll(async () => {
+    await db.exec(`delete from public.follows;`);
+    seriesId = await seedSeries();
+    await asAuthenticated(db, ALICE);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, is_favorite)
+       values ($1, $2, 'watching', true)
+       on conflict (user_id, series_id) do update set is_favorite = true`,
+      [ALICE, seriesId]
+    );
+    await reset(db);
+    await db.query(`insert into public.follows (follower_id, following_id) values ($1, $2)`, [BOB, ALICE]);
+  });
+
+  it("returns favorites to followers and hides them from strangers", async () => {
+    await asAuthenticated(db, BOB);
+    const asFollower = await db.query(`select series_id from public.get_user_favorites($1, 60)`, [ALICE]);
+    await reset(db);
+
+    await asAuthenticated(db, CAROL);
+    const asStranger = await db.query(`select series_id from public.get_user_favorites($1, 60)`, [ALICE]);
+    await reset(db);
+
+    expect(asFollower.rows).toHaveLength(1);
+    expect(asStranger.rows).toHaveLength(0);
+  });
+});
+
 describe("lists", () => {
   let seriesId: string;
   let publicList: string;

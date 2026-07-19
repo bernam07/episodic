@@ -37,6 +37,14 @@ export class GetUserLibrary {
   }
 }
 
+export class GetUserFavorites {
+  constructor(private readonly social: ISocialRepository) {}
+
+  async execute(userId: string, limit = 60): Promise<UserLibraryItem[]> {
+    return this.social.getUserFavorites(userId, limit);
+  }
+}
+
 export class GetFollowers {
   constructor(private readonly social: ISocialRepository) {}
 
