@@ -137,6 +137,7 @@ function mapSeriesDetail(item: Record<string, unknown>) {
     last_episode_to_air: mapEpisodeStub(last),
     next_episode_to_air: mapEpisodeStub(item.next_episode_to_air as TmdbEpisodeStub | null),
     seasons_meta: seasons,
+    episode_run_time: ((item.episode_run_time as number[]) ?? []).filter((n) => n > 0),
   };
 }
 

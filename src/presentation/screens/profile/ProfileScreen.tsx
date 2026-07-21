@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQueries } from "@tanstack/react-query";
 import { computeLibraryStats } from "@/domain/entities/LibraryStats";
 import { ListsSection } from "@/presentation/components/lists/ListsSection";
 import { SERIES_STATUS_LABELS, SERIES_STATUSES, type SeriesStatus } from "@/domain/entities/SeriesStatus";
+import { queryKeys } from "@/presentation/hooks/queryKeys";
+import { container } from "@/presentation/di/container";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { Avatar } from "@/presentation/components/social/Avatar";
@@ -166,6 +169,69 @@ function Stats() {
   );
 }
 
+function formatWatchTime(minutes: number): { value: string; unit: string } {
+  if (minutes < 60) return { value: String(minutes), unit: "minutes" };
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return { value: String(hours), unit: "hours" };
+  const days = Math.floor(hours / 24);
+  const remainHours = hours % 24;
+  return { value: `${days}d ${remainHours}h`, unit: "watch time" };
+}
+
+function WatchTime() {
+  const { data: library } = useLibrary();
+
+  const watchedSeries = useMemo(
+    () => (library ?? []).filter((item) => item.watchedEpisodes > 0),
+    [library]
+  );
+
+  const detailQueries = useQueries({
+    queries: watchedSeries.map((item) => ({
+      queryKey: queryKeys.seriesDetail(item.tmdbId),
+      queryFn: () => container.usecases.getSeriesDetail.execute(item.tmdbId),
+      staleTime: 1000 * 60 * 60 * 12,
+    })),
+  });
+
+  const allLoaded = detailQueries.every((q) => q.data || q.error);
+  const totalMinutes = useMemo(() => {
+    if (!allLoaded) return 0;
+    let total = 0;
+    for (let i = 0; i < watchedSeries.length; i++) {
+      const detail = detailQueries[i]?.data;
+      if (!detail) continue;
+      const runtimes = detail.episodeRunTime ?? [];
+      const avgRuntime = runtimes.length > 0
+        ? runtimes.reduce((a, b) => a + b, 0) / runtimes.length
+        : 0;
+      if (avgRuntime > 0) {
+        total += watchedSeries[i].watchedEpisodes * avgRuntime;
+      }
+    }
+    return Math.round(total);
+  }, [allLoaded, watchedSeries, detailQueries]);
+
+  if (watchedSeries.length === 0 || !allLoaded || totalMinutes === 0) return null;
+
+  const formatted = formatWatchTime(totalMinutes);
+
+  return (
+    <section className="mt-4 px-5">
+      <div className="flex items-center gap-3 rounded-xl bg-ink-850 px-4 py-3">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 shrink-0 text-accent-400">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <div>
+          <p className="text-[18px] font-bold leading-none tabular-nums text-mist-100">{formatted.value}</p>
+          <p className="mt-0.5 text-[11px] tracking-wide text-mist-500 uppercase">{formatted.unit}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Favorites() {
   const { data } = useLibrary();
   const favorites = (data ?? []).filter((item) => item.isFavorite);
@@ -235,6 +301,7 @@ export function ProfileScreen() {
     <>
       <Header onOpenSettings={() => setSettingsOpen(true)} />
       <Stats />
+      <WatchTime />
       <Favorites />
       <ListsSection userId={user?.id ?? null} isOwn />
       <DiarySection userId={user?.id ?? null} />

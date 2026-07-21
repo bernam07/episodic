@@ -1,3 +1,4 @@
+import type { ComparisonItem } from "@/domain/entities/Comparison";
 import type {
   ProfileSearchResult,
   ProfileSummary,
@@ -70,5 +71,13 @@ export class ToggleFollow {
     }
 
     return this.social.unfollow(userId);
+  }
+}
+
+export class CompareLibraries {
+  constructor(private readonly social: ISocialRepository) {}
+
+  async execute(otherUserId: string): Promise<ComparisonItem[]> {
+    return this.social.compareLibraries(otherUserId);
   }
 }

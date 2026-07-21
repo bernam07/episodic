@@ -15,12 +15,12 @@ import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { SeriesStateCard } from "@/presentation/components/series/SeriesStateCard";
 import { StatusPicker } from "@/presentation/components/series/StatusPicker";
 import { Button } from "@/presentation/components/ui/Button";
-import { RatingDisplay } from "@/presentation/components/ui/Rating";
+import { RatingInput } from "@/presentation/components/ui/Rating";
 import { Sheet } from "@/presentation/components/ui/Sheet";
 import { FullScreenSpinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useCredits, useSeriesDetail } from "@/presentation/hooks/useDiscovery";
-import { useOwnReview, useRatingSummary, useSeriesReviews } from "@/presentation/hooks/useReviews";
+import { useOwnReview, useRatingSummary, useSeriesReviews, useSubmitReview } from "@/presentation/hooks/useReviews";
 import {
   useBumpRewatch,
   useLocalSeriesId,
@@ -78,6 +78,7 @@ export function SeriesDetailScreen() {
   const toggleSeason = useToggleSeason(seriesId ?? null);
   const toggleFavorite = useToggleFavorite(seriesId ?? null);
   const bumpRewatch = useBumpRewatch(seriesId ?? null);
+  const submitReview = useSubmitReview(seriesId ?? null);
 
   if (isLoading || !detail) {
     return <FullScreenSpinner />;
@@ -198,20 +199,29 @@ export function SeriesDetailScreen() {
             </svg>
           </button>
 
-          <Button
-            variant="secondary"
-            className="flex-1"
-            disabled={!seriesId}
-            onClick={() => setReviewSheetOpen(true)}
-          >
-            {ownReview ? "Edit Review" : "Rate"}
-          </Button>
         </div>
 
-        {ownReview ? (
-          <div className="mt-3 flex items-center gap-2">
-            <RatingDisplay value={ownReview.rating} />
-            <span className="text-[12px] text-mist-500">Your rating</span>
+        {seriesId ? (
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <RatingInput
+                value={ownReview?.rating ?? 0}
+                onChange={(rating) =>
+                  submitReview.mutate({
+                    rating,
+                    body: ownReview?.body ?? null,
+                    containsSpoilers: ownReview?.containsSpoilers ?? false,
+                  })
+                }
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setReviewSheetOpen(true)}
+              className="tap-none text-[13px] font-medium text-accent-400 active:text-accent-300"
+            >
+              {ownReview?.body ? "Edit review" : "Write a review"}
+            </button>
           </div>
         ) : null}
 

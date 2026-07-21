@@ -21,6 +21,8 @@ type ProgressRow = {
   rewatch_count: number;
   number_of_seasons: number;
   number_of_episodes: number;
+  aired_episodes: number;
+  genres: string[];
   watched_episodes: number;
   remaining_episodes: number;
   progress_percent: number;
@@ -40,6 +42,8 @@ function toProgress(row: ProgressRow): SeriesProgress {
     rewatchCount: row.rewatch_count,
     numberOfSeasons: row.number_of_seasons,
     numberOfEpisodes: row.number_of_episodes,
+    airedEpisodes: row.aired_episodes ?? 0,
+    genres: row.genres ?? [],
     watchedEpisodes: row.watched_episodes,
     remainingEpisodes: row.remaining_episodes,
     progressPercent: Number(row.progress_percent),
@@ -78,7 +82,7 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       throw new AppError("unknown", error.message, error);
     }
 
-    return (data as ProgressRow[]).map(toProgress);
+    return (data as unknown as ProgressRow[]).map(toProgress);
   }
 
   async getSeriesProgress(seriesId: string): Promise<SeriesProgress | null> {
@@ -95,7 +99,7 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       throw new AppError("unknown", error.message, error);
     }
 
-    return data ? toProgress(data as ProgressRow) : null;
+    return data ? toProgress(data as unknown as ProgressRow) : null;
   }
 
   async getStatus(seriesId: string): Promise<UserSeriesStatus | null> {

@@ -11,6 +11,8 @@ export type SeriesProgress = {
   rewatchCount: number;
   numberOfSeasons: number;
   numberOfEpisodes: number;
+  airedEpisodes: number;
+  genres: string[];
   watchedEpisodes: number;
   remainingEpisodes: number;
   progressPercent: number;

@@ -58,6 +58,7 @@ import {
   SubmitReview,
 } from "@/domain/usecases/reviews/ReviewUseCases";
 import {
+  CompareLibraries,
   GetFollowers,
   GetFollowing,
   GetProfileSummary,
@@ -156,6 +157,7 @@ export const container = {
     getFollowers: new GetFollowers(socialRepository),
     getFollowing: new GetFollowing(socialRepository),
     toggleFollow: new ToggleFollow(socialRepository),
+    compareLibraries: new CompareLibraries(socialRepository),
 
     getNotifications: new GetNotifications(notificationRepository),
     getUnreadCount: new GetUnreadCount(notificationRepository),

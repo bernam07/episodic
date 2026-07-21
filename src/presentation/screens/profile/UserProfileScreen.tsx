@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { ComparisonSheet } from "@/presentation/components/social/ComparisonSheet";
 import { SERIES_STATUS_LABELS, SERIES_STATUSES } from "@/domain/entities/SeriesStatus";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { Avatar } from "@/presentation/components/social/Avatar";
@@ -31,6 +32,7 @@ export function UserProfileScreen() {
     summary && !summary.isSelf && summary.isFollowing ? summary.id : null
   );
   const [followMode, setFollowMode] = useState<"followers" | "following" | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   if (isLoading) {
     return <FullScreenSpinner />;
@@ -112,8 +114,20 @@ export function UserProfileScreen() {
           <p className="mt-3 text-[14px] whitespace-pre-wrap text-mist-300">{summary.bio}</p>
         ) : null}
 
-        <div className="mt-4">
+        <div className="mt-4 flex gap-3">
           <FollowButton userId={summary.id} isFollowing={summary.isFollowing} size="md" />
+          {summary.isFollowing ? (
+            <button
+              type="button"
+              onClick={() => setCompareOpen(true)}
+              className="tap-none flex min-h-[40px] items-center gap-2 rounded-xl bg-ink-800 px-4 text-[13px] font-semibold text-mist-300 active:bg-ink-700"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                <path d="M16 3h5v5M8 3H3v5M21 3l-7 7M3 3l7 7M16 21h5v-5M8 21H3v-5M21 21l-7-7M3 21l7-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Compare
+            </button>
+          ) : null}
         </div>
 
         <FollowListSheet
@@ -201,6 +215,13 @@ export function UserProfileScreen() {
           <DiarySection userId={summary.id} />
         </>
       )}
+
+      <ComparisonSheet
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        userId={summary.id}
+        displayName={summary.displayName || summary.username}
+      />
     </>
   );
 }

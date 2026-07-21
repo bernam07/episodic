@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { releaseYear } from "@/domain/entities/Series";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { FollowButton } from "@/presentation/components/social/FollowButton";
@@ -25,7 +25,9 @@ function useDebounced(value: string, delay = 350) {
 }
 
 function GenreRecommendations() {
-  const [genreId, setGenreId] = useState<number | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const genreParam = searchParams.get("genre");
+  const genreId = genreParam ? Number(genreParam) : null;
   const { data: genres, isLoading: genresLoading } = useGenres();
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
     useInfiniteDiscover(genreId);
@@ -60,7 +62,7 @@ function GenreRecommendations() {
       <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto px-5">
         <button
           type="button"
-          onClick={() => setGenreId(null)}
+          onClick={() => setSearchParams({}, { replace: true })}
           className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${
             genreId === null ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
           }`}
@@ -71,7 +73,7 @@ function GenreRecommendations() {
           <button
             key={genre.id}
             type="button"
-            onClick={() => setGenreId(genre.id)}
+            onClick={() => setSearchParams({ genre: String(genre.id) }, { replace: true })}
             className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${
               genreId === genre.id
                 ? "bg-accent-600 text-white"
@@ -208,9 +210,17 @@ function SeriesResults({ query }: { query: string }) {
 }
 
 export function SearchScreen() {
-  const [tab, setTab] = useState<Tab>("series");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const tab: Tab = tabParam === "users" ? "users" : "series";
   const [query, setQuery] = useState("");
   const debounced = useDebounced(query);
+
+  function setTab(next: Tab) {
+    const params: Record<string, string> = {};
+    if (next === "users") params.tab = "users";
+    setSearchParams(params, { replace: true });
+  }
 
   return (
     <>

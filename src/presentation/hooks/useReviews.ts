@@ -40,8 +40,9 @@ export function useSubmitReview(seriesId: string | null) {
   return useMutation({
     mutationFn: (input: Omit<SubmitReviewInput, "seriesId">) =>
       container.usecases.submitReview.execute({ ...input, seriesId: seriesId as string }),
-    onSuccess: () => {
-      if (seriesId) {
+    onSuccess: (_result, input) => {
+      const hasBody = !!input.body?.trim();
+      if (seriesId && hasBody) {
         void container.repositories.push.notifyReview(seriesId).catch(() => {});
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.seriesReviews(seriesId) });

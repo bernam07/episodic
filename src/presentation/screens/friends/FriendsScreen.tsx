@@ -14,6 +14,19 @@ export function FriendsScreen() {
       <ScreenHeader
         title="Friends"
         subtitle={data && data.length > 0 ? "What the people you follow are watching" : undefined}
+        action={
+          <Link
+            to="/search?tab=users"
+            className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
+            aria-label="Find friends"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4-4v2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M19 8v6M22 11h-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        }
       />
 
       {isLoading ? (
@@ -29,7 +42,7 @@ export function FriendsScreen() {
             Follow people to see the series they start, finish and rate.
           </p>
           <Link
-            to="/search"
+            to="/search?tab=users"
             className="tap-none mt-5 inline-flex min-h-[44px] items-center rounded-xl bg-accent-600 px-5 text-[14px] font-semibold text-white active:bg-accent-500"
           >
             Find people

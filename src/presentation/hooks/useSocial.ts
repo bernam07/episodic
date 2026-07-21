@@ -53,6 +53,14 @@ export function useFollowing(username: string | null) {
   });
 }
 
+export function useCompareLibraries(userId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.comparison(userId),
+    queryFn: () => container.usecases.compareLibraries.execute(userId as string),
+    enabled: !!userId,
+  });
+}
+
 export function useToggleFollow() {
   const queryClient = useQueryClient();
 

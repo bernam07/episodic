@@ -34,4 +34,5 @@ export const queryKeys = {
   userLists: (userId: string | null) => ["lists", userId] as const,
   list: (listId: string | null) => ["list", listId] as const,
   listItems: (listId: string | null) => ["list-items", listId] as const,
+  comparison: (userId: string | null) => ["comparison", userId] as const,
 };

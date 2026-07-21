@@ -41,6 +41,7 @@ type RawDetail = RawSummary & {
     air_date: string | null;
     poster_path: string | null;
   }[];
+  episode_run_time: number[];
 };
 
 type RawEpisode = {
@@ -114,6 +115,7 @@ function toDetail(raw: RawDetail): SeriesDetail {
       airDate: season.air_date,
       posterPath: season.poster_path,
     })),
+    episodeRunTime: raw.episode_run_time ?? [],
   };
 }
 

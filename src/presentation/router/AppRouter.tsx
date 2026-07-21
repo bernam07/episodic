@@ -49,6 +49,9 @@ const SeriesDetailScreen = lazy(() =>
 const ListDetailScreen = lazy(() =>
   import("@/presentation/screens/lists/ListDetailScreen").then((m) => ({ default: m.ListDetailScreen }))
 );
+const CalendarScreen = lazy(() =>
+  import("@/presentation/screens/calendar/CalendarScreen").then((m) => ({ default: m.CalendarScreen }))
+);
 
 export function AppRouter() {
   return (
@@ -69,6 +72,7 @@ export function AppRouter() {
               <Route path="/user/:username" element={<UserProfileScreen />} />
               <Route path="/series/:tmdbId" element={<SeriesDetailScreen />} />
               <Route path="/list/:id" element={<ListDetailScreen />} />
+              <Route path="/calendar" element={<CalendarScreen />} />
             </Route>
             </Route>
           </Route>

@@ -1,4 +1,5 @@
 import { AppError } from "@/core/errors/AppError";
+import type { ComparisonItem } from "@/domain/entities/Comparison";
 import type {
   ProfileSearchResult,
   ProfileSummary,
@@ -144,6 +145,38 @@ export class SupabaseSocialRepository implements ISocialRepository {
       isFavorite: true,
       rating: null,
       updatedAt: row.updated_at,
+    }));
+  }
+
+  async compareLibraries(otherUserId: string): Promise<ComparisonItem[]> {
+    const { data, error } = await supabase.rpc("compare_libraries" as never, {
+      p_other_user_id: otherUserId,
+    } as never);
+
+    if (error) {
+      throw new AppError("unknown", (error as { message: string }).message, error);
+    }
+
+    type ComparisonRow = {
+      tmdb_id: number;
+      series_name: string;
+      poster_path: string | null;
+      genres: string[];
+      my_status: string | null;
+      my_rating: number | null;
+      their_status: string | null;
+      their_rating: number | null;
+    };
+
+    return ((data ?? []) as ComparisonRow[]).map((row) => ({
+      tmdbId: row.tmdb_id,
+      seriesName: row.series_name,
+      posterPath: row.poster_path,
+      genres: row.genres ?? [],
+      myStatus: (row.my_status as ComparisonItem["myStatus"]) ?? null,
+      myRating: row.my_rating === null ? null : Number(row.my_rating),
+      theirStatus: (row.their_status as ComparisonItem["theirStatus"]) ?? null,
+      theirRating: row.their_rating === null ? null : Number(row.their_rating),
     }));
   }
 

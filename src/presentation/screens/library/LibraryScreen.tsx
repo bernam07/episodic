@@ -51,20 +51,39 @@ export function LibraryScreen() {
     return base;
   }, [data]);
 
+  const genreParam = searchParams.get("genre");
+
+  const allGenres = useMemo(() => {
+    if (!data) return [];
+    const set = new Set<string>();
+    for (const item of data) {
+      for (const g of item.genres) set.add(g);
+    }
+    return [...set].sort();
+  }, [data]);
+
   const visible = useMemo(() => {
     if (!data) return [];
-    if (filter === "favorites") return data.filter((item) => item.isFavorite);
-    if (filter === "rewatched") return data.filter((item) => item.rewatchCount > 0);
-    if (filter === "all") return data;
-    return data.filter((item) => item.status === filter);
-  }, [data, filter]);
+    let result = data;
+    if (filter === "favorites") result = result.filter((item) => item.isFavorite);
+    else if (filter === "rewatched") result = result.filter((item) => item.rewatchCount > 0);
+    else if (filter !== "all") result = result.filter((item) => item.status === filter);
+    if (genreParam) result = result.filter((item) => item.genres.includes(genreParam));
+    return result;
+  }, [data, filter, genreParam]);
 
   function setFilter(next: Filter) {
-    if (next === "all") {
-      setSearchParams({}, { replace: true });
-    } else {
-      setSearchParams({ status: next }, { replace: true });
-    }
+    const params: Record<string, string> = {};
+    if (next !== "all") params.status = next;
+    if (genreParam) params.genre = genreParam;
+    setSearchParams(params, { replace: true });
+  }
+
+  function setGenre(genre: string | null) {
+    const params: Record<string, string> = {};
+    if (filter !== "all") params.status = filter;
+    if (genre) params.genre = genre;
+    setSearchParams(params, { replace: true });
   }
 
   return (
@@ -95,6 +114,32 @@ export function LibraryScreen() {
           </button>
         ))}
       </div>
+
+      {allGenres.length > 0 ? (
+        <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 pb-4">
+          <button
+            type="button"
+            onClick={() => setGenre(null)}
+            className={`tap-none shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
+              !genreParam ? "bg-mist-100 text-ink-950" : "bg-ink-800 text-mist-400 active:bg-ink-700"
+            }`}
+          >
+            All genres
+          </button>
+          {allGenres.map((genre) => (
+            <button
+              key={genre}
+              type="button"
+              onClick={() => setGenre(genreParam === genre ? null : genre)}
+              className={`tap-none shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                genreParam === genre ? "bg-mist-100 text-ink-950" : "bg-ink-800 text-mist-400 active:bg-ink-700"
+              }`}
+            >
+              {genre}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {isLoading ? (
         <div className="flex h-40 items-center justify-center">

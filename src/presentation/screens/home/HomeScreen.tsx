@@ -4,11 +4,9 @@ import { backdropUrl } from "@/data/tmdb/images";
 import type { UpNextItem } from "@/domain/entities/Progress";
 import { releaseYear, type SeriesSummary } from "@/domain/entities/Series";
 import { NotificationSheet } from "@/presentation/components/notifications/NotificationSheet";
-import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { Spinner } from "@/presentation/components/ui/Spinner";
-import { useGenres, useInfiniteDiscover, useRecommendations, useTrending } from "@/presentation/hooks/useDiscovery";
-import { useInfiniteScroll } from "@/presentation/hooks/useInfiniteScroll";
+import { useRecommendations, useTrending } from "@/presentation/hooks/useDiscovery";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useUnreadCount } from "@/presentation/hooks/useNotifications";
 import { useLibrary, useMarkUpNext, useUpNext } from "@/presentation/hooks/useTracking";
@@ -152,89 +150,32 @@ function RecommendationsRail() {
   );
 }
 
-function EndlessGrid() {
-  const [genreId, setGenreId] = useState<number | null>(null);
-  const { data: genres } = useGenres();
-  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useInfiniteDiscover(genreId);
+function TrendingRail() {
+  const { data } = useTrending();
+  const items = (data?.results ?? []).slice(1, 16);
 
-  const sentinelRef = useInfiniteScroll({
-    hasNextPage: !!hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  });
-
-  const series = data?.pages.flatMap((page) => page.results) ?? [];
-  const seen = new Set<number>();
-  const unique = series.filter((item) => {
-    if (seen.has(item.tmdbId)) {
-      return false;
-    }
-    seen.add(item.tmdbId);
-    return true;
-  });
+  if (items.length === 0) return null;
 
   return (
-    <section className="mt-8">
+    <section className="mt-7">
       <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-        Browse
+        Trending This Week
       </h2>
-
-      <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto px-5">
-        <button
-          type="button"
-          onClick={() => setGenreId(null)}
-          className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${
-            genreId === null ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
-          }`}
-        >
-          Popular
-        </button>
-        {(genres ?? []).map((genre) => (
-          <button
-            key={genre.id}
-            type="button"
-            onClick={() => setGenreId(genre.id)}
-            className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${
-              genreId === genre.id
-                ? "bg-accent-600 text-white"
-                : "bg-ink-800 text-mist-400 active:bg-ink-700"
-            }`}
+      <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
+        {items.map((item) => (
+          <Link
+            key={item.tmdbId}
+            to={`/series/${item.tmdbId}`}
+            className="tap-none w-[132px] shrink-0 active:opacity-70"
           >
-            {genre.name}
-          </button>
+            <SeriesPoster path={item.posterPath} alt={item.name} />
+            <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
+            {item.firstAirDate ? (
+              <p className="mt-0.5 text-[11px] text-mist-400">{releaseYear(item)}</p>
+            ) : null}
+          </Link>
         ))}
       </div>
-
-      {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Spinner />
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-          {unique.map((item) => (
-            <SeriesCard
-              key={item.tmdbId}
-              tmdbId={item.tmdbId}
-              name={item.name}
-              posterPath={item.posterPath}
-              year={releaseYear(item)}
-            />
-          ))}
-        </div>
-      )}
-
-      <div ref={sentinelRef} className="h-px" />
-
-      {isFetchingNextPage ? (
-        <div className="flex h-16 items-center justify-center">
-          <Spinner />
-        </div>
-      ) : null}
-
-      {!hasNextPage && unique.length > 0 ? (
-        <p className="py-8 text-center text-[12px] text-mist-500">You have reached the end.</p>
-      ) : null}
     </section>
   );
 }
@@ -255,10 +196,21 @@ export function HomeScreen() {
           </p>
           <h1 className="text-[28px] font-bold tracking-tight text-mist-100">Episodic</h1>
         </div>
+        <div className="mt-2 flex gap-2">
+        <Link
+          to="/calendar"
+          className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
+          aria-label="Calendar"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+            <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
         <button
           type="button"
           onClick={() => setNotificationsOpen(true)}
-          className="tap-none relative mt-2 flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
+          className="tap-none relative flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
           aria-label="Notifications"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
@@ -271,6 +223,7 @@ export function HomeScreen() {
             </span>
           ) : null}
         </button>
+        </div>
       </header>
 
       {featured ? (
@@ -281,7 +234,7 @@ export function HomeScreen() {
 
       <UpNextRail />
       <RecommendationsRail />
-      <EndlessGrid />
+      <TrendingRail />
 
       <NotificationSheet open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
     </>
