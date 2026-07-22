@@ -667,13 +667,28 @@ describe("community rating summary", () => {
 
   it("groups reviews into rating buckets", async () => {
     await asAuthenticated(db, ALICE);
-    await db.query(`insert into public.reviews (user_id, series_id, rating) values ($1, $2, 4.5)`, [ALICE, seriesId]);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating)
+       values ($1, $2, 'watching', 4.5)
+       on conflict (user_id, series_id) do update set rating = 4.5`,
+      [ALICE, seriesId]
+    );
     await reset(db);
     await asAuthenticated(db, BOB);
-    await db.query(`insert into public.reviews (user_id, series_id, rating) values ($1, $2, 4.5)`, [BOB, seriesId]);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating)
+       values ($1, $2, 'watching', 4.5)
+       on conflict (user_id, series_id) do update set rating = 4.5`,
+      [BOB, seriesId]
+    );
     await reset(db);
     await asAuthenticated(db, CAROL);
-    await db.query(`insert into public.reviews (user_id, series_id, rating) values ($1, $2, 3.0)`, [CAROL, seriesId]);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating)
+       values ($1, $2, 'watching', 3.0)
+       on conflict (user_id, series_id) do update set rating = 3.0`,
+      [CAROL, seriesId]
+    );
 
     const r = await db.query<{ rating: number; count: number }>(
       `select rating, count from public.get_series_rating_summary($1) order by rating`,

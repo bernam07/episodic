@@ -132,7 +132,7 @@ create function public.get_series_rating_summary(p_series_id uuid)
 returns table (rating numeric, count integer)
 language sql
 stable
-security invoker
+security definer
 set search_path = public
 as $$
   select uss.rating, count(*)::integer
