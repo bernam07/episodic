@@ -292,7 +292,7 @@ export type Database = {
           contains_spoilers: boolean
           created_at: string
           id: string
-          rating: number
+          rating: number | null
           series_id: string
           updated_at: string
           user_id: string
@@ -302,7 +302,7 @@ export type Database = {
           contains_spoilers?: boolean
           created_at?: string
           id?: string
-          rating: number
+          rating?: number | null
           series_id: string
           updated_at?: string
           user_id: string
@@ -312,7 +312,7 @@ export type Database = {
           contains_spoilers?: boolean
           created_at?: string
           id?: string
-          rating?: number
+          rating?: number | null
           series_id?: string
           updated_at?: string
           user_id?: string
@@ -403,6 +403,7 @@ export type Database = {
           created_at: string
           id: string
           is_favorite: boolean
+          rating: number | null
           rewatch_count: number
           series_id: string
           started_at: string | null
@@ -415,6 +416,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_favorite?: boolean
+          rating?: number | null
           rewatch_count?: number
           series_id: string
           started_at?: string | null
@@ -427,6 +429,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_favorite?: boolean
+          rating?: number | null
           rewatch_count?: number
           series_id?: string
           started_at?: string | null
@@ -455,8 +458,10 @@ export type Database = {
     Views: {
       user_series_progress: {
         Row: {
+          aired_episodes: number | null
           backdrop_path: string | null
           completed_at: string | null
+          genres: string[] | null
           is_favorite: boolean | null
           name: string | null
           number_of_episodes: number | null
@@ -516,6 +521,19 @@ export type Database = {
         Returns: number
       }
       clear_series_episodes: { Args: { p_series_id: string }; Returns: number }
+      compare_libraries: {
+        Args: { p_other_user_id: string }
+        Returns: {
+          genres: string[]
+          my_rating: number
+          my_status: Database["public"]["Enums"]["series_watch_status"]
+          poster_path: string
+          series_name: string
+          their_rating: number
+          their_status: Database["public"]["Enums"]["series_watch_status"]
+          tmdb_id: number
+        }[]
+      }
       delete_own_account: { Args: never; Returns: undefined }
       generate_unique_username: { Args: { p_seed: string }; Returns: string }
       get_continue_watching: {
@@ -734,6 +752,10 @@ export type Database = {
           series_count: number
           username: string
         }[]
+      }
+      set_rating: {
+        Args: { p_rating: number; p_series_id: string }
+        Returns: undefined
       }
       set_season_watched: {
         Args: {

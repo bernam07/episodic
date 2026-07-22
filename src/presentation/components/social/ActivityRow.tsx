@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { posterUrl } from "@/data/tmdb/images";
 import { activityVerb, type ActivityEvent } from "@/domain/entities/Activity";
 import { Avatar } from "@/presentation/components/social/Avatar";
-import { RatingDisplay } from "@/presentation/components/ui/Rating";
 import { relativeTime } from "@/presentation/utils/relativeTime";
 
 function capitalize(value: string): string {
@@ -50,12 +49,9 @@ export function ActivityRow({
 
         <div className="mt-1.5 flex items-center gap-2">
           <span className="text-[11px] text-mist-500">{relativeTime(event.occurredAt)}</span>
-          {event.eventType === "rated" && event.rating !== null ? (
-            <RatingDisplay value={event.rating} />
-          ) : null}
         </div>
 
-        {event.eventType === "rated" && event.reviewBody ? (
+        {event.eventType === "reviewed" && event.reviewBody ? (
           <p className="mt-1.5 line-clamp-2 text-[13px] text-mist-400">{event.reviewBody}</p>
         ) : null}
       </div>

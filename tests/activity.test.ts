@@ -24,7 +24,7 @@ describe("activityVerb", () => {
   it("phrases start and finish milestones", () => {
     expect(activityVerb(event({ eventType: "started" }))).toBe("started watching");
     expect(activityVerb(event({ eventType: "finished" }))).toBe("finished");
-    expect(activityVerb(event({ eventType: "rated" }))).toBe("rated");
+    expect(activityVerb(event({ eventType: "reviewed" }))).toBe("reviewed");
   });
 
   it("pluralises the progress episode count", () => {

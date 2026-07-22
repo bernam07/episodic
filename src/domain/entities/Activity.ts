@@ -1,4 +1,4 @@
-export type ActivityEventType = "started" | "finished" | "progress" | "rated";
+export type ActivityEventType = "started" | "finished" | "progress" | "reviewed";
 
 export type ActivityEvent = {
   actorId: string;
@@ -22,8 +22,8 @@ export function activityVerb(event: ActivityEvent): string {
       return "started watching";
     case "finished":
       return "finished";
-    case "rated":
-      return "rated";
+    case "reviewed":
+      return "reviewed";
     case "progress": {
       const count = event.episodeCount ?? 0;
       return `watched ${count} ${count === 1 ? "episode" : "episodes"} of`;

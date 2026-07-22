@@ -618,15 +618,16 @@ describe("activity feed", () => {
     expect(rows.filter((e) => e.event_type === "finished")).toHaveLength(1);
   });
 
-  it("emits a rated event carrying the score", async () => {
-    await db.query(`insert into public.reviews (user_id, series_id, rating, body) values ($1, $2, 4.5, 'Great')`, [
-      GRETA,
-      seriesId,
-    ]);
+  it("surfaces a written review but keeps a bare rating silent", async () => {
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating) values ($1, $2, 'watching', 4.5)
+       on conflict (user_id, series_id) do update set rating = 4.5`,
+      [GRETA, seriesId]
+    );
+    expect((await feed(FRANK)).filter((e) => e.event_type === "reviewed")).toHaveLength(0);
 
-    const rated = (await feed(FRANK)).filter((e) => e.event_type === "rated");
-    expect(rated).toHaveLength(1);
-    expect(Number(rated[0].rating)).toBe(4.5);
+    await db.query(`insert into public.reviews (user_id, series_id, body) values ($1, $2, 'Great')`, [GRETA, seriesId]);
+    expect((await feed(FRANK)).filter((e) => e.event_type === "reviewed")).toHaveLength(1);
   });
 
   it("friends feed shows followed users' events but never the viewer's own", async () => {
