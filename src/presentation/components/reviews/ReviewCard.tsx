@@ -66,9 +66,11 @@ export function ReviewCard({ review, showSeries = false, canDelete = false }: Re
                   {review.author?.displayName || review.author?.username || "Someone"}
                 </span>
               )}
-              <div className="mt-1">
-                <RatingDisplay value={review.rating} />
-              </div>
+              {review.rating !== null ? (
+                <div className="mt-1">
+                  <RatingDisplay value={review.rating} />
+                </div>
+              ) : null}
             </div>
 
             {canDelete ? (

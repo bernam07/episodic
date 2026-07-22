@@ -78,6 +78,7 @@ import {
   RemoveFromLibrary,
   SetSeriesStatus,
   ToggleEpisodeWatched,
+  SetRating,
   ToggleFavorite,
   ToggleSeasonWatched,
 } from "@/domain/usecases/tracking/TrackingUseCases";
@@ -140,6 +141,7 @@ export const container = {
     toggleEpisodeWatched: new ToggleEpisodeWatched(trackingRepository),
     toggleSeasonWatched: new ToggleSeasonWatched(trackingRepository),
     toggleFavorite: new ToggleFavorite(trackingRepository),
+    setRating: new SetRating(trackingRepository),
     getContinueWatching: new GetContinueWatching(trackingRepository),
     getUpNext: new GetUpNext(trackingRepository),
 

@@ -166,3 +166,11 @@ export class ToggleFavorite {
     return this.tracking.toggleFavorite(seriesId);
   }
 }
+
+export class SetRating {
+  constructor(private readonly tracking: ITrackingRepository) {}
+
+  async execute(seriesId: string, rating: number | null): Promise<void> {
+    return this.tracking.setRating(seriesId, rating);
+  }
+}

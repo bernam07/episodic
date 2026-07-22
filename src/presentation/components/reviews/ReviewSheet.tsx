@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { toUserMessage } from "@/core/errors/AppError";
 import type { Review } from "@/domain/entities/Review";
 import { Button } from "@/presentation/components/ui/Button";
-import { RatingInput } from "@/presentation/components/ui/Rating";
 import { Sheet } from "@/presentation/components/ui/Sheet";
 import { useSubmitReview } from "@/presentation/hooks/useReviews";
 
@@ -17,7 +16,6 @@ type ReviewSheetProps = {
 const MAX_BODY = 2000;
 
 export function ReviewSheet({ open, onClose, seriesId, seriesName, existing }: ReviewSheetProps) {
-  const [rating, setRating] = useState(existing?.rating ?? 0);
   const [body, setBody] = useState(existing?.body ?? "");
   const [spoilers, setSpoilers] = useState(existing?.containsSpoilers ?? false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +24,6 @@ export function ReviewSheet({ open, onClose, seriesId, seriesName, existing }: R
 
   useEffect(() => {
     if (open) {
-      setRating(existing?.rating ?? 0);
       setBody(existing?.body ?? "");
       setSpoilers(existing?.containsSpoilers ?? false);
       setError(null);
@@ -37,7 +34,7 @@ export function ReviewSheet({ open, onClose, seriesId, seriesName, existing }: R
     setError(null);
 
     try {
-      await submit.mutateAsync({ rating, body, containsSpoilers: spoilers });
+      await submit.mutateAsync({ body, containsSpoilers: spoilers });
       onClose();
     } catch (caught) {
       setError(toUserMessage(caught));
@@ -45,18 +42,14 @@ export function ReviewSheet({ open, onClose, seriesId, seriesName, existing }: R
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={existing ? "Edit Review" : "Rate & Review"}>
+    <Sheet open={open} onClose={onClose} title={existing?.body ? "Edit Review" : "Write a Review"}>
       <p className="mb-5 truncate text-[13px] text-mist-400">{seriesName}</p>
-
-      <div className="mb-5">
-        <RatingInput value={rating} onChange={setRating} />
-      </div>
 
       <textarea
         value={body}
         onChange={(event) => setBody(event.target.value.slice(0, MAX_BODY))}
-        placeholder="Write a short review (optional)"
-        rows={4}
+        placeholder="What did you think?"
+        rows={5}
         className="w-full resize-none rounded-xl border border-ink-700 bg-ink-850 px-4 py-3 text-[15px] text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none"
       />
 
@@ -91,11 +84,11 @@ export function ReviewSheet({ open, onClose, seriesId, seriesName, existing }: R
       <Button
         fullWidth
         className="mt-4"
-        disabled={rating === 0}
+        disabled={!body.trim()}
         loading={submit.isPending}
         onClick={handleSubmit}
       >
-        {existing ? "Update Review" : "Post Review"}
+        {existing?.body ? "Update Review" : "Post Review"}
       </Button>
     </Sheet>
   );

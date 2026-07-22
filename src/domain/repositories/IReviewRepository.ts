@@ -3,8 +3,7 @@ import type { Review } from "../entities/Review";
 
 export type SubmitReviewInput = {
   seriesId: string;
-  rating: number;
-  body?: string | null;
+  body: string;
   containsSpoilers?: boolean;
 };
 

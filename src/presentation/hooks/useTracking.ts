@@ -176,6 +176,20 @@ export function useToggleFavorite(seriesId: string | null) {
   });
 }
 
+export function useSetRating(seriesId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (rating: number | null) =>
+      container.usecases.setRating.execute(seriesId as string, rating),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracking(seriesId) });
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ratingSummary(seriesId) });
+    },
+  });
+}
+
 export function useBumpRewatch(seriesId: string | null) {
   const queryClient = useQueryClient();
 

@@ -14,7 +14,7 @@ type ReviewRow = {
   id: string;
   user_id: string;
   series_id: string;
-  rating: number;
+  rating: number | null;
   body: string | null;
   contains_spoilers: boolean;
   created_at: string;
@@ -27,7 +27,7 @@ function toReview(row: ReviewRow): Review {
     id: row.id,
     userId: row.user_id,
     seriesId: row.series_id,
-    rating: Number(row.rating),
+    rating: row.rating !== null ? Number(row.rating) : null,
     body: row.body,
     containsSpoilers: row.contains_spoilers,
     createdAt: row.created_at,
@@ -115,10 +115,9 @@ export class SupabaseReviewRepository implements IReviewRepository {
         {
           user_id: userId,
           series_id: input.seriesId,
-          rating: input.rating,
-          body: input.body ?? null,
+          body: input.body,
           contains_spoilers: input.containsSpoilers ?? false,
-        },
+        } as never,
         { onConflict: "user_id,series_id" }
       )
       .select(SELECT_WITH_AUTHOR)

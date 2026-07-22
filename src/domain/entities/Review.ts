@@ -2,7 +2,7 @@ export type Review = {
   id: string;
   userId: string;
   seriesId: string;
-  rating: number;
+  rating: number | null;
   body: string | null;
   containsSpoilers: boolean;
   createdAt: string;

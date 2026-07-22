@@ -107,7 +107,7 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
 
     const { data, error } = await supabase
       .from("user_series_status")
-      .select("id, user_id, series_id, status, is_favorite, rewatch_count, started_at, completed_at")
+      .select("*")
       .eq("user_id", userId)
       .eq("series_id", seriesId)
       .maybeSingle();
@@ -120,15 +120,18 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       return null;
     }
 
+    const row = data as unknown as Record<string, unknown>;
+
     return {
-      id: data.id,
-      userId: data.user_id,
-      seriesId: data.series_id,
-      status: data.status,
-      isFavorite: data.is_favorite,
-      rewatchCount: data.rewatch_count,
-      startedAt: data.started_at,
-      completedAt: data.completed_at,
+      id: row.id as string,
+      userId: row.user_id as string,
+      seriesId: row.series_id as string,
+      status: row.status as SeriesStatus,
+      isFavorite: row.is_favorite as boolean,
+      rewatchCount: (row.rewatch_count as number) ?? 0,
+      rating: (row.rating as number | null) ?? null,
+      startedAt: row.started_at as string | null,
+      completedAt: row.completed_at as string | null,
     };
   }
 
@@ -290,6 +293,17 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
 
     if (error) {
       throw new AppError("unknown", error.message, error);
+    }
+  }
+
+  async setRating(seriesId: string, rating: number | null): Promise<void> {
+    const { error } = await supabase.rpc("set_rating" as never, {
+      p_series_id: seriesId,
+      p_rating: rating,
+    } as never);
+
+    if (error) {
+      throw new AppError("unknown", (error as { message: string }).message, error);
     }
   }
 

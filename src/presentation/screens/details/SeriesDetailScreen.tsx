@@ -20,13 +20,14 @@ import { Sheet } from "@/presentation/components/ui/Sheet";
 import { FullScreenSpinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useCredits, useSeriesDetail } from "@/presentation/hooks/useDiscovery";
-import { useOwnReview, useRatingSummary, useSeriesReviews, useSubmitReview } from "@/presentation/hooks/useReviews";
+import { useOwnReview, useRatingSummary, useSeriesReviews } from "@/presentation/hooks/useReviews";
 import {
   useBumpRewatch,
   useLocalSeriesId,
   useRemoveFromLibrary,
   useSeasonProgress,
   useSeriesTracking,
+  useSetRating,
   useSetSeriesStatus,
   useToggleEpisode,
   useToggleFavorite,
@@ -78,7 +79,7 @@ export function SeriesDetailScreen() {
   const toggleSeason = useToggleSeason(seriesId ?? null);
   const toggleFavorite = useToggleFavorite(seriesId ?? null);
   const bumpRewatch = useBumpRewatch(seriesId ?? null);
-  const submitReview = useSubmitReview(seriesId ?? null);
+  const setRating = useSetRating(seriesId ?? null);
 
   if (isLoading || !detail) {
     return <FullScreenSpinner />;
@@ -203,18 +204,10 @@ export function SeriesDetailScreen() {
 
         {seriesId ? (
           <div className="mt-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <RatingInput
-                value={ownReview?.rating ?? 0}
-                onChange={(rating) =>
-                  submitReview.mutate({
-                    rating,
-                    body: ownReview?.body ?? null,
-                    containsSpoilers: ownReview?.containsSpoilers ?? false,
-                  })
-                }
-              />
-            </div>
+            <RatingInput
+              value={tracking?.rating ?? 0}
+              onChange={(rating) => setRating.mutate(rating || null)}
+            />
             <button
               type="button"
               onClick={() => setReviewSheetOpen(true)}
