@@ -857,3 +857,172 @@ describe("push subscriptions", () => {
     expect((other.rows[0] as { n: number }).n).toBe(0);
   });
 });
+
+describe("compare_libraries", () => {
+  let s1: string;
+  let s2: string;
+
+  async function seed(tmdbId: number, name: string): Promise<string> {
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{ id: string }>(`select public.upsert_series_from_tmdb($1::jsonb) as id`, [
+      JSON.stringify({ ...BREAKING_BAD, tmdb_id: tmdbId, name }),
+    ]);
+    await reset(db);
+    return r.rows[0].id;
+  }
+
+  beforeAll(async () => {
+    await db.exec(`delete from public.follows;`);
+    s1 = await seed(6001, "Shared Show");
+    s2 = await seed(6002, "Bob Only");
+    await db.query(`insert into public.follows (follower_id, following_id) values ($1, $2)`, [ALICE, BOB]);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating) values ($1, $2, 'watching', 4.0)
+       on conflict (user_id, series_id) do update set status = 'watching', rating = 4.0`,
+      [ALICE, s1]
+    );
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating) values ($1, $2, 'watched', 5.0)
+       on conflict (user_id, series_id) do update set status = 'watched', rating = 5.0`,
+      [BOB, s1]
+    );
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status) values ($1, $2, 'watching')
+       on conflict (user_id, series_id) do update set status = 'watching'`,
+      [BOB, s2]
+    );
+  });
+
+  it("returns the union of both libraries with each side's status and rating", async () => {
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{
+      tmdb_id: number;
+      my_status: string | null;
+      my_rating: string | null;
+      their_status: string | null;
+      their_rating: string | null;
+    }>(
+      `select tmdb_id, my_status, my_rating, their_status, their_rating from public.compare_libraries($1) order by tmdb_id`,
+      [BOB]
+    );
+    await reset(db);
+
+    const byId = new Map(r.rows.map((row) => [row.tmdb_id, row]));
+    expect(byId.get(6001)).toMatchObject({ my_status: "watching", their_status: "watched" });
+    expect(Number(byId.get(6001)!.my_rating)).toBe(4);
+    expect(Number(byId.get(6001)!.their_rating)).toBe(5);
+    expect(byId.get(6002)).toMatchObject({ my_status: null, their_status: "watching" });
+  });
+
+  it("refuses to compare with a user you don't follow", async () => {
+    await asAuthenticated(db, CAROL);
+    let rejected = false;
+    try {
+      await db.query(`select * from public.compare_libraries($1)`, [BOB]);
+    } catch {
+      rejected = true;
+    }
+    await reset(db);
+    expect(rejected).toBe(true);
+  });
+});
+
+describe("set_rating and review sync", () => {
+  let seriesId: string;
+
+  beforeAll(async () => {
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{ id: string }>(`select public.upsert_series_from_tmdb($1::jsonb) as id`, [
+      JSON.stringify({ ...BREAKING_BAD, tmdb_id: 6003, name: "Rating Sync Show" }),
+    ]);
+    seriesId = r.rows[0].id;
+    await db.query(`insert into public.user_series_status (user_id, series_id, status) values ($1, $2, 'watching')`, [
+      ALICE,
+      seriesId,
+    ]);
+    await reset(db);
+  });
+
+  afterEach(async () => {
+    await db.exec(`delete from public.reviews where series_id = '${seriesId}';`);
+  });
+
+  it("writes the rating onto the status row and the progress view", async () => {
+    await asAuthenticated(db, ALICE);
+    await db.query(`select public.set_rating($1, 4.5)`, [seriesId]);
+    const r = await db.query<{ user_rating: string }>(
+      `select user_rating from public.user_series_progress where user_id = $1 and series_id = $2`,
+      [ALICE, seriesId]
+    );
+    await reset(db);
+    expect(Number(r.rows[0].user_rating)).toBe(4.5);
+  });
+
+  it("refuses to rate a series not in the library", async () => {
+    await asAuthenticated(db, BOB);
+    let rejected = false;
+    try {
+      await db.query(`select public.set_rating($1, 3.0)`, [seriesId]);
+    } catch {
+      rejected = true;
+    }
+    await reset(db);
+    expect(rejected).toBe(true);
+  });
+
+  it("back-fills a new review's rating from the status rating", async () => {
+    await asAuthenticated(db, ALICE);
+    await db.query(`select public.set_rating($1, 4.0)`, [seriesId]);
+    await db.query(`insert into public.reviews (user_id, series_id, body) values ($1, $2, 'Great show')`, [
+      ALICE,
+      seriesId,
+    ]);
+    const r = await db.query<{ rating: string | null }>(
+      `select rating from public.reviews where user_id = $1 and series_id = $2`,
+      [ALICE, seriesId]
+    );
+    await reset(db);
+    expect(Number(r.rows[0].rating)).toBe(4);
+  });
+
+  it("syncs a later rating change onto an existing review", async () => {
+    await asAuthenticated(db, ALICE);
+    await db.query(`select public.set_rating($1, 4.0)`, [seriesId]);
+    await db.query(`insert into public.reviews (user_id, series_id, body) values ($1, $2, 'Great')`, [ALICE, seriesId]);
+    await db.query(`select public.set_rating($1, 2.5)`, [seriesId]);
+    const r = await db.query<{ rating: string }>(
+      `select rating from public.reviews where user_id = $1 and series_id = $2`,
+      [ALICE, seriesId]
+    );
+    await reset(db);
+    expect(Number(r.rows[0].rating)).toBe(2.5);
+  });
+});
+
+describe("new_episode notifications", () => {
+  it("delivers a system notification with no actor and the episode number", async () => {
+    const seriesId = await seedSeries();
+    await db.query(
+      `insert into public.notifications (user_id, type, series_id, season_number, episode_number)
+       values ($1, 'new_episode', $2, 2, 5)`,
+      [ALICE, seriesId]
+    );
+
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{
+      type: string;
+      actor_id: string | null;
+      season_number: number;
+      episode_number: number;
+      series_name: string | null;
+    }>(
+      `select type, actor_id, season_number, episode_number, series_name
+       from public.get_notifications(50) where type = 'new_episode'`
+    );
+    await reset(db);
+
+    expect(r.rows).toHaveLength(1);
+    expect(r.rows[0]).toMatchObject({ type: "new_episode", actor_id: null, season_number: 2, episode_number: 5 });
+    expect(r.rows[0].series_name).toBeTruthy();
+  });
+});
