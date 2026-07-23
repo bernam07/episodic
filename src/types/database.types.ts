@@ -345,6 +345,7 @@ export type Database = {
           aired_episodes: number
           backdrop_path: string | null
           created_at: string
+          episode_runtime: number
           first_air_date: string | null
           genres: string[]
           id: string
@@ -365,6 +366,7 @@ export type Database = {
           aired_episodes?: number
           backdrop_path?: string | null
           created_at?: string
+          episode_runtime?: number
           first_air_date?: string | null
           genres?: string[]
           id?: string
@@ -385,6 +387,7 @@ export type Database = {
           aired_episodes?: number
           backdrop_path?: string | null
           created_at?: string
+          episode_runtime?: number
           first_air_date?: string | null
           genres?: string[]
           id?: string
@@ -467,6 +470,7 @@ export type Database = {
           aired_episodes: number | null
           backdrop_path: string | null
           completed_at: string | null
+          episode_runtime: number | null
           genres: string[] | null
           is_favorite: boolean | null
           name: string | null

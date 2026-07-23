@@ -1,11 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQueries } from "@tanstack/react-query";
 import { computeLibraryStats } from "@/domain/entities/LibraryStats";
 import { ListsSection } from "@/presentation/components/lists/ListsSection";
 import { SERIES_STATUS_LABELS, SERIES_STATUSES, type SeriesStatus } from "@/domain/entities/SeriesStatus";
-import { queryKeys } from "@/presentation/hooks/queryKeys";
-import { container } from "@/presentation/di/container";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { RatingBadge, WatchedBadge } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
@@ -182,38 +179,15 @@ function formatWatchTime(minutes: number): { value: string; unit: string } {
 function WatchTime() {
   const { data: library } = useLibrary();
 
-  const watchedSeries = useMemo(
-    () => (library ?? []).filter((item) => item.watchedEpisodes > 0),
-    [library]
-  );
-
-  const detailQueries = useQueries({
-    queries: watchedSeries.map((item) => ({
-      queryKey: queryKeys.seriesDetail(item.tmdbId),
-      queryFn: () => container.usecases.getSeriesDetail.execute(item.tmdbId),
-      staleTime: 1000 * 60 * 60 * 12,
-    })),
-  });
-
-  const allLoaded = detailQueries.every((q) => q.data || q.error);
   const totalMinutes = useMemo(() => {
-    if (!allLoaded) return 0;
     let total = 0;
-    for (let i = 0; i < watchedSeries.length; i++) {
-      const detail = detailQueries[i]?.data;
-      if (!detail) continue;
-      const runtimes = detail.episodeRunTime ?? [];
-      const avgRuntime = runtimes.length > 0
-        ? runtimes.reduce((a, b) => a + b, 0) / runtimes.length
-        : 0;
-      if (avgRuntime > 0) {
-        total += watchedSeries[i].watchedEpisodes * avgRuntime;
-      }
+    for (const item of library ?? []) {
+      total += item.watchedEpisodes * item.episodeRuntime;
     }
-    return Math.round(total);
-  }, [allLoaded, watchedSeries, detailQueries]);
+    return total;
+  }, [library]);
 
-  if (watchedSeries.length === 0 || !allLoaded || totalMinutes === 0) return null;
+  if (totalMinutes === 0) return null;
 
   const formatted = formatWatchTime(totalMinutes);
 

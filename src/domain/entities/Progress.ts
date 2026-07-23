@@ -12,6 +12,7 @@ export type SeriesProgress = {
   numberOfSeasons: number;
   numberOfEpisodes: number;
   airedEpisodes: number;
+  episodeRuntime: number;
   genres: string[];
   watchedEpisodes: number;
   remainingEpisodes: number;
