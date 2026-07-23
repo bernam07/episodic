@@ -1,0 +1,19 @@
+name: episode-check
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger new-episode notifications
+        run: |
+          curl -fsS -X POST "$SUPABASE_URL/functions/v1/notify-new-episodes" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -H "Content-Type: application/json"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

@@ -165,28 +165,34 @@ export type Database = {
       }
       notifications: {
         Row: {
-          actor_id: string
+          actor_id: string | null
           created_at: string
+          episode_number: number | null
           id: string
           read: boolean
+          season_number: number | null
           series_id: string | null
           type: Database["public"]["Enums"]["notification_type"]
           user_id: string
         }
         Insert: {
-          actor_id: string
+          actor_id?: string | null
           created_at?: string
+          episode_number?: number | null
           id?: string
           read?: boolean
+          season_number?: number | null
           series_id?: string | null
           type: Database["public"]["Enums"]["notification_type"]
           user_id: string
         }
         Update: {
-          actor_id?: string
+          actor_id?: string | null
           created_at?: string
+          episode_number?: number | null
           id?: string
           read?: boolean
+          season_number?: number | null
           series_id?: string | null
           type?: Database["public"]["Enums"]["notification_type"]
           user_id?: string
@@ -627,8 +633,10 @@ export type Database = {
           actor_id: string
           actor_username: string
           created_at: string
+          episode_number: number
           id: string
           read: boolean
+          season_number: number
           series_id: string
           series_name: string
           series_poster_path: string
@@ -776,7 +784,7 @@ export type Database = {
       username_available: { Args: { p_username: string }; Returns: boolean }
     }
     Enums: {
-      notification_type: "follow" | "review"
+      notification_type: "follow" | "review" | "new_episode"
       series_watch_status:
         | "want_to_watch"
         | "watching"
@@ -909,7 +917,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      notification_type: ["follow", "review"],
+      notification_type: ["follow", "review", "new_episode"],
       series_watch_status: [
         "want_to_watch",
         "watching",

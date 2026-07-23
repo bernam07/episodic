@@ -431,6 +431,8 @@ screenshot before believing a red result.
 | `…140000_push_subscriptions` (2026-07-19) | `push_subscriptions` table (endpoint-unique) + own-only RLS for Web Push |
 | `…150000_rewatch_count` (2026-07-19) | `user_series_status.rewatch_count`, `rewatch_count` added to `user_series_progress` view, `bump_rewatch(series_id, delta)` RPC (clamps ≥ 0) |
 | `…160000_user_favorites` (2026-07-19) | `get_user_favorites(user_id)` RPC — favorites for a profile without the 60-row library truncation |
+| `…090000_new_episode_type` (2026-07-24) | adds `'new_episode'` to the `notification_type` enum (isolated so the value commits before use) |
+| `…091000_new_episode_notifications` (2026-07-24) | `notifications.actor_id` nullable + `season_number`/`episode_number` columns; `get_notifications` left-joins the actor (system notifications have none) and returns the episode |
 
 ## Edge Functions
 
@@ -439,6 +441,17 @@ screenshot before believing a red result.
 | `tmdb` | `true` | `/search?q=`, `/trending`, `/genres`, `/discover?genre=`, `/series/:id`, `/series/:id/recommendations`, `/series/:id/season/:n`, `/series/:id/credits` |
 | `auth-login` | **`false`** | `POST` `{ identifier, password }` → `{ access_token, refresh_token }` |
 | `push` | `true` | `POST` `{ type: "follow", followingId }` or `{ type: "review", seriesId }` → sends Web Push to recipients |
+| `notify-new-episodes` | **`false`** | `POST` (guarded by `x-cron-secret`) → for every *watching* series checks TMDB for newly-aired episodes, updates `series.aired_episodes`, and notifies watchers (in-app + Web Push) |
+
+**New-episode notifications (scheduled).** No `pg_cron`/`pg_net` (keeps the zero-extensions rule) —
+a **GitHub Actions** cron (`.github/workflows/episode-check.yml`, every 12h + manual dispatch) POSTs the
+`notify-new-episodes` function with the `x-cron-secret` header. The function diffs each watching series'
+TMDB `last_episode_to_air`-derived aired count against the stored `series.aired_episodes`; on an increase
+it updates the row (the stored count is the **dedup marker**) and inserts a `new_episode` notification +
+Web Push for each watcher. First-time computation from a `0` baseline updates silently (no false "new
+episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo secrets `SUPABASE_URL` +
+`CRON_SECRET` must be added for the workflow to run. Notifications with no actor render the series poster
+(not an avatar) in the bell sheet.
 
 **Web Push.** VAPID-signed browser push, additive to the in-app `notifications` bell. Pieces:
 - **Keys**: VAPID keypair. Public key is **not secret** — lives in `VITE_VAPID_PUBLIC_KEY` (committed in

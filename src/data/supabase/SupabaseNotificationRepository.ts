@@ -24,6 +24,8 @@ export class SupabaseNotificationRepository implements INotificationRepository {
       seriesTmdbId: row.series_tmdb_id,
       seriesName: row.series_name,
       seriesPosterPath: row.series_poster_path,
+      seasonNumber: row.season_number,
+      episodeNumber: row.episode_number,
     }));
   }
 

@@ -48,3 +48,6 @@ verify_jwt = false
 
 [functions.push]
 verify_jwt = true
+
+[functions.notify-new-episodes]
+verify_jwt = false
