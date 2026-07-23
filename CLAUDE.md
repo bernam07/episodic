@@ -192,10 +192,21 @@ a list — never added to any library — would otherwise have no `series` row; 
 `ignoreDuplicates` so re-adding is a no-op. Lists show as a grid on profiles (own + others' public),
 open at `/list/:id`, and series are added from the detail screen's `AddToListSheet`.
 
-**Community rating summary.** `get_series_rating_summary(series_id)` returns grouped
-`(rating, count)` buckets; `summarizeRatings` (pure) expands them to the full 10 half-star buckets +
-weighted average + total, rendered as a histogram on the series page. It's `security invoker` and
-safe because `reviews` is `select_all` — the aggregate exposes nothing the client couldn't already read.
+**Ratings are decoupled from reviews.** A rating is a lightweight star action stored on
+`user_series_status.rating` (set via the `set_rating` RPC — own-row only, refuses a series not in your
+library); a **review** is a separate text post (`reviews.body` required, non-empty). Ratings are
+deliberately **silent** — rating something creates **no** activity/feed event; only a written review
+surfaces, as a `reviewed` event (text, no stars). Two triggers keep `reviews.rating` a synced *display
+copy* of `user_series_status.rating` (`fill_review_rating` on review insert, `sync_rating_to_review` on
+a later rating change), so a review can show its author's stars without re-entry — but the source of
+truth is `user_series_status.rating`. The star badge (`RatingBadge`) is overlaid on posters everywhere
+via a `useMyRatings()` (tmdbId→rating) lookup; watched-but-unrated series get a `WatchedBadge` check
+(`useMyWatched()`) — a "seen it" cue across Home, Search and favorites.
+
+**Community rating summary.** `get_series_rating_summary(series_id)` returns grouped `(rating, count)`
+buckets from `user_series_status.rating` (so it captures ratings even without a review); `summarizeRatings`
+(pure) expands them to the full 10 half-star buckets + weighted average + total, rendered as a histogram
+on the series page. `security definer`, aggregate-only — exposes nothing per-user.
 
 **Onboarding is add-series-only** (no "follow people" step — deliberately cut). `profiles.onboarded`
 gates it; existing rows were backfilled `true`, so only new signups see it. `OnboardingGate` (a
@@ -364,11 +375,11 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 107 tests:
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 111 tests:
 - `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
   validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
   (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
-- `tests/schema.test.ts` — the schema/RLS/social/notification/delete/hardening/up-next/activity-feed/ratings/lists checks against real
+- `tests/schema.test.ts` — the schema/RLS/social/notification/delete/hardening/up-next/activity-feed/ratings/lists/rewatch/favorites/push/compare-libraries/set-rating+review-sync/new-episode checks against real
   Postgres via **PGlite**, using the shared harness in `tests/support/pglite.ts` (`createMigratedDb`
   applies all migrations under the shim). Runs in CI — no browser, no live backend.
 
@@ -431,8 +442,14 @@ screenshot before believing a red result.
 | `…140000_push_subscriptions` (2026-07-19) | `push_subscriptions` table (endpoint-unique) + own-only RLS for Web Push |
 | `…150000_rewatch_count` (2026-07-19) | `user_series_status.rewatch_count`, `rewatch_count` added to `user_series_progress` view, `bump_rewatch(series_id, delta)` RPC (clamps ≥ 0) |
 | `…160000_user_favorites` (2026-07-19) | `get_user_favorites(user_id)` RPC — favorites for a profile without the 60-row library truncation |
+| `…090000_genres_calendar_compare` (2026-07-21) | `genres` + `aired_episodes` added to the `user_series_progress` view; `compare_libraries(other_user_id)` RPC (`security definer`, follow-gated) |
+| `…090000_decouple_rating_from_reviews` (2026-07-22) | `user_series_status.rating` (backfilled from reviews), `reviews.rating` nullable, view uses `uss.rating`, `set_rating` RPC, `compare_libraries` + `get_series_rating_summary` read `uss.rating` |
+| `…100000_silent_ratings` (2026-07-22) | `get_user_library` reads `uss.rating`; `_activity_events` `rated`→`reviewed` (text-only, ratings silent in the feed) |
+| `…090000_review_rating_sync` (2026-07-23) | `fill_review_rating` / `sync_rating_to_review` triggers keep `reviews.rating` in sync with `uss.rating`; `notify_on_review` fires only when body is non-empty |
+| `…100000_favorites_rating` (2026-07-23) | `get_user_favorites` returns `uss.rating` (ratings show on other profiles' favorites) |
 | `…090000_new_episode_type` (2026-07-24) | adds `'new_episode'` to the `notification_type` enum (isolated so the value commits before use) |
 | `…091000_new_episode_notifications` (2026-07-24) | `notifications.actor_id` nullable + `season_number`/`episode_number` columns; `get_notifications` left-joins the actor (system notifications have none) and returns the episode |
+| `…100000_series_runtime` (2026-07-24) | `series.episode_runtime` (avg, stored by `upsert_series_from_tmdb`, exposed on the view) so profile watch-time sums from the library with zero TMDB calls |
 
 ## Edge Functions
 
@@ -476,8 +493,9 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
 
 ## Key UI features
 
-- **Auth landing page**: Poster-wall backdrop from trending series, feature highlights, auth form.
-  Two-column layout on desktop (poster wall left, form right).
+- **Auth landing page**: slowly drifting poster-wall backdrop from trending series, feature
+  highlights, and the form. Two-column on desktop; segmented Sign in / Sign up control, forgot-password
+  as its own mode, icon-prefixed fields, and a password show/hide toggle.
 - **Episode detail**: Tap any episode row → bottom sheet with still image, formatted air date,
   runtime, TMDB rating, full description, mark-watched toggle.
 - **Cast rail**: Horizontal scroll of circular actor photos + name + character on series detail.
@@ -497,6 +515,17 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   action), list detail at `/list/:id` (owner can manage/remove/edit/delete), and an "Add to list"
   sheet on the series detail screen. See Data model for the privacy + caching rules.
 - **Community ratings**: a half-star histogram (average + total) on the series page, above reviews.
+- **Rewatch counter**: +/− stepper on the series page; "Rewatched" Library filter (see Data model).
+- **Seen-it cues**: your rating star / a watched checkmark overlaid on posters across Home, Search and
+  favorites (`useMyRatings` / `useMyWatched`); ratings and reviews are decoupled (see Data model).
+- **Compare libraries**: from a followed user's profile, `compare_libraries` shows the union of both
+  libraries with each side's status + rating (`ComparisonSheet`).
+- **Calendar**: `/calendar` — upcoming episodes of your Watching / Want-to-Watch series, grouped by day,
+  with a **Week / Month** toggle and prev/next navigation (enumerates the airing season, not just the
+  next episode).
+- **Watch time**: profile stat summed from `series.episode_runtime` × watched episodes (no TMDB calls).
+- **New-episode alerts**: scheduled push + in-app notification when a Watching series airs a new episode
+  (see Edge Functions / notify-new-episodes).
 - **Onboarding**: first-run, add-series-only poster picker for new signups (`OnboardingScreen`).
 - **Notifications**: Bell on the home header with an unread badge, opening `NotificationSheet`
   (follow + review activity). Marked read on open.
