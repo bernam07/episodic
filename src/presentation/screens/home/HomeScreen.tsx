@@ -6,11 +6,21 @@ import { releaseYear, type SeriesSummary } from "@/domain/entities/Series";
 import { NotificationSheet } from "@/presentation/components/notifications/NotificationSheet";
 import { RatingBadge, WatchedBadge } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
+import { ActivityRow } from "@/presentation/components/social/ActivityRow";
 import { Spinner } from "@/presentation/components/ui/Spinner";
+import { useFriendsFeed } from "@/presentation/hooks/useActivity";
 import { useRecommendations, useTrending } from "@/presentation/hooks/useDiscovery";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useUnreadCount } from "@/presentation/hooks/useNotifications";
 import { useLibrary, useMarkUpNext, useMyRatings, useMyWatched, useUpNext } from "@/presentation/hooks/useTracking";
+
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 6) return "Late night";
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
 function Hero({ series }: { series: SeriesSummary }) {
   const backdrop = backdropUrl(series.backdropPath, "w1280");
@@ -109,17 +119,41 @@ function UpNextRail() {
   );
 }
 
+function FriendsRail() {
+  const { data } = useFriendsFeed();
+
+  if (!data || data.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="mt-7">
+      <div className="mb-2 flex items-center justify-between px-5">
+        <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">From Friends</h2>
+        <Link to="/friends" className="tap-none text-[12px] font-semibold text-accent-400 active:text-accent-300">
+          See all
+        </Link>
+      </div>
+      <ul className="divide-y divide-ink-800 px-5">
+        {data.slice(0, 4).map((event) => (
+          <ActivityRow key={`${event.actorId}-${event.eventType}-${event.seriesId}-${event.occurredAt}`} event={event} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function RecommendationsRail() {
   const { data: library } = useLibrary();
 
-  const seedTmdbId = useMemo(() => {
+  const seed = useMemo(() => {
     if (!library || library.length === 0) return null;
-    const watching = library.filter((item) => item.status === "watching" || item.status === "watched");
-    const pool = watching.length > 0 ? watching : library;
-    return pool[Math.floor(Math.random() * pool.length)].tmdbId;
+    const watched = library.filter((item) => item.status === "watching" || item.status === "watched");
+    const pool = watched.length > 0 ? watched : library;
+    return pool[Math.floor(Math.random() * pool.length)];
   }, [library]);
 
-  const { data: recs } = useRecommendations(seedTmdbId);
+  const { data: recs } = useRecommendations(seed?.tmdbId ?? null);
 
   const inLibrary = useMemo(() => new Set((library ?? []).map((item) => item.tmdbId)), [library]);
   const suggestions = useMemo(
@@ -133,8 +167,8 @@ function RecommendationsRail() {
 
   return (
     <section className="mt-7">
-      <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-        Recommended for You
+      <h2 className="mb-3 truncate px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+        {seed ? `Because you watched ${seed.name}` : "Recommended for You"}
       </h2>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
         {suggestions.map((item) => (
@@ -205,7 +239,7 @@ export function HomeScreen() {
       <header className="flex items-start justify-between px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-4">
         <div>
           <p className="text-[13px] text-mist-400">
-            {profile ? `Welcome back, ${profile.displayName || profile.username}` : "Welcome"}
+            {profile ? `${greeting()}, ${profile.displayName || profile.username}` : greeting()}
           </p>
           <h1 className="text-[28px] font-bold tracking-tight text-mist-100">Episodic</h1>
         </div>
@@ -246,6 +280,7 @@ export function HomeScreen() {
       ) : null}
 
       <UpNextRail />
+      <FriendsRail />
       <RecommendationsRail />
       <TrendingRail />
 
