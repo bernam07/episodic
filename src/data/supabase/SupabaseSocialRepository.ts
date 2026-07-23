@@ -143,7 +143,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
       posterPath: row.poster_path,
       status: row.status,
       isFavorite: true,
-      rating: null,
+      rating: row.rating === null ? null : Number(row.rating),
       updatedAt: row.updated_at,
     }));
   }

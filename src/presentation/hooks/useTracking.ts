@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import type { Episode } from "@/domain/entities/Episode";
 import type { SeriesDetail } from "@/domain/entities/Series";
 import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
@@ -11,6 +12,20 @@ export function useLibrary(status?: SeriesStatus) {
     queryFn: () => container.usecases.getLibrary.execute(status),
     staleTime: 1000 * 30,
   });
+}
+
+export function useMyRatings(): Map<number, number> {
+  const { data } = useLibrary();
+
+  return useMemo(() => {
+    const map = new Map<number, number>();
+    for (const item of data ?? []) {
+      if (item.userRating !== null) {
+        map.set(item.tmdbId, item.userRating);
+      }
+    }
+    return map;
+  }, [data]);
 }
 
 export function useContinueWatching() {

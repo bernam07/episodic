@@ -4,12 +4,13 @@ import { backdropUrl } from "@/data/tmdb/images";
 import type { UpNextItem } from "@/domain/entities/Progress";
 import { releaseYear, type SeriesSummary } from "@/domain/entities/Series";
 import { NotificationSheet } from "@/presentation/components/notifications/NotificationSheet";
+import { RatingBadge } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useRecommendations, useTrending } from "@/presentation/hooks/useDiscovery";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useUnreadCount } from "@/presentation/hooks/useNotifications";
-import { useLibrary, useMarkUpNext, useUpNext } from "@/presentation/hooks/useTracking";
+import { useLibrary, useMarkUpNext, useMyRatings, useUpNext } from "@/presentation/hooks/useTracking";
 
 function Hero({ series }: { series: SeriesSummary }) {
   const backdrop = backdropUrl(series.backdropPath, "w1280");
@@ -35,13 +36,16 @@ function Hero({ series }: { series: SeriesSummary }) {
   );
 }
 
-function UpNextCard({ item }: { item: UpNextItem }) {
+function UpNextCard({ item, rating }: { item: UpNextItem; rating: number | null }) {
   const mark = useMarkUpNext();
 
   return (
     <div className="w-[132px] shrink-0">
       <Link to={`/series/${item.tmdbId}`} className="tap-none block active:opacity-70">
-        <SeriesPoster path={item.posterPath} alt={item.name} />
+        <div className="relative">
+          <SeriesPoster path={item.posterPath} alt={item.name} />
+          {rating ? <RatingBadge value={rating} /> : null}
+        </div>
         <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
       </Link>
       <div className="mt-1 flex items-center justify-between gap-2">
@@ -77,6 +81,7 @@ function UpNextCard({ item }: { item: UpNextItem }) {
 
 function UpNextRail() {
   const { data, isLoading } = useUpNext();
+  const ratings = useMyRatings();
 
   if (isLoading) {
     return (
@@ -97,7 +102,7 @@ function UpNextRail() {
       </h2>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
         {data.map((item) => (
-          <UpNextCard key={item.seriesId} item={item} />
+          <UpNextCard key={item.seriesId} item={item} rating={ratings.get(item.tmdbId) ?? null} />
         ))}
       </div>
     </section>
@@ -152,6 +157,7 @@ function RecommendationsRail() {
 
 function TrendingRail() {
   const { data } = useTrending();
+  const ratings = useMyRatings();
   const items = (data?.results ?? []).slice(1, 16);
 
   if (items.length === 0) return null;
@@ -162,19 +168,25 @@ function TrendingRail() {
         Trending This Week
       </h2>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
-        {items.map((item) => (
+        {items.map((item) => {
+          const rating = ratings.get(item.tmdbId) ?? null;
+          return (
           <Link
             key={item.tmdbId}
             to={`/series/${item.tmdbId}`}
             className="tap-none w-[132px] shrink-0 active:opacity-70"
           >
-            <SeriesPoster path={item.posterPath} alt={item.name} />
+            <div className="relative">
+              <SeriesPoster path={item.posterPath} alt={item.name} />
+              {rating ? <RatingBadge value={rating} /> : null}
+            </div>
             <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
             {item.firstAirDate ? (
               <p className="mt-0.5 text-[11px] text-mist-400">{releaseYear(item)}</p>
             ) : null}
           </Link>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

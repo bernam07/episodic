@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -707,6 +707,7 @@ export type Database = {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
           poster_path: string
+          rating: number
           series_id: string
           series_name: string
           status: Database["public"]["Enums"]["series_watch_status"]
