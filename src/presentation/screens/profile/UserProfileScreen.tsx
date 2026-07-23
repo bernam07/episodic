@@ -171,6 +171,7 @@ export function UserProfileScreen() {
                     name={item.seriesName}
                     posterPath={item.posterPath}
                     status={item.status}
+                    rating={item.rating}
                   />
                 ))}
               </div>
@@ -205,7 +206,7 @@ export function UserProfileScreen() {
                     name={item.seriesName}
                     posterPath={item.posterPath}
                     status={item.status}
-                    caption={item.rating !== null ? `Rated ${item.rating.toFixed(1)}` : undefined}
+                    rating={item.rating}
                   />
                 ))}
               </div>

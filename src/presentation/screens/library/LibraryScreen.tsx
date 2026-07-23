@@ -187,6 +187,7 @@ export function LibraryScreen() {
                       status={item.status}
                       caption={`${item.watchedEpisodes}/${item.numberOfEpisodes} episodes`}
                       progressPercent={item.progressPercent}
+                      rating={item.userRating}
                     />
                   ))}
                 </div>

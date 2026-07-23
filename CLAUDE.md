@@ -17,19 +17,21 @@ cd episodic
 npm install
 ```
 
-**`.env.local` is gitignored and is NOT in this repo.** You must recreate it:
+**`.env.local` is gitignored and is NOT in this repo.** Create it manually:
 
-```bash
-cp .env.example .env.local
+```
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<anon key from dashboard>
+VITE_VAPID_PUBLIC_KEY=BDWCO0WiZD14NUtDyIqXja41lvPPenkt-S74SSkBGo1eF_xC_nAuiGIJQQg0Iv8ziK5UhvSQqVWl41-fV6I0CZc
 ```
 
-Fill it from **Supabase dashboard → Project Settings → API**:
+Fill the first two from **Supabase dashboard → Project Settings → API**:
 
 | Variable | Where |
 |---|---|
 | `VITE_SUPABASE_URL` | Project URL |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Publishable (anon) key |
-| `VITE_VAPID_PUBLIC_KEY` | Web Push public key — not secret; the real value is in `.env.example` |
+| `VITE_VAPID_PUBLIC_KEY` | Web Push public key — not secret; the value above is the real one |
 
 The publishable key is safe in the client — RLS is what protects data. **Never** put the
 Supabase secret key or the TMDB key in a `VITE_*` variable; anything so prefixed is inlined
@@ -159,7 +161,7 @@ hundreds of `episode_tracking` rows all stamped `now()`). The `_activity_events`
 event types and *collapses the noise*:
 - **started** — `user_series_status.started_at`
 - **finished** — `user_series_status.completed_at`
-- **rated** — `reviews` (carries rating + body)
+- **reviewed** — `reviews` (carries body text; only fires when body is non-empty)
 - **progress** — `episode_tracking` **grouped by (user, series, day)** → "watched N episodes of X",
   so a week of Up Next one-taps is one line, not seven.
 
@@ -440,7 +442,7 @@ screenshot before believing a red result.
 
 **Web Push.** VAPID-signed browser push, additive to the in-app `notifications` bell. Pieces:
 - **Keys**: VAPID keypair. Public key is **not secret** — lives in `VITE_VAPID_PUBLIC_KEY` (committed in
-  `.env.example`, inlined via `vite.config.ts` `define`, read by `env.vapidPublicKey`). Private key +
+  `.env.local`, inlined via `vite.config.ts` `define`, read by `env.vapidPublicKey`). Private key +
   subject are Supabase **secrets** (`VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) used only in the edge function.
 - **Subscriptions**: `push_subscriptions` (endpoint-unique, own-only RLS). The client subscribes via the
   service worker's `pushManager`, then upserts the subscription; the edge function reads all recipients'
@@ -476,7 +478,7 @@ screenshot before believing a red result.
 - **Up Next**: Home rail showing the next unwatched aired episode of each *watching* series
   (`get_up_next`), with a one-tap check-off that advances to the following episode.
 - **Activity feed / Diary**: the **Friends** tab is a chronological milestone feed of the people you
-  follow (started / finished / rated / "watched N episodes of"); profiles show the same events as a
+  follow (started / finished / reviewed / "watched N episodes of"); profiles show the same events as a
   "Recent Activity" diary (own + follow-gated others). Backfills collapse to one line — see Data model.
 - **Lists**: custom public/private collections. "Lists" section on every profile (own has a New-list
   action), list detail at `/list/:id` (owner can manage/remove/edit/delete), and an "Add to list"

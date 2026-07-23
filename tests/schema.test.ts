@@ -346,7 +346,7 @@ describe("notifications", () => {
 
   it("a review notifies each follower", async () => {
     await asAuthenticated(db, BOB);
-    await db.query(`insert into public.reviews (user_id, series_id, rating) values ($1, $2, 4.5)`, [
+    await db.query(`insert into public.reviews (user_id, series_id, rating, body) values ($1, $2, 4.5, 'Great show')`, [
       BOB,
       seriesId,
     ]);

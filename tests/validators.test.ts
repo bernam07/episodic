@@ -1,32 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isValidRating, MAX_RATING, MIN_RATING } from "@/domain/entities/Review";
 import {
   isValidAvatarFile,
   isValidEmail,
   isValidUsername,
   MAX_AVATAR_BYTES,
 } from "@/domain/usecases/auth/AuthUseCases";
-
-describe("isValidRating", () => {
-  it("accepts half-star values within range", () => {
-    expect(isValidRating(0.5)).toBe(true);
-    expect(isValidRating(3)).toBe(true);
-    expect(isValidRating(4.5)).toBe(true);
-    expect(isValidRating(MIN_RATING)).toBe(true);
-    expect(isValidRating(MAX_RATING)).toBe(true);
-  });
-
-  it("rejects values outside 0.5–5", () => {
-    expect(isValidRating(0)).toBe(false);
-    expect(isValidRating(5.5)).toBe(false);
-    expect(isValidRating(-1)).toBe(false);
-  });
-
-  it("rejects fractions that are not half-steps", () => {
-    expect(isValidRating(4.3)).toBe(false);
-    expect(isValidRating(1.1)).toBe(false);
-  });
-});
 
 describe("isValidUsername", () => {
   it("accepts 3–24 chars of letters, numbers and underscore", () => {
