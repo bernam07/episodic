@@ -28,6 +28,20 @@ export function useMyRatings(): Map<number, number> {
   }, [data]);
 }
 
+export function useMyWatched(): Set<number> {
+  const { data } = useLibrary();
+
+  return useMemo(() => {
+    const set = new Set<number>();
+    for (const item of data ?? []) {
+      if (item.status === "watched") {
+        set.add(item.tmdbId);
+      }
+    }
+    return set;
+  }, [data]);
+}
+
 export function useContinueWatching() {
   return useQuery({
     queryKey: queryKeys.continueWatching,

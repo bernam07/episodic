@@ -4,7 +4,7 @@ import { releaseYear } from "@/domain/entities/Series";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { FollowButton } from "@/presentation/components/social/FollowButton";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
-import { useMyRatings } from "@/presentation/hooks/useTracking";
+import { useMyRatings, useMyWatched } from "@/presentation/hooks/useTracking";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useGenres, useInfiniteDiscover, useSearchSeries } from "@/presentation/hooks/useDiscovery";
 import { useInfiniteScroll } from "@/presentation/hooks/useInfiniteScroll";
@@ -30,6 +30,7 @@ function GenreRecommendations() {
   const genreParam = searchParams.get("genre");
   const genreId = genreParam ? Number(genreParam) : null;
   const ratings = useMyRatings();
+  const watched = useMyWatched();
   const { data: genres, isLoading: genresLoading } = useGenres();
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
     useInfiniteDiscover(genreId);
@@ -105,6 +106,7 @@ function GenreRecommendations() {
               posterPath={series.posterPath}
               year={releaseYear(series)}
               rating={ratings.get(series.tmdbId) ?? null}
+              watched={watched.has(series.tmdbId)}
             />
           ))}
         </div>
@@ -179,6 +181,7 @@ function UserResults({ query }: { query: string }) {
 function SeriesResults({ query }: { query: string }) {
   const { data, isFetching } = useSearchSeries(query);
   const ratings = useMyRatings();
+  const watched = useMyWatched();
 
   if (query.trim().length < 2) {
     return <GenreRecommendations />;
@@ -208,6 +211,7 @@ function SeriesResults({ query }: { query: string }) {
           posterPath={series.posterPath}
           year={releaseYear(series)}
           rating={ratings.get(series.tmdbId) ?? null}
+          watched={watched.has(series.tmdbId)}
         />
       ))}
     </div>

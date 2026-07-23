@@ -5,6 +5,19 @@ import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
 import { SeriesPoster } from "./SeriesPoster";
 import { StatusBadge } from "./StatusBadge";
 
+export function WatchedBadge() {
+  return (
+    <span
+      className="absolute right-1.5 bottom-1.5 flex size-5 items-center justify-center rounded-full bg-emerald-500/90 backdrop-blur-sm"
+      aria-label="Watched"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" className="size-3">
+        <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
 export function RatingBadge({ value }: { value: number }) {
   const gradientId = useId();
   return (
@@ -35,6 +48,7 @@ type SeriesCardProps = {
   caption?: string;
   status?: SeriesStatus;
   rating?: number | null;
+  watched?: boolean;
 };
 
 export function SeriesCard({
@@ -46,6 +60,7 @@ export function SeriesCard({
   caption,
   status,
   rating,
+  watched,
 }: SeriesCardProps) {
   return (
     <Link to={`/series/${tmdbId}`} className="tap-none block active:opacity-70">
@@ -54,7 +69,7 @@ export function SeriesCard({
         {status ? (
           <StatusBadge status={status} className="absolute top-1.5 left-1.5 backdrop-blur-sm" />
         ) : null}
-        {rating ? <RatingBadge value={rating} /> : null}
+        {rating ? <RatingBadge value={rating} /> : watched && !status ? <WatchedBadge /> : null}
       </div>
       <div className="mt-2 px-0.5">
         <p className="truncate text-[13px] font-semibold text-mist-100">{name}</p>

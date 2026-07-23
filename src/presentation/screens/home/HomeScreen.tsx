@@ -4,13 +4,13 @@ import { backdropUrl } from "@/data/tmdb/images";
 import type { UpNextItem } from "@/domain/entities/Progress";
 import { releaseYear, type SeriesSummary } from "@/domain/entities/Series";
 import { NotificationSheet } from "@/presentation/components/notifications/NotificationSheet";
-import { RatingBadge } from "@/presentation/components/series/SeriesCard";
+import { RatingBadge, WatchedBadge } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useRecommendations, useTrending } from "@/presentation/hooks/useDiscovery";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useUnreadCount } from "@/presentation/hooks/useNotifications";
-import { useLibrary, useMarkUpNext, useMyRatings, useUpNext } from "@/presentation/hooks/useTracking";
+import { useLibrary, useMarkUpNext, useMyRatings, useMyWatched, useUpNext } from "@/presentation/hooks/useTracking";
 
 function Hero({ series }: { series: SeriesSummary }) {
   const backdrop = backdropUrl(series.backdropPath, "w1280");
@@ -158,6 +158,7 @@ function RecommendationsRail() {
 function TrendingRail() {
   const { data } = useTrending();
   const ratings = useMyRatings();
+  const watched = useMyWatched();
   const items = (data?.results ?? []).slice(1, 16);
 
   if (items.length === 0) return null;
@@ -178,7 +179,7 @@ function TrendingRail() {
           >
             <div className="relative">
               <SeriesPoster path={item.posterPath} alt={item.name} />
-              {rating ? <RatingBadge value={rating} /> : null}
+              {rating ? <RatingBadge value={rating} /> : watched.has(item.tmdbId) ? <WatchedBadge /> : null}
             </div>
             <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
             {item.firstAirDate ? (

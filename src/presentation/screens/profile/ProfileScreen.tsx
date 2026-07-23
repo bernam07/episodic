@@ -7,7 +7,7 @@ import { SERIES_STATUS_LABELS, SERIES_STATUSES, type SeriesStatus } from "@/doma
 import { queryKeys } from "@/presentation/hooks/queryKeys";
 import { container } from "@/presentation/di/container";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
-import { RatingBadge } from "@/presentation/components/series/SeriesCard";
+import { RatingBadge, WatchedBadge } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { DeleteAccountSheet } from "@/presentation/components/social/DeleteAccountSheet";
@@ -257,7 +257,11 @@ function Favorites() {
           >
             <div className="relative overflow-hidden rounded-xl ring-1 ring-white/10">
               <SeriesPoster path={item.posterPath} alt={item.name} />
-              {item.userRating ? <RatingBadge value={item.userRating} /> : null}
+              {item.userRating ? (
+                <RatingBadge value={item.userRating} />
+              ) : item.status === "watched" ? (
+                <WatchedBadge />
+              ) : null}
             </div>
             <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
           </Link>
