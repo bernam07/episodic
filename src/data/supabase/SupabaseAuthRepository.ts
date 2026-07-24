@@ -1,4 +1,5 @@
 import { AppError } from "@/core/errors/AppError";
+import { env } from "@/core/config/env";
 import type { AuthUser, Profile } from "@/domain/entities/Profile";
 import type {
   IAuthRepository,
@@ -105,17 +106,20 @@ export class SupabaseAuthRepository implements IAuthRepository {
   }
 
   async signIn({ identifier, password }: SignInInput): Promise<AuthUser> {
-    const { data, error } = await supabase.functions.invoke<{
-      access_token: string;
-      refresh_token: string;
-    }>("auth-login", {
+    const response = await fetch(`${env.supabaseUrl}/functions/v1/auth-login`, {
       method: "POST",
-      body: { identifier, password },
+      headers: {
+        "Content-Type": "application/json",
+        apikey: env.supabasePublishableKey,
+      },
+      body: JSON.stringify({ identifier, password }),
     });
 
-    if (error || !data?.access_token) {
-      throw new AppError("auth", "Incorrect username or password.", error);
+    if (!response.ok) {
+      throw new AppError("auth", "Incorrect username or password.");
     }
+
+    const data: { access_token: string; refresh_token: string } = await response.json();
 
     const { data: session, error: sessionError } = await supabase.auth.setSession({
       access_token: data.access_token,
