@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ActivityRow } from "@/presentation/components/social/ActivityRow";
-import { Spinner } from "@/presentation/components/ui/Spinner";
+import { FeedSkeleton } from "@/presentation/components/ui/Skeleton";
 import { useFriendsFeed } from "@/presentation/hooks/useActivity";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 import { plural } from "@/presentation/utils/plural";
@@ -29,11 +29,7 @@ export function FriendsScreen() {
         }
       />
 
-      {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Spinner />
-        </div>
-      ) : null}
+      {isLoading ? <FeedSkeleton count={6} /> : null}
 
       {!isLoading && (!data || data.length === 0) ? (
         <div className="px-5 pt-10 text-center">

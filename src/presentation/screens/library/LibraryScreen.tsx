@@ -6,7 +6,7 @@ import {
   type SeriesStatus,
 } from "@/domain/entities/SeriesStatus";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
-import { Spinner } from "@/presentation/components/ui/Spinner";
+import { PosterGridSkeleton } from "@/presentation/components/ui/Skeleton";
 import { useLibrary } from "@/presentation/hooks/useTracking";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 
@@ -141,11 +141,7 @@ export function LibraryScreen() {
         </div>
       ) : null}
 
-      {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Spinner />
-        </div>
-      ) : null}
+      {isLoading ? <PosterGridSkeleton count={12} /> : null}
 
       {!isLoading && (data?.length ?? 0) === 0 ? (
         <div className="px-5 pt-10 text-center">

@@ -5,6 +5,7 @@ import { Avatar } from "@/presentation/components/social/Avatar";
 import { FollowButton } from "@/presentation/components/social/FollowButton";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { useMyRatings, useMyWatched } from "@/presentation/hooks/useTracking";
+import { PosterGridSkeleton } from "@/presentation/components/ui/Skeleton";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useGenres, useInfiniteDiscover, useSearchSeries } from "@/presentation/hooks/useDiscovery";
 import { useInfiniteScroll } from "@/presentation/hooks/useInfiniteScroll";
@@ -93,9 +94,7 @@ function GenreRecommendations() {
       </h2>
 
       {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Spinner />
-        </div>
+        <PosterGridSkeleton count={12} />
       ) : (
         <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {unique.map((series) => (
@@ -188,11 +187,7 @@ function SeriesResults({ query }: { query: string }) {
   }
 
   if (isFetching && !data) {
-    return (
-      <div className="flex h-40 items-center justify-center">
-        <Spinner />
-      </div>
-    );
+    return <PosterGridSkeleton count={12} />;
   }
 
   if (!data || data.results.length === 0) {

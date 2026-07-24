@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { posterUrl } from "@/data/tmdb/images";
 import { activityVerb, type ActivityEvent, type ActivityEventType } from "@/domain/entities/Activity";
-import { Spinner } from "@/presentation/components/ui/Spinner";
+import { FeedSkeleton } from "@/presentation/components/ui/Skeleton";
 import { useUserDiary } from "@/presentation/hooks/useActivity";
 import { relativeTime } from "@/presentation/utils/relativeTime";
 
@@ -83,10 +83,8 @@ export function DiarySection({ userId }: { userId: string | null }) {
 
   if (isLoading) {
     return (
-      <section className="mt-8 px-5">
-        <div className="flex h-20 items-center justify-center">
-          <Spinner />
-        </div>
+      <section className="mt-8">
+        <FeedSkeleton count={3} />
       </section>
     );
   }

@@ -7,7 +7,7 @@ import { NotificationSheet } from "@/presentation/components/notifications/Notif
 import { RatingBadge, WatchedBadge } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { ActivityRow } from "@/presentation/components/social/ActivityRow";
-import { Spinner } from "@/presentation/components/ui/Spinner";
+import { RailSkeleton } from "@/presentation/components/ui/Skeleton";
 import { useFriendsFeed } from "@/presentation/hooks/useActivity";
 import { useRecommendations, useTrending } from "@/presentation/hooks/useDiscovery";
 import { useAuth } from "@/presentation/hooks/useAuth";
@@ -95,9 +95,12 @@ function UpNextRail() {
 
   if (isLoading) {
     return (
-      <div className="flex h-28 items-center justify-center">
-        <Spinner />
-      </div>
+      <section className="mt-7">
+        <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+          Up Next
+        </h2>
+        <RailSkeleton />
+      </section>
     );
   }
 
