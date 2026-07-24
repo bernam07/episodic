@@ -4,6 +4,7 @@ import type { CastMember } from "@/domain/entities/Cast";
 import type { Episode, Season } from "@/domain/entities/Episode";
 import type { PersonDetail } from "@/domain/entities/Person";
 import type { SeriesDetail, SeriesSummary } from "@/domain/entities/Series";
+import type { WatchProviders } from "@/domain/entities/WatchProviders";
 import type { Genre, ITmdbRepository, SearchResult } from "@/domain/repositories/ITmdbRepository";
 import { supabase } from "../supabase/client";
 
@@ -207,6 +208,41 @@ export class TmdbRepository implements ITmdbRepository {
       profilePath: item.profile_path,
       order: item.order,
     }));
+  }
+
+  async getWatchProviders(tmdbId: number, region: string): Promise<WatchProviders> {
+    type RawProvider = {
+      provider_id: number;
+      provider_name: string;
+      logo_path: string | null;
+      display_priority: number;
+    };
+    type RawProviders = {
+      region: string;
+      link: string | null;
+      flatrate: RawProvider[];
+      rent: RawProvider[];
+      buy: RawProvider[];
+    };
+
+    const toProvider = (raw: RawProvider) => ({
+      providerId: raw.provider_id,
+      providerName: raw.provider_name,
+      logoPath: raw.logo_path,
+      displayPriority: raw.display_priority,
+    });
+
+    const raw = await this.invoke<RawProviders>(
+      `series/${tmdbId}/providers?region=${encodeURIComponent(region)}`
+    );
+
+    return {
+      region: raw.region,
+      link: raw.link,
+      flatrate: (raw.flatrate ?? []).map(toProvider),
+      rent: (raw.rent ?? []).map(toProvider),
+      buy: (raw.buy ?? []).map(toProvider),
+    };
   }
 
   async getPersonDetail(personId: number): Promise<PersonDetail> {

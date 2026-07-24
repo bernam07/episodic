@@ -8,6 +8,8 @@ import { SERIES_STATUS_LABELS, type SeriesStatus } from "@/domain/entities/Serie
 import { ActorDetailSheet } from "@/presentation/components/actors/ActorDetailSheet";
 import { SeasonAccordion } from "@/presentation/components/episodes/SeasonAccordion";
 import { AddToListSheet } from "@/presentation/components/lists/AddToListSheet";
+import { MoreLikeThisRail } from "@/presentation/components/series/MoreLikeThisRail";
+import { WatchProvidersSection } from "@/presentation/components/series/WatchProvidersSection";
 import { RatingSummaryCard } from "@/presentation/components/reviews/RatingSummaryCard";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { ReviewSheet } from "@/presentation/components/reviews/ReviewSheet";
@@ -281,6 +283,8 @@ export function SeriesDetailScreen() {
             ))}
           </div>
         ) : null}
+
+        <WatchProvidersSection tmdbId={tmdbId} />
       </div>
 
       {cast && cast.length > 0 ? (
@@ -359,6 +363,8 @@ export function SeriesDetailScreen() {
           />
         </section>
       </div>
+
+      <MoreLikeThisRail tmdbId={tmdbId} />
 
       <Sheet
         open={statusSheetOpen}

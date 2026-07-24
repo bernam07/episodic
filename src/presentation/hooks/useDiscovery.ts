@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { preferredRegion } from "@/domain/entities/WatchProviders";
 import type { SearchResult } from "@/domain/repositories/ITmdbRepository";
 import { container } from "@/presentation/di/container";
 import { queryKeys } from "./queryKeys";
@@ -85,6 +86,16 @@ export function useCredits(tmdbId: number) {
   return useQuery({
     queryKey: queryKeys.credits(tmdbId),
     queryFn: () => container.usecases.getCredits.execute(tmdbId),
+    enabled: Number.isFinite(tmdbId) && tmdbId > 0,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+}
+
+export function useWatchProviders(tmdbId: number) {
+  return useQuery({
+    queryKey: queryKeys.watchProviders(tmdbId),
+    queryFn: () =>
+      container.usecases.getWatchProviders.execute(tmdbId, preferredRegion(navigator.language)),
     enabled: Number.isFinite(tmdbId) && tmdbId > 0,
     staleTime: 1000 * 60 * 60 * 24,
   });

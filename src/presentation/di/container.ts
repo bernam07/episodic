@@ -42,6 +42,7 @@ import {
   GetSeason,
   GetSeriesDetail,
   GetTrending,
+  GetWatchProviders,
   SearchSeries,
 } from "@/domain/usecases/discovery/DiscoveryUseCases";
 import {
@@ -130,6 +131,7 @@ export const container = {
     getSeason: new GetSeason(tmdbRepository),
     getCredits: new GetCredits(tmdbRepository),
     getPersonDetail: new GetPersonDetail(tmdbRepository),
+    getWatchProviders: new GetWatchProviders(tmdbRepository),
 
     ensureSeriesCached,
     collectAiredEpisodes,

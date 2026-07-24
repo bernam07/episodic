@@ -281,6 +281,38 @@ async function handlePersonDetail(personId: string) {
   );
 }
 
+function mapProviderList(items: Record<string, unknown>[] | undefined) {
+  return (items ?? []).map((item) => ({
+    provider_id: item.provider_id as number,
+    provider_name: (item.provider_name as string) ?? "",
+    logo_path: (item.logo_path as string) ?? null,
+    display_priority: (item.display_priority as number) ?? 999,
+  }));
+}
+
+async function handleWatchProviders(tmdbId: string, url: URL) {
+  const region = (url.searchParams.get("region") ?? "PT").toUpperCase();
+  const data = await tmdbFetch(`/tv/${tmdbId}/watch/providers`);
+  const results = (data.results ?? {}) as Record<string, Record<string, unknown>>;
+  const entry = results[region] ?? results.US ?? null;
+
+  if (!entry) {
+    return json({ region, link: null, flatrate: [], rent: [], buy: [] }, 200, 86400);
+  }
+
+  return json(
+    {
+      region: results[region] ? region : "US",
+      link: (entry.link as string) ?? null,
+      flatrate: mapProviderList(entry.flatrate as Record<string, unknown>[]),
+      rent: mapProviderList(entry.rent as Record<string, unknown>[]),
+      buy: mapProviderList(entry.buy as Record<string, unknown>[]),
+    },
+    200,
+    86400
+  );
+}
+
 async function handleCredits(tmdbId: string) {
   const data = await tmdbFetch(`/tv/${tmdbId}/credits`);
 
@@ -345,6 +377,10 @@ Deno.serve(async (req: Request) => {
 
     if (route[0] === "series" && route[1] && route[2] === "credits") {
       return await handleCredits(route[1]);
+    }
+
+    if (route[0] === "series" && route[1] && route[2] === "providers") {
+      return await handleWatchProviders(route[1], url);
     }
 
     if (route[0] === "person" && route[1]) {
