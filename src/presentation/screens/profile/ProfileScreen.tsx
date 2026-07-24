@@ -134,6 +134,15 @@ function Stats() {
     <section className="px-5">
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent-600/25 via-ink-850 to-ink-850 p-5 ring-1 ring-white/5 ring-inset">
         <div className="pointer-events-none absolute -top-10 -right-10 size-32 rounded-full bg-accent-500/10 blur-2xl" />
+        <Link
+          to="/stats"
+          className="tap-none absolute top-4 right-4 z-10 flex items-center gap-1 text-[12px] font-semibold text-accent-400 active:text-accent-300"
+        >
+          All stats
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+            <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
         <p className="text-[12px] font-medium tracking-wide text-mist-400 uppercase">Episodes watched</p>
         <p className="mt-1 text-[44px] leading-none font-bold tabular-nums text-mist-100">
           {stats.episodesWatched}

@@ -111,7 +111,8 @@ src/
 ```
 
 Routes: `/auth`, `/reset-password`, `/` (home), `/search`, `/library`, `/friends`, `/profile`,
-`/user/:username`, `/series/:tmdbId`. Five bottom-nav tabs on mobile; sidebar from `md` up.
+`/user/:username`, `/series/:tmdbId`, `/list/:id`, `/calendar`, `/stats`. Five bottom-nav tabs on
+mobile; sidebar from `md` up.
 
 ---
 
@@ -375,7 +376,7 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 111 tests:
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 115 tests:
 - `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
   validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
   (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
@@ -455,7 +456,7 @@ screenshot before believing a red result.
 
 | Function | `verify_jwt` | Routes |
 |---|---|---|
-| `tmdb` | `true` | `/search?q=`, `/trending`, `/genres`, `/discover?genre=`, `/series/:id`, `/series/:id/recommendations`, `/series/:id/season/:n`, `/series/:id/credits` |
+| `tmdb` | `true` | `/search?q=`, `/trending`, `/genres`, `/discover?genre=`, `/series/:id`, `/series/:id/recommendations`, `/series/:id/season/:n`, `/series/:id/credits`, `/series/:id/providers?region=` |
 | `auth-login` | **`false`** | `POST` `{ identifier, password }` → `{ access_token, refresh_token }` |
 | `push` | `true` | `POST` `{ type: "follow", followingId }` or `{ type: "review", seriesId }` → sends Web Push to recipients |
 | `notify-new-episodes` | **`false`** | `POST` (guarded by `x-cron-secret`) → for every *watching* series checks TMDB for newly-aired episodes, updates `series.aired_episodes`, and notifies watchers (in-app + Web Push) |
@@ -524,6 +525,14 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   with a **Week / Month** toggle and prev/next navigation (enumerates the airing season, not just the
   next episode).
 - **Watch time**: profile stat summed from `series.episode_runtime` × watched episodes (no TMDB calls).
+- **Where to Watch**: streaming/rent/buy provider logos on the series page (`/series/:id/providers`
+  edge route, JustWatch-sourced via TMDB; region from `navigator.language`, PT fallback → US).
+- **More Like This**: recommendations rail at the bottom of the series page, with seen-it badges.
+- **Stats page**: `/stats` ("All stats" link on the profile panel) — watch time headline, status
+  pills, top-genre bars, own-ratings histogram, most-watched series, favorites/rewatch tiles. All
+  computed client-side by `computeLibraryInsights` (pure) from the already-loaded library.
+- **Skeleton loaders**: shape-matching placeholders (`Skeleton.tsx` kit) on Library, Home rails,
+  Friends feed, diary and Search grids instead of centered spinners.
 - **New-episode alerts**: scheduled push + in-app notification when a Watching series airs a new episode
   (see Edge Functions / notify-new-episodes).
 - **Onboarding**: first-run, add-series-only poster picker for new signups (`OnboardingScreen`).
