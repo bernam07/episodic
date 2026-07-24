@@ -474,14 +474,26 @@ describe("get_up_next", () => {
     expect(rows[0]).toMatchObject({ next_season: 1, next_episode: 3 });
   });
 
-  it("fills a gap when episodes were watched out of order", async () => {
+  it("counts out-of-order watching per season (client resolves the exact gap)", async () => {
     await asAuthenticated(db, EDDIE);
     await db.query(`delete from public.episode_tracking where user_id = $1`, [EDDIE]);
     await watch(1, 1, 1001);
     await watch(1, 3, 1003);
     await reset(db);
     const rows = await upNext();
-    expect(rows[0]).toMatchObject({ next_season: 1, next_episode: 2 });
+    expect(rows[0]).toMatchObject({ next_season: 1, next_episode: 3 });
+  });
+
+  it("survives absolute episode numbering inside a season (One Piece-style)", async () => {
+    await asAuthenticated(db, EDDIE);
+    await db.query(`delete from public.episode_tracking where user_id = $1`, [EDDIE]);
+    await watch(1, 1, 1001);
+    await watch(1, 2, 1002);
+    await watch(1, 3, 1003);
+    await watch(2, 62, 2062);
+    await reset(db);
+    const rows = await upNext();
+    expect(rows[0]).toMatchObject({ next_season: 2, next_episode: 2 });
   });
 
   it("crosses into the next season", async () => {

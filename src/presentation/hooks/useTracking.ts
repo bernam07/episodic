@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import type { Episode } from "@/domain/entities/Episode";
+import { hasAired, type Episode } from "@/domain/entities/Episode";
 import type { SeriesDetail } from "@/domain/entities/Series";
 import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { container } from "@/presentation/di/container";
@@ -69,13 +69,19 @@ export function useMarkUpNext() {
       nextSeason: number;
       nextEpisode: number;
     }) => {
-      const season = await queryClient.fetchQuery({
-        queryKey: queryKeys.season(item.tmdbId, item.nextSeason),
-        queryFn: () => container.usecases.getSeason.execute(item.tmdbId, item.nextSeason),
-        staleTime: 1000 * 60 * 60 * 12,
-      });
+      const [season, watchedIds] = await Promise.all([
+        queryClient.fetchQuery({
+          queryKey: queryKeys.season(item.tmdbId, item.nextSeason),
+          queryFn: () => container.usecases.getSeason.execute(item.tmdbId, item.nextSeason),
+          staleTime: 1000 * 60 * 60 * 12,
+        }),
+        container.usecases.getWatchedEpisodes.execute(item.seriesId),
+      ]);
 
-      const episode = season.episodes.find((candidate) => candidate.episodeNumber === item.nextEpisode);
+      const ordered = [...season.episodes].sort((a, b) => a.episodeNumber - b.episodeNumber);
+      const episode =
+        ordered.find((candidate) => hasAired(candidate) && !watchedIds.has(candidate.tmdbEpisodeId)) ??
+        ordered[item.nextEpisode - 1];
 
       if (!episode) {
         return;
@@ -83,8 +89,8 @@ export function useMarkUpNext() {
 
       await container.repositories.tracking.markEpisode(item.seriesId, {
         tmdbEpisodeId: episode.tmdbEpisodeId,
-        seasonNumber: item.nextSeason,
-        episodeNumber: item.nextEpisode,
+        seasonNumber: episode.seasonNumber,
+        episodeNumber: episode.episodeNumber,
       });
     },
     onSuccess: (_result, item) => invalidate(item.seriesId),

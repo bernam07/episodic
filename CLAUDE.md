@@ -149,12 +149,16 @@ only an ended series with every episode watched is *finished*. Aired counts deri
 
 **"Up Next" / `aired_episodes`.** `series.aired_episodes` stores the aired-episode count (computed
 in the `tmdb` edge function from `last_episode_to_air`, mirroring `airedEpisodeCount`; the client
-also sends it via `cacheSeries`). The `get_up_next` RPC uses it: for each *watching* series it
-expands `seasons_meta` into an ordered episode list, finds the first **unwatched** episode whose
-ordinal ≤ `aired_episodes` (so it never suggests an unaired episode and correctly fills gaps if you
-watched out of order), and returns its season/episode number. The Home "Up Next" rail shows that
-episode with a one-tap check-off: `useMarkUpNext` fetches the season (TanStack-cached) to resolve
-the `tmdb_episode_id`, then marks it — because Postgres stores counts, not episode IDs.
+also sends it via `cacheSeries`). The `get_up_next` RPC works on **per-season watched counts, never
+on `(season, episode)` equality**: for each *watching* series it walks `seasons_meta` in order,
+picks the first season whose watched count < `episode_count`, and returns `next_episode` as the
+**index within that season** (`watched + 1`), only when its global ordinal ≤ `aired_episodes` (never
+suggests unaired). This is deliberate: TMDB numbers some shows **absolutely within seasons** (One
+Piece S2 starts at E62), so joining tracking rows by episode_number silently never matched and the
+suggestion stuck forever (fixed in `…110000_fix_up_next_absolute_numbering`). The one-tap check-off
+(`useMarkUpNext`) resolves the *exact* episode client-side: fetches the season (TanStack-cached) +
+the watched-id set, and marks the first aired unwatched episode — which also fills out-of-order gaps
+precisely. Postgres stores counts, not episode IDs; only the client sees real numbering.
 
 **Activity feed / Diary are built from *milestones*, never raw episode rows.** This is the whole
 trick to a diary that survives someone adding a series they watched a year ago (which backfills
@@ -376,7 +380,7 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 115 tests:
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 116 tests:
 - `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
   validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
   (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
@@ -451,6 +455,7 @@ screenshot before believing a red result.
 | `…090000_new_episode_type` (2026-07-24) | adds `'new_episode'` to the `notification_type` enum (isolated so the value commits before use) |
 | `…091000_new_episode_notifications` (2026-07-24) | `notifications.actor_id` nullable + `season_number`/`episode_number` columns; `get_notifications` left-joins the actor (system notifications have none) and returns the episode |
 | `…100000_series_runtime` (2026-07-24) | `series.episode_runtime` (avg, stored by `upsert_series_from_tmdb`, exposed on the view) so profile watch-time sums from the library with zero TMDB calls |
+| `…110000_fix_up_next_absolute_numbering` (2026-07-24) | `get_up_next` rewritten to per-season watched counts — episode_number equality broke on absolutely-numbered shows (One Piece S2 = E62+) and stuck the suggestion |
 
 ## Edge Functions
 
