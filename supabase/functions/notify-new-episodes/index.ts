@@ -88,12 +88,22 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
   }
 
-  const { data: watchingRows } = await service
-    .from("user_series_status")
-    .select("series_id")
-    .eq("status", "watching");
+  const allWatchingRows: { series_id: string }[] = [];
+  let page = 0;
+  const PAGE_SIZE = 1000;
+  while (true) {
+    const { data } = await service
+      .from("user_series_status")
+      .select("series_id")
+      .eq("status", "watching")
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+    const rows = (data ?? []) as { series_id: string }[];
+    allWatchingRows.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+    page += 1;
+  }
 
-  const seriesIds = [...new Set((watchingRows ?? []).map((r: { series_id: string }) => r.series_id))];
+  const seriesIds = [...new Set(allWatchingRows.map((r) => r.series_id))];
 
   if (seriesIds.length === 0) {
     return new Response(JSON.stringify({ checked: 0, updated: 0, notified: 0 }), {
@@ -161,7 +171,7 @@ Deno.serve(async (req) => {
     });
 
     notified += userIds.length;
-    await new Promise((r) => setTimeout(r, 120));
+    await new Promise((r) => setTimeout(r, 50));
   }
 
   return new Response(JSON.stringify({ checked: seriesIds.length, updated, notified }), {

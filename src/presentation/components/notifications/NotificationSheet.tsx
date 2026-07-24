@@ -21,7 +21,9 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
   const href =
     (notification.type === "review" || isEpisode) && notification.seriesTmdbId
       ? `/series/${notification.seriesTmdbId}`
-      : `/user/${notification.actorUsername ?? ""}`;
+      : notification.actorUsername
+        ? `/user/${notification.actorUsername}`
+        : "/";
 
   const poster = posterUrl(notification.seriesPosterPath, "w154");
   const episodeLabel =
@@ -91,7 +93,7 @@ export function NotificationSheet({ open, onClose }: NotificationSheetProps) {
     if (open && notifications && notifications.some((n) => !n.read)) {
       markRead.mutate();
     }
-  }, [open, notifications]);
+  }, [open, notifications, markRead]);
 
   return (
     <Sheet open={open} onClose={onClose} title="Notifications">

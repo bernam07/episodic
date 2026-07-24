@@ -155,11 +155,13 @@ function FriendsRail() {
 
 function RecommendationsRail() {
   const { data: library } = useLibrary();
+  const ratings = useMyRatings();
+  const watched = useMyWatched();
 
   const seed = useMemo(() => {
     if (!library || library.length === 0) return null;
-    const watched = library.filter((item) => item.status === "watching" || item.status === "watched");
-    const pool = watched.length > 0 ? watched : library;
+    const active = library.filter((item) => item.status === "watching" || item.status === "watched");
+    const pool = active.length > 0 ? active : library;
     return pool[Math.floor(Math.random() * pool.length)];
   }, [library]);
 
@@ -181,19 +183,25 @@ function RecommendationsRail() {
         {seed ? `Because you watched ${seed.name}` : "Recommended for You"}
       </h2>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
-        {suggestions.map((item) => (
-          <Link
-            key={item.tmdbId}
-            to={`/series/${item.tmdbId}`}
-            className="tap-none w-[132px] shrink-0 active:opacity-70"
-          >
-            <SeriesPoster path={item.posterPath} alt={item.name} />
-            <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
-            {item.firstAirDate ? (
-              <p className="mt-0.5 text-[11px] text-mist-400">{releaseYear(item)}</p>
-            ) : null}
-          </Link>
-        ))}
+        {suggestions.map((item) => {
+          const rating = ratings.get(item.tmdbId) ?? null;
+          return (
+            <Link
+              key={item.tmdbId}
+              to={`/series/${item.tmdbId}`}
+              className="tap-none w-[132px] shrink-0 active:opacity-70"
+            >
+              <div className="relative">
+                <SeriesPoster path={item.posterPath} alt={item.name} />
+                {rating ? <RatingBadge value={rating} /> : watched.has(item.tmdbId) ? <WatchedBadge /> : null}
+              </div>
+              <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
+              {item.firstAirDate ? (
+                <p className="mt-0.5 text-[11px] text-mist-400">{releaseYear(item)}</p>
+              ) : null}
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

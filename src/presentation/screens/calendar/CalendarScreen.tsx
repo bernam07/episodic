@@ -108,6 +108,8 @@ export function CalendarScreen() {
 
   const isLoading =
     libraryLoading || detailQueries.some((q) => q.isLoading) || seasonQueries.some((q) => q.isLoading);
+  const hasError =
+    detailQueries.some((q) => q.isError) || seasonQueries.some((q) => q.isError);
 
   const { start, end, label } = windowFor(view, offset);
 
@@ -212,6 +214,13 @@ export function CalendarScreen() {
       {isLoading ? (
         <div className="flex h-40 items-center justify-center">
           <Spinner />
+        </div>
+      ) : hasError && grouped.total === 0 ? (
+        <div className="px-5 pt-10 text-center">
+          <p className="text-[15px] font-semibold text-mist-200">Could not load schedule</p>
+          <p className="mt-1 text-[13px] text-mist-500">
+            Something went wrong fetching episode data. Try again later.
+          </p>
         </div>
       ) : grouped.total === 0 ? (
         <div className="px-5 pt-10 text-center">
