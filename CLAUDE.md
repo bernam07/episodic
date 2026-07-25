@@ -533,9 +533,16 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
 - **Where to Watch**: streaming/rent/buy provider logos on the series page (`/series/:id/providers`
   edge route, JustWatch-sourced via TMDB; region from `navigator.language`, PT fallback → US).
 - **More Like This**: recommendations rail at the bottom of the series page, with seen-it badges.
-- **Stats page**: `/stats` ("All stats" link on the profile panel) — watch time headline, status
-  pills, top-genre bars, own-ratings histogram, most-watched series, favorites/rewatch tiles. All
-  computed client-side by `computeLibraryInsights` (pure) from the already-loaded library.
+- **Stats page**: `/stats` ("All stats" link on the profile panel) — watch-time hero, a part-to-whole
+  **Library Breakdown** stacked bar + legend, sequential top-genre bars, an **emphasis** ratings
+  histogram (the modal bucket in accent, the rest recessive gray), a backdrop **Most Watched** card,
+  and favorites/rewatch tiles. All computed client-side by `computeLibraryInsights` (pure) from the
+  already-loaded library. **The four status colors are a validated categorical palette**
+  (`#3b82f6` watching / `#d97706` want / `#059669` watched / `#f43f5e` abandoned) — checked with the
+  dataviz validator for CVD separation, chroma and contrast on the `ink-850` surface, in that hue
+  order. Keep them identical here and on the profile pills: colour follows the status, not the chart.
+  The emerald↔amber pair sits in the 6–8 CVD band, which is legal only because every segment carries
+  a labelled legend entry and a 2px surface gap — don't drop either.
 - **Skeleton loaders**: shape-matching placeholders (`Skeleton.tsx` kit) on Library, Home rails,
   Friends feed, diary and Search grids instead of centered spinners.
 - **New-episode alerts**: scheduled push + in-app notification when a Watching series airs a new episode

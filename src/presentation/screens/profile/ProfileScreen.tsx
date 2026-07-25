@@ -20,10 +20,10 @@ import { useLibrary } from "@/presentation/hooks/useTracking";
 import { pluralize } from "@/presentation/utils/plural";
 
 const STATUS_DOTS: Record<SeriesStatus, string> = {
-  want_to_watch: "bg-sky-400",
-  watching: "bg-accent-400",
-  watched: "bg-emerald-400",
-  abandoned: "bg-mist-500",
+  want_to_watch: "bg-[#d97706]",
+  watching: "bg-[#3b82f6]",
+  watched: "bg-[#059669]",
+  abandoned: "bg-[#f43f5e]",
 };
 
 function SecondaryStat({ value, label }: { value: number | string; label: string }) {
