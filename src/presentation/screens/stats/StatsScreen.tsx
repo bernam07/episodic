@@ -145,7 +145,7 @@ function Ratings({ ratings }: { ratings: RatingSummary }) {
                     to={`/library?status=rated&rating=${bucket.rating}`}
                     aria-label={`${plural(bucket.count, "series", "series")} rated ${bucket.rating} stars`}
                     title={`${bucket.rating} ★ · ${plural(bucket.count, "series", "series")}`}
-                    className="tap-none flex w-full flex-col justify-end active:opacity-70"
+                    className="tap-none flex h-full w-full flex-col justify-end active:opacity-70"
                   >
                     {bar}
                   </Link>
