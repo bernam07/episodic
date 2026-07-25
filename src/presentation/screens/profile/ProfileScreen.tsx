@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { computeLibraryStats } from "@/domain/entities/LibraryStats";
 import { ListsSection } from "@/presentation/components/lists/ListsSection";
@@ -12,6 +12,8 @@ import { DiarySection } from "@/presentation/components/social/DiarySection";
 import { EditProfileSheet } from "@/presentation/components/social/EditProfileSheet";
 import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
 import { SettingsSheet } from "@/presentation/components/social/SettingsSheet";
+import { Duration, InlineStat } from "@/presentation/components/stats/StatsPrimitives";
+import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useOwnReviews } from "@/presentation/hooks/useReviews";
@@ -25,15 +27,6 @@ const STATUS_DOTS: Record<SeriesStatus, string> = {
   watched: "bg-[#059669]",
   abandoned: "bg-[#f43f5e]",
 };
-
-function SecondaryStat({ value, label }: { value: number | string; label: string }) {
-  return (
-    <div className="px-2 py-1 text-center">
-      <p className="text-[19px] leading-none font-bold tabular-nums text-mist-100">{value}</p>
-      <p className="mt-1 text-[10px] tracking-wide text-mist-500 uppercase">{label}</p>
-    </div>
-  );
-}
 
 function Header({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { profile, user } = useAuth();
@@ -121,96 +114,71 @@ function Stats() {
 
   if (isLoading) {
     return (
-      <div className="flex h-24 items-center justify-center">
-        <Spinner />
-      </div>
+      <section className="px-5">
+        <Skeleton className="h-42 w-full rounded-3xl" />
+      </section>
     );
   }
 
   const library = data ?? [];
   const stats = computeLibraryStats(library);
+  const watchTimeMinutes = library.reduce(
+    (total, item) => total + item.watchedEpisodes * item.episodeRuntime,
+    0
+  );
 
   return (
     <section className="px-5">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent-600/25 via-ink-850 to-ink-850 p-5 ring-1 ring-white/5 ring-inset">
-        <div className="pointer-events-none absolute -top-10 -right-10 size-32 rounded-full bg-accent-500/10 blur-2xl" />
-        <Link
-          to="/stats"
-          className="tap-none absolute top-4 right-4 z-10 flex items-center gap-1 text-[12px] font-semibold text-accent-400 active:text-accent-300"
-        >
-          All stats
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
-            <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Link>
-        <p className="text-[12px] font-medium tracking-wide text-mist-400 uppercase">Episodes watched</p>
-        <p className="mt-1 text-[44px] leading-none font-bold tabular-nums text-mist-100">
+      <div className="relative overflow-hidden rounded-3xl bg-ink-850 px-6 pt-6 pb-5">
+        <div className="pointer-events-none absolute -top-16 -right-12 size-48 rounded-full bg-accent-500/18 blur-3xl" />
+
+        <div className="relative flex items-baseline justify-between gap-3">
+          <p className="text-[11px] font-semibold tracking-[0.12em] text-accent-300 uppercase">
+            Episodes watched
+          </p>
+          <Link
+            to="/stats"
+            className="tap-none flex shrink-0 items-center gap-1 text-[12px] font-semibold text-accent-400 active:text-accent-300"
+          >
+            All stats
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+              <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        </div>
+
+        <p className="relative mt-2.5 text-[48px] leading-none font-bold tracking-tight text-mist-100">
           {stats.episodesWatched}
         </p>
 
-        <div className="mt-5 grid grid-cols-3 divide-x divide-white/5 rounded-xl bg-ink-950/40 py-3">
-          <SecondaryStat value={stats.seriesTracked} label="Series" />
-          <SecondaryStat value={stats.finished} label="Finished" />
-          <SecondaryStat value={stats.averageRating ?? "—"} label="Avg ★" />
+        <div className="relative mt-6 flex gap-2 border-t border-white/8 pt-4">
+          <InlineStat value={stats.seriesTracked} label="series" />
+          <InlineStat value={stats.finished} label="finished" />
+          <InlineStat value={stats.averageRating ?? "—"} label="avg rating" />
+          {watchTimeMinutes > 0 ? (
+            <InlineStat value={<Duration minutes={watchTimeMinutes} />} label="watched" />
+          ) : null}
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3.5 px-1 sm:grid-cols-4">
         {SERIES_STATUSES.map((status) => (
           <Link
             key={status}
             to={`/library?status=${status}`}
-            className="tap-none flex items-center gap-2 rounded-xl bg-ink-850 px-3 py-2.5 active:bg-ink-800"
+            className="tap-none flex items-center gap-2.5 active:opacity-70"
           >
             <span className={`size-2 shrink-0 rounded-full ${STATUS_DOTS[status]}`} />
-            <span className="min-w-0 flex-1 truncate text-[12px] text-mist-400">
-              {SERIES_STATUS_LABELS[status]}
-            </span>
-            <span className="text-[14px] font-bold tabular-nums text-mist-100">
-              {library.filter((item) => item.status === status).length}
+            <span className="min-w-0 flex-1">
+              <span className="block text-[16px] leading-none font-bold text-mist-100">
+                {library.filter((item) => item.status === status).length}
+              </span>
+              <span className="mt-1 block truncate text-[11px] text-mist-500">
+                {SERIES_STATUS_LABELS[status]}
+              </span>
             </span>
           </Link>
         ))}
-      </div>
-    </section>
-  );
-}
-
-function formatWatchTime(minutes: number): { value: string; unit: string } {
-  if (minutes < 60) return { value: String(minutes), unit: "minutes" };
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return { value: String(hours), unit: "hours" };
-  const days = Math.floor(hours / 24);
-  const remainHours = hours % 24;
-  return { value: `${days}d ${remainHours}h`, unit: "watch time" };
-}
-
-function WatchTime() {
-  const { data: library } = useLibrary();
-
-  const totalMinutes = useMemo(() => {
-    let total = 0;
-    for (const item of library ?? []) {
-      total += item.watchedEpisodes * item.episodeRuntime;
-    }
-    return total;
-  }, [library]);
-
-  if (totalMinutes === 0) return null;
-
-  const formatted = formatWatchTime(totalMinutes);
-
-  return (
-    <section className="mt-4 px-5">
-      <div className="flex items-center gap-3 rounded-xl bg-ink-850 px-4 py-3">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 shrink-0 text-accent-400">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <div>
-          <p className="text-[18px] font-bold leading-none tabular-nums text-mist-100">{formatted.value}</p>
-          <p className="mt-0.5 text-[11px] tracking-wide text-mist-500 uppercase">{formatted.unit}</p>
-        </div>
       </div>
     </section>
   );
@@ -290,7 +258,6 @@ export function ProfileScreen() {
     <>
       <Header onOpenSettings={() => setSettingsOpen(true)} />
       <Stats />
-      <WatchTime />
       <Favorites />
       <ListsSection userId={user?.id ?? null} isOwn />
       <DiarySection userId={user?.id ?? null} />
