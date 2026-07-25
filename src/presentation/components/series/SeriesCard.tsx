@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
@@ -14,6 +14,47 @@ export function WatchedBadge() {
       <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" className="size-3">
         <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
+    </span>
+  );
+}
+
+const IN_LIBRARY_STYLES: Record<SeriesStatus, string> = {
+  watching: "bg-[#3b82f6]",
+  want_to_watch: "bg-[#d97706]",
+  watched: "bg-[#059669]",
+  abandoned: "bg-[#f43f5e]",
+};
+
+const IN_LIBRARY_GLYPHS: Record<SeriesStatus, ReactNode> = {
+  watching: (
+    <svg viewBox="0 0 24 24" fill="white" className="size-2.5">
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  ),
+  want_to_watch: (
+    <svg viewBox="0 0 24 24" fill="white" className="size-2.5">
+      <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" />
+    </svg>
+  ),
+  watched: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" className="size-2.5">
+      <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  abandoned: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" className="size-2.5">
+      <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+    </svg>
+  ),
+};
+
+export function InLibraryBadge({ status }: { status: SeriesStatus }) {
+  return (
+    <span
+      className={`absolute right-1.5 bottom-1.5 flex size-5 items-center justify-center rounded-full ring-2 ring-ink-950/40 ${IN_LIBRARY_STYLES[status]}`}
+      aria-label={`In your library: ${status.replace(/_/g, " ")}`}
+    >
+      {IN_LIBRARY_GLYPHS[status]}
     </span>
   );
 }
@@ -49,6 +90,7 @@ type SeriesCardProps = {
   status?: SeriesStatus;
   rating?: number | null;
   watched?: boolean;
+  libraryStatus?: SeriesStatus | null;
 };
 
 export function SeriesCard({
@@ -61,6 +103,7 @@ export function SeriesCard({
   status,
   rating,
   watched,
+  libraryStatus,
 }: SeriesCardProps) {
   return (
     <Link to={`/series/${tmdbId}`} className="tap-none block active:opacity-70">
@@ -69,7 +112,13 @@ export function SeriesCard({
         {status ? (
           <StatusBadge status={status} className="absolute top-1.5 left-1.5 backdrop-blur-sm" />
         ) : null}
-        {rating ? <RatingBadge value={rating} /> : watched && !status ? <WatchedBadge /> : null}
+        {rating ? (
+          <RatingBadge value={rating} />
+        ) : status ? null : watched ? (
+          <WatchedBadge />
+        ) : libraryStatus ? (
+          <InLibraryBadge status={libraryStatus} />
+        ) : null}
       </div>
       <div className="mt-2 px-0.5">
         <p className="truncate text-[13px] font-semibold text-mist-100">{name}</p>

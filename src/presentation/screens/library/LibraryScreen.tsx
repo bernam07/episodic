@@ -10,14 +10,15 @@ import { PosterGridSkeleton } from "@/presentation/components/ui/Skeleton";
 import { useLibrary } from "@/presentation/hooks/useTracking";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 
-type Filter = SeriesStatus | "all" | "favorites" | "rewatched";
+type Filter = SeriesStatus | "all" | "favorites" | "rewatched" | "rated";
 
-const FILTERS: Filter[] = ["all", ...SERIES_STATUSES, "favorites", "rewatched"];
+const FILTERS: Filter[] = ["all", ...SERIES_STATUSES, "favorites", "rated", "rewatched"];
 
 const FILTER_LABELS: Record<Filter, string> = {
   all: "All",
   ...SERIES_STATUS_LABELS,
   favorites: "Favorites",
+  rated: "Rated",
   rewatched: "Rewatched",
 };
 
@@ -39,12 +40,14 @@ export function LibraryScreen() {
       watched: 0,
       abandoned: 0,
       favorites: 0,
+      rated: 0,
       rewatched: 0,
     };
 
     for (const item of data ?? []) {
       base[item.status] += 1;
       if (item.isFavorite) base.favorites += 1;
+      if (item.userRating !== null) base.rated += 1;
       if (item.rewatchCount > 0) base.rewatched += 1;
     }
 
@@ -52,6 +55,7 @@ export function LibraryScreen() {
   }, [data]);
 
   const genreParam = searchParams.get("genre");
+  const ratingParam = searchParams.get("rating");
 
   const allGenres = useMemo(() => {
     if (!data) return [];
@@ -67,10 +71,14 @@ export function LibraryScreen() {
     let result = data;
     if (filter === "favorites") result = result.filter((item) => item.isFavorite);
     else if (filter === "rewatched") result = result.filter((item) => item.rewatchCount > 0);
+    else if (filter === "rated") result = result.filter((item) => item.userRating !== null);
     else if (filter !== "all") result = result.filter((item) => item.status === filter);
     if (genreParam) result = result.filter((item) => item.genres.includes(genreParam));
+    if (filter === "rated" && ratingParam) {
+      result = result.filter((item) => item.userRating === Number(ratingParam));
+    }
     return result;
-  }, [data, filter, genreParam]);
+  }, [data, filter, genreParam, ratingParam]);
 
   function setFilter(next: Filter) {
     const params: Record<string, string> = {};
@@ -83,6 +91,13 @@ export function LibraryScreen() {
     const params: Record<string, string> = {};
     if (filter !== "all") params.status = filter;
     if (genre) params.genre = genre;
+    if (ratingParam) params.rating = ratingParam;
+    setSearchParams(params, { replace: true });
+  }
+
+  function clearRating() {
+    const params: Record<string, string> = { status: "rated" };
+    if (genreParam) params.genre = genreParam;
     setSearchParams(params, { replace: true });
   }
 
@@ -114,6 +129,21 @@ export function LibraryScreen() {
           </button>
         ))}
       </div>
+
+      {filter === "rated" && ratingParam ? (
+        <div className="px-5 pb-4">
+          <button
+            type="button"
+            onClick={clearRating}
+            className="tap-none flex items-center gap-1.5 rounded-full bg-accent-600/15 px-3 py-1.5 text-[12px] font-semibold text-accent-300 active:bg-accent-600/25"
+          >
+            Rated {ratingParam} ★
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
+              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+      ) : null}
 
       {allGenres.length > 0 ? (
         <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 pb-4">

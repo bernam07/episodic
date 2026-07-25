@@ -522,8 +522,16 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   sheet on the series detail screen. See Data model for the privacy + caching rules.
 - **Community ratings**: a half-star histogram (average + total) on the series page, above reviews.
 - **Rewatch counter**: +/− stepper on the series page; "Rewatched" Library filter (see Data model).
-- **Seen-it cues**: your rating star / a watched checkmark overlaid on posters across Home, Search and
-  favorites (`useMyRatings` / `useMyWatched`); ratings and reviews are decoupled (see Data model).
+- **Seen-it cues**: posters across Home, Search, browse and More Like This carry one corner badge,
+  in this precedence — your rating star (`useMyRatings`) → watched check (`useMyWatched`) → an
+  **in-library** dot in the status colour with a glyph (`useMyLibraryStatus`), so a series you
+  merely added is still visibly *yours* when scrolling a big catalogue. Suppressed where a
+  `StatusBadge` already states the status (Library, profiles). Ratings/reviews are decoupled (see
+  Data model).
+- **Finding a rating you can't place**: the Library has a **Rated** filter (sorted by `updated_at`,
+  so a just-set rating is first) and the stats histogram bars deep-link to
+  `/library?status=rated&rating=<n>`, with a dismissable chip. Re-tapping the same star on the
+  series page clears the rating (`set_rating` with `null`).
 - **Compare libraries**: from a followed user's profile, `compare_libraries` shows the union of both
   libraries with each side's status + rating (`ComparisonSheet`).
 - **Calendar**: `/calendar` — upcoming episodes of your Watching / Want-to-Watch series, grouped by day,

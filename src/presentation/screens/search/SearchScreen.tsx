@@ -4,7 +4,7 @@ import { releaseYear } from "@/domain/entities/Series";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { FollowButton } from "@/presentation/components/social/FollowButton";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
-import { useMyRatings, useMyWatched } from "@/presentation/hooks/useTracking";
+import { useMyLibraryStatus, useMyRatings, useMyWatched } from "@/presentation/hooks/useTracking";
 import { PosterGridSkeleton } from "@/presentation/components/ui/Skeleton";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useGenres, useInfiniteDiscover, useSearchSeries } from "@/presentation/hooks/useDiscovery";
@@ -32,6 +32,7 @@ function GenreRecommendations() {
   const genreId = genreParam ? Number(genreParam) : null;
   const ratings = useMyRatings();
   const watched = useMyWatched();
+  const libraryStatus = useMyLibraryStatus();
   const { data: genres, isLoading: genresLoading } = useGenres();
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
     useInfiniteDiscover(genreId);
@@ -106,6 +107,7 @@ function GenreRecommendations() {
               year={releaseYear(series)}
               rating={ratings.get(series.tmdbId) ?? null}
               watched={watched.has(series.tmdbId)}
+              libraryStatus={libraryStatus.get(series.tmdbId) ?? null}
             />
           ))}
         </div>
@@ -181,6 +183,7 @@ function SeriesResults({ query }: { query: string }) {
   const { data, isFetching } = useSearchSeries(query);
   const ratings = useMyRatings();
   const watched = useMyWatched();
+  const libraryStatus = useMyLibraryStatus();
 
   if (query.trim().length < 2) {
     return <GenreRecommendations />;
@@ -207,6 +210,7 @@ function SeriesResults({ query }: { query: string }) {
           year={releaseYear(series)}
           rating={ratings.get(series.tmdbId) ?? null}
           watched={watched.has(series.tmdbId)}
+          libraryStatus={libraryStatus.get(series.tmdbId) ?? null}
         />
       ))}
     </div>

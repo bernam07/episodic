@@ -28,6 +28,18 @@ export function useMyRatings(): Map<number, number> {
   }, [data]);
 }
 
+export function useMyLibraryStatus(): Map<number, SeriesStatus> {
+  const { data } = useLibrary();
+
+  return useMemo(() => {
+    const map = new Map<number, SeriesStatus>();
+    for (const item of data ?? []) {
+      map.set(item.tmdbId, item.status);
+    }
+    return map;
+  }, [data]);
+}
+
 export function useMyWatched(): Set<number> {
   const { data } = useLibrary();
 

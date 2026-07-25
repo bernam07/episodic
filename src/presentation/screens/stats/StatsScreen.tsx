@@ -121,10 +121,9 @@ function Ratings({ ratings }: { ratings: RatingSummary }) {
 
       <div className="px-5">
         <div className="flex h-28 items-end gap-1">
-          {ratings.buckets.map((bucket, index) => (
-            <div key={bucket.rating} className="flex h-full flex-1 flex-col justify-end">
+          {ratings.buckets.map((bucket, index) => {
+            const bar = (
               <div
-                title={`${bucket.rating} ★ · ${plural(bucket.count, "rating", "ratings")}`}
                 className={`bar-grow-y w-full rounded-t-[3px] ${
                   bucket.count === 0
                     ? "bg-white/[0.06]"
@@ -137,8 +136,25 @@ function Ratings({ ratings }: { ratings: RatingSummary }) {
                   animationDelay: `${index * 35}ms`,
                 }}
               />
-            </div>
-          ))}
+            );
+
+            return (
+              <div key={bucket.rating} className="flex h-full flex-1 flex-col justify-end">
+                {bucket.count > 0 ? (
+                  <Link
+                    to={`/library?status=rated&rating=${bucket.rating}`}
+                    aria-label={`${plural(bucket.count, "series", "series")} rated ${bucket.rating} stars`}
+                    title={`${bucket.rating} ★ · ${plural(bucket.count, "series", "series")}`}
+                    className="tap-none flex w-full flex-col justify-end active:opacity-70"
+                  >
+                    {bar}
+                  </Link>
+                ) : (
+                  bar
+                )}
+              </div>
+            );
+          })}
         </div>
 
         <div className="mt-2 flex gap-1 border-t border-white/5 pt-2">
