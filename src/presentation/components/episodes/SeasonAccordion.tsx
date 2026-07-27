@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { Episode } from "@/domain/entities/Episode";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { hasAired, type Episode } from "@/domain/entities/Episode";
 import type { SeasonMeta } from "@/domain/entities/Series";
 import type { SeasonProgress } from "@/domain/entities/Progress";
 import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
@@ -30,10 +30,34 @@ export function SeasonAccordion({
   const [open, setOpen] = useState(false);
   const [detailEpisode, setDetailEpisode] = useState<Episode | null>(null);
   const { data, isLoading } = useSeason(tmdbId, open ? season.seasonNumber : null);
+  const nextRef = useRef<HTMLDivElement | null>(null);
+  const didScrollRef = useRef(false);
 
   const watchedCount = progress?.watchedEpisodes ?? 0;
   const percent = progress?.progressPercent ?? 0;
   const allWatched = season.episodeCount > 0 && watchedCount >= season.episodeCount;
+
+  const nextUnwatched = data?.episodes.find(
+    (ep) => hasAired(ep) && !watchedIds.has(ep.tmdbEpisodeId)
+  ) ?? null;
+
+  useEffect(() => {
+    if (data && nextRef.current && !didScrollRef.current) {
+      didScrollRef.current = true;
+      nextRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (!open) didScrollRef.current = false;
+  }, [open]);
+
+  const setNextRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      nextRef.current = node;
+    },
+    []
+  );
 
   return (
     <div className="border-b border-ink-800 last:border-b-0">
@@ -83,16 +107,30 @@ export function SeasonAccordion({
                 </button>
               ) : null}
 
+              {nextUnwatched && !allWatched ? (
+                <button
+                  type="button"
+                  onClick={() => nextRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                  className="tap-none mb-1 ml-2 min-h-[36px] rounded-lg px-2 text-[13px] font-semibold text-mist-300 active:bg-ink-800"
+                >
+                  Jump to E{nextUnwatched.episodeNumber}
+                </button>
+              ) : null}
+
               <div className="divide-y divide-ink-800/60">
                 {data.episodes.map((episode) => (
-                  <EpisodeRow
+                  <div
                     key={episode.tmdbEpisodeId}
-                    episode={episode}
-                    watched={watchedIds.has(episode.tmdbEpisodeId)}
-                    disabled={!canTrack}
-                    onToggle={(watched) => onToggleEpisode(episode, watched)}
-                    onOpenDetail={() => setDetailEpisode(episode)}
-                  />
+                    ref={nextUnwatched?.tmdbEpisodeId === episode.tmdbEpisodeId ? setNextRef : undefined}
+                  >
+                    <EpisodeRow
+                      episode={episode}
+                      watched={watchedIds.has(episode.tmdbEpisodeId)}
+                      disabled={!canTrack}
+                      onToggle={(watched) => onToggleEpisode(episode, watched)}
+                      onOpenDetail={() => setDetailEpisode(episode)}
+                    />
+                  </div>
                 ))}
               </div>
             </>

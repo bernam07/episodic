@@ -49,6 +49,14 @@ export function ActivityRow({
 
         <div className="mt-1.5 flex items-center gap-2">
           <span className="text-[11px] text-mist-500">{relativeTime(event.occurredAt)}</span>
+          {event.rating ? (
+            <span className="flex items-center gap-0.5 text-[11px] font-semibold text-amber-400">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5">
+                <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
+              </svg>
+              {event.rating.toFixed(1)}
+            </span>
+          ) : null}
         </div>
 
         {event.eventType === "reviewed" && event.reviewBody ? (

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { backdropUrl } from "@/data/tmdb/images";
 import type { UpNextItem } from "@/domain/entities/Progress";
@@ -104,7 +104,7 @@ function UpNextRail() {
     return (
       <section className="mt-7">
         <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-          Up Next
+          Continue Watching
         </h2>
         <RailSkeleton />
       </section>
@@ -118,7 +118,7 @@ function UpNextRail() {
   return (
     <section className="mt-7">
       <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-        Up Next
+        Continue Watching
       </h2>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
         {data.map((item) => (
@@ -159,11 +159,12 @@ function RecommendationsRail() {
   const watched = useMyWatched();
   const libraryStatus = useMyLibraryStatus();
 
+  const seedIndex = useRef(Math.random());
   const seed = useMemo(() => {
     if (!library || library.length === 0) return null;
     const active = library.filter((item) => item.status === "watching" || item.status === "watched");
     const pool = active.length > 0 ? active : library;
-    return pool[Math.floor(Math.random() * pool.length)];
+    return pool[Math.floor(seedIndex.current * pool.length)];
   }, [library]);
 
   const { data: recs } = useRecommendations(seed?.tmdbId ?? null);

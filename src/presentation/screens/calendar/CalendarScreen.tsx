@@ -5,7 +5,7 @@ import type { Episode, Season } from "@/domain/entities/Episode";
 import type { SeriesDetail } from "@/domain/entities/Series";
 import { posterUrl } from "@/data/tmdb/images";
 import { Spinner } from "@/presentation/components/ui/Spinner";
-import { useLibrary } from "@/presentation/hooks/useTracking";
+import { useLibrary, useToggleEpisode } from "@/presentation/hooks/useTracking";
 import { queryKeys } from "@/presentation/hooks/queryKeys";
 import { container } from "@/presentation/di/container";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
@@ -14,6 +14,7 @@ type View = "week" | "month";
 
 type AiringEntry = {
   tmdbId: number;
+  seriesId: string;
   seriesName: string;
   posterPath: string | null;
   episode: Episode;
@@ -69,6 +70,49 @@ function formatDay(dateStr: string): string {
   return date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
 }
 
+function CalendarEntry({ item }: { item: AiringEntry }) {
+  const toggle = useToggleEpisode(item.seriesId);
+  const poster = posterUrl(item.posterPath, "w154");
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-ink-850 p-3">
+      <Link to={`/series/${item.tmdbId}`} className="tap-none flex min-w-0 flex-1 items-center gap-3 active:opacity-70">
+        {poster ? (
+          <img src={poster} alt="" loading="lazy" className="h-16 w-11 shrink-0 rounded-lg object-cover" />
+        ) : (
+          <div className="flex h-16 w-11 shrink-0 items-center justify-center rounded-lg bg-ink-700">
+            <span className="text-[10px] text-mist-600">N/A</span>
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-semibold text-mist-100">{item.seriesName}</p>
+          <p className="mt-0.5 text-[12px] font-medium text-accent-400">
+            S{item.episode.seasonNumber} · E{item.episode.episodeNumber}
+          </p>
+          {item.episode.name ? (
+            <p className="mt-0.5 truncate text-[12px] text-mist-500">{item.episode.name}</p>
+          ) : null}
+        </div>
+      </Link>
+      <button
+        type="button"
+        disabled={toggle.isPending}
+        aria-label={`Mark S${item.episode.seasonNumber} E${item.episode.episodeNumber} watched`}
+        onClick={() => toggle.mutate({ episode: item.episode, watched: true })}
+        className="tap-none flex size-8 shrink-0 items-center justify-center rounded-full border border-ink-600 text-mist-400 transition-colors active:border-accent-500 active:bg-accent-500 active:text-white disabled:opacity-50"
+      >
+        {toggle.isPending ? (
+          <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        ) : (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="size-3.5">
+            <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
 export function CalendarScreen() {
   const [view, setView] = useState<View>("week");
   const [offset, setOffset] = useState(0);
@@ -87,16 +131,23 @@ export function CalendarScreen() {
     })),
   });
 
+  const tmdbToSeriesId = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const item of activeSeries) map.set(item.tmdbId, item.seriesId);
+    return map;
+  }, [activeSeries]);
+
   const airing = useMemo(() => {
-    const list: { tmdbId: number; name: string; posterPath: string | null; season: number }[] = [];
+    const list: { tmdbId: number; seriesId: string; name: string; posterPath: string | null; season: number }[] = [];
     for (const query of detailQueries) {
       const detail = query.data as SeriesDetail | undefined;
       const season = detail?.nextEpisodeToAir?.seasonNumber;
-      if (!detail || !season) continue;
-      list.push({ tmdbId: detail.tmdbId, name: detail.name, posterPath: detail.posterPath, season });
+      const sid = detail ? tmdbToSeriesId.get(detail.tmdbId) : undefined;
+      if (!detail || !season || !sid) continue;
+      list.push({ tmdbId: detail.tmdbId, seriesId: sid, name: detail.name, posterPath: detail.posterPath, season });
     }
     return list;
-  }, [detailQueries]);
+  }, [detailQueries, tmdbToSeriesId]);
 
   const seasonQueries = useQueries({
     queries: airing.map((item) => ({
@@ -121,7 +172,7 @@ export function CalendarScreen() {
       if (!season || !meta) return;
       for (const episode of season.episodes) {
         if (episode.airDate && episode.airDate >= start && episode.airDate <= end) {
-          result.push({ tmdbId: meta.tmdbId, seriesName: meta.name, posterPath: meta.posterPath, episode });
+          result.push({ tmdbId: meta.tmdbId, seriesId: meta.seriesId, seriesName: meta.name, posterPath: meta.posterPath, episode });
         }
       }
     });
@@ -238,33 +289,7 @@ export function CalendarScreen() {
               </h2>
               <div className="space-y-2">
                 {items.map((item) => (
-                  <Link
-                    key={`${item.tmdbId}-${item.episode.tmdbEpisodeId}`}
-                    to={`/series/${item.tmdbId}`}
-                    className="tap-none flex items-center gap-3 rounded-xl bg-ink-850 p-3 active:bg-ink-800"
-                  >
-                    {posterUrl(item.posterPath, "w154") ? (
-                      <img
-                        src={posterUrl(item.posterPath, "w154")!}
-                        alt=""
-                        loading="lazy"
-                        className="h-16 w-11 shrink-0 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-16 w-11 shrink-0 items-center justify-center rounded-lg bg-ink-700">
-                        <span className="text-[10px] text-mist-600">N/A</span>
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[14px] font-semibold text-mist-100">{item.seriesName}</p>
-                      <p className="mt-0.5 text-[12px] font-medium text-accent-400">
-                        S{item.episode.seasonNumber} · E{item.episode.episodeNumber}
-                      </p>
-                      {item.episode.name ? (
-                        <p className="mt-0.5 truncate text-[12px] text-mist-500">{item.episode.name}</p>
-                      ) : null}
-                    </div>
-                  </Link>
+                  <CalendarEntry key={`${item.tmdbId}-${item.episode.tmdbEpisodeId}`} item={item} />
                 ))}
               </div>
             </section>

@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   SERIES_STATUS_LABELS,
   SERIES_STATUSES,
   type SeriesStatus,
 } from "@/domain/entities/SeriesStatus";
+import type { SeriesProgress } from "@/domain/entities/Progress";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { PosterGridSkeleton } from "@/presentation/components/ui/Skeleton";
 import { useLibrary } from "@/presentation/hooks/useTracking";
@@ -24,6 +25,22 @@ const FILTER_LABELS: Record<Filter, string> = {
 
 const VALID_FILTERS = new Set<string>(FILTERS);
 
+type SortKey = "recent" | "alpha" | "rating" | "progress";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  recent: "Recent",
+  alpha: "A–Z",
+  rating: "Rating",
+  progress: "Progress",
+};
+
+const SORT_FNS: Record<SortKey, (a: SeriesProgress, b: SeriesProgress) => number> = {
+  recent: (a, b) => b.updatedAt.localeCompare(a.updatedAt),
+  alpha: (a, b) => a.name.localeCompare(b.name),
+  rating: (a, b) => (b.userRating ?? 0) - (a.userRating ?? 0) || b.updatedAt.localeCompare(a.updatedAt),
+  progress: (a, b) => b.progressPercent - a.progressPercent || a.name.localeCompare(b.name),
+};
+
 export function LibraryScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
   const paramValue = searchParams.get("status");
@@ -31,6 +48,8 @@ export function LibraryScreen() {
     paramValue && VALID_FILTERS.has(paramValue) ? (paramValue as Filter) : "all";
 
   const { data, isLoading } = useLibrary();
+  const [sort, setSort] = useState<SortKey>("recent");
+  const [search, setSearch] = useState("");
 
   const counts = useMemo(() => {
     const base: Record<Filter, number> = {
@@ -77,8 +96,15 @@ export function LibraryScreen() {
     if (filter === "rated" && ratingParam) {
       result = result.filter((item) => item.userRating === Number(ratingParam));
     }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter((item) => item.name.toLowerCase().includes(q));
+    }
+    if (filter !== "all") {
+      result = [...result].sort(SORT_FNS[sort]);
+    }
     return result;
-  }, [data, filter, genreParam, ratingParam]);
+  }, [data, filter, genreParam, ratingParam, search, sort]);
 
   function setFilter(next: Filter) {
     const params: Record<string, string> = {};
@@ -108,7 +134,32 @@ export function LibraryScreen() {
         subtitle={data && data.length > 0 ? `${data.length} series tracked` : undefined}
       />
 
-      <div className="no-scrollbar sticky top-0 z-20 flex gap-2 overflow-x-auto bg-ink-950/80 px-5 pb-4 backdrop-blur-xl">
+      <div className="sticky top-0 z-20 bg-ink-950/80 px-5 pb-3 backdrop-blur-xl">
+        <div className="relative">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-mist-500"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            inputMode="search"
+            autoCapitalize="none"
+            autoCorrect="off"
+            placeholder="Search library"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="w-full rounded-xl border border-ink-700 bg-ink-850 py-2.5 pr-4 pl-10 text-[14px] text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div className="no-scrollbar sticky top-[52px] z-20 flex gap-2 overflow-x-auto bg-ink-950/80 px-5 pb-4 backdrop-blur-xl">
         {FILTERS.map((value) => (
           <button
             key={value}
@@ -166,6 +217,24 @@ export function LibraryScreen() {
               }`}
             >
               {genre}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {filter !== "all" && visible.length > 1 ? (
+        <div className="flex items-center gap-1.5 px-5 pb-4">
+          <span className="mr-1 text-[11px] text-mist-500">Sort</span>
+          {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSort(key)}
+              className={`tap-none rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                sort === key ? "bg-mist-100 text-ink-950" : "bg-ink-800 text-mist-400 active:bg-ink-700"
+              }`}
+            >
+              {SORT_LABELS[key]}
             </button>
           ))}
         </div>
