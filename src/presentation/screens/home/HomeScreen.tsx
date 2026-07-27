@@ -157,6 +157,7 @@ function RecommendationsRail() {
   const { data: library } = useLibrary();
   const ratings = useMyRatings();
   const watched = useMyWatched();
+  const libraryStatus = useMyLibraryStatus();
 
   const seed = useMemo(() => {
     if (!library || library.length === 0) return null;
@@ -193,7 +194,13 @@ function RecommendationsRail() {
             >
               <div className="relative">
                 <SeriesPoster path={item.posterPath} alt={item.name} />
-                {rating ? <RatingBadge value={rating} /> : watched.has(item.tmdbId) ? <WatchedBadge /> : null}
+                {rating ? (
+                  <RatingBadge value={rating} />
+                ) : watched.has(item.tmdbId) ? (
+                  <WatchedBadge />
+                ) : libraryStatus.has(item.tmdbId) ? (
+                  <InLibraryBadge status={libraryStatus.get(item.tmdbId)!} />
+                ) : null}
               </div>
               <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
               {item.firstAirDate ? (

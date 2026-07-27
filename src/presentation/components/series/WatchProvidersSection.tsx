@@ -1,5 +1,6 @@
 import { providerLogoUrl } from "@/data/tmdb/images";
 import { hasProviders, type WatchProvider } from "@/domain/entities/WatchProviders";
+import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { useWatchProviders } from "@/presentation/hooks/useDiscovery";
 
 function ProviderGroup({ label, providers }: { label: string; providers: WatchProvider[] }) {
@@ -39,7 +40,16 @@ function ProviderGroup({ label, providers }: { label: string; providers: WatchPr
 }
 
 export function WatchProvidersSection({ tmdbId }: { tmdbId: number }) {
-  const { data } = useWatchProviders(tmdbId);
+  const { data, isLoading } = useWatchProviders(tmdbId);
+
+  if (isLoading) {
+    return (
+      <section className="mt-7">
+        <Skeleton className="mb-3 h-4 w-32" />
+        <Skeleton className="h-16 w-full rounded-card" />
+      </section>
+    );
+  }
 
   if (!data || !hasProviders(data)) {
     return null;
