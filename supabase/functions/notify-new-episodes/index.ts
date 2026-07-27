@@ -111,15 +111,20 @@ Deno.serve(async (req) => {
     });
   }
 
-  const { data: seriesRows } = await service
-    .from("series")
-    .select("id, tmdb_id, name, aired_episodes, seasons_meta")
-    .in("id", seriesIds);
+  const seriesRows: SeriesRow[] = [];
+  const ID_CHUNK = 200;
+  for (let index = 0; index < seriesIds.length; index += ID_CHUNK) {
+    const { data } = await service
+      .from("series")
+      .select("id, tmdb_id, name, aired_episodes, seasons_meta")
+      .in("id", seriesIds.slice(index, index + ID_CHUNK));
+    seriesRows.push(...((data ?? []) as SeriesRow[]));
+  }
 
   let updated = 0;
   let notified = 0;
 
-  for (const series of (seriesRows ?? []) as SeriesRow[]) {
+  for (const series of seriesRows) {
     const detail = await tmdbSeries(series.tmdb_id);
     if (!detail) {
       continue;

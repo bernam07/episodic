@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueries } from "@tanstack/react-query";
-import type { Episode, Season } from "@/domain/entities/Episode";
+import { hasAired, type Episode, type Season } from "@/domain/entities/Episode";
 import type { SeriesDetail } from "@/domain/entities/Series";
 import { posterUrl } from "@/data/tmdb/images";
 import { Spinner } from "@/presentation/components/ui/Spinner";
@@ -94,21 +94,27 @@ function CalendarEntry({ item }: { item: AiringEntry }) {
           ) : null}
         </div>
       </Link>
-      <button
-        type="button"
-        disabled={toggle.isPending}
-        aria-label={`Mark S${item.episode.seasonNumber} E${item.episode.episodeNumber} watched`}
-        onClick={() => toggle.mutate({ episode: item.episode, watched: true })}
-        className="tap-none flex size-8 shrink-0 items-center justify-center rounded-full border border-ink-600 text-mist-400 transition-colors active:border-accent-500 active:bg-accent-500 active:text-white disabled:opacity-50"
-      >
-        {toggle.isPending ? (
-          <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-        ) : (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="size-3.5">
-            <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </button>
+      {hasAired(item.episode) ? (
+        <button
+          type="button"
+          disabled={toggle.isPending}
+          aria-label={`Mark S${item.episode.seasonNumber} E${item.episode.episodeNumber} watched`}
+          onClick={() => toggle.mutate({ episode: item.episode, watched: true })}
+          className="tap-none flex size-8 shrink-0 items-center justify-center rounded-full border border-ink-600 text-mist-400 transition-colors active:border-accent-500 active:bg-accent-500 active:text-white disabled:opacity-50"
+        >
+          {toggle.isPending ? (
+            <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="size-3.5">
+              <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </button>
+      ) : (
+        <span className="shrink-0 rounded-full bg-ink-800 px-2.5 py-1 text-[10px] font-medium text-mist-500">
+          Upcoming
+        </span>
+      )}
     </div>
   );
 }

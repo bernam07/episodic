@@ -642,6 +642,22 @@ describe("activity feed", () => {
     expect((await feed(FRANK)).filter((e) => e.event_type === "reviewed")).toHaveLength(1);
   });
 
+  it("carries the author's stars on a reviewed event so the feed can show them", async () => {
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating) values ($1, $2, 'watching', 4.5)
+       on conflict (user_id, series_id) do update set rating = 4.5`,
+      [GRETA, seriesId]
+    );
+    await db.query(`insert into public.reviews (user_id, series_id, body) values ($1, $2, 'Loved it')`, [
+      GRETA,
+      seriesId,
+    ]);
+
+    const reviewed = (await feed(FRANK)).filter((e) => e.event_type === "reviewed");
+    expect(reviewed).toHaveLength(1);
+    expect(Number(reviewed[0].rating)).toBe(4.5);
+  });
+
   it("friends feed shows followed users' events but never the viewer's own", async () => {
     await asAuthenticated(db, GRETA);
     await watchOn(GRETA, 8001, 1, "2026-07-12T10:00:00Z");

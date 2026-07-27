@@ -87,11 +87,11 @@ type NotificationSheetProps = {
 
 export function NotificationSheet({ open, onClose }: NotificationSheetProps) {
   const { data: notifications, isLoading } = useNotifications();
-  const markRead = useMarkNotificationsRead();
+  const { mutate: markRead } = useMarkNotificationsRead();
 
   useEffect(() => {
     if (open && notifications && notifications.some((n) => !n.read)) {
-      markRead.mutate();
+      markRead();
     }
   }, [open, notifications, markRead]);
 
