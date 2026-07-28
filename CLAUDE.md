@@ -540,8 +540,14 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   `StatusBadge` already states the status (Library, profiles). Ratings/reviews are decoupled (see
   Data model).
 - **Clearing a rating**: re-tapping the same star on the series page clears the rating (`set_rating`
-  with `null`). (The old dedicated **Rated** Library filter and the stats-histogram deep-link into it
-  were removed — the ratings histogram on `/stats` is now display-only.)
+  with `null`).
+- **Stats deep-links → focused Library views**: Favorites/Rated/Rewatched are no longer standing
+  Library filter tabs, but `/stats` still drills into them via a `?view=` param — the ratings
+  histogram bars link to `/library?view=rated&rating=<n>`, and the favorites/rewatch tiles to
+  `?view=favorites` / `?view=rewatched`. In the Library a `view` param enters a **focused mode**: the
+  status tab row and genre chips are replaced by a single dismissable chip (clears back to the normal
+  library), the grid is flat + sortable, and the `view` filter (isFavorite / rewatchCount>0 /
+  userRating[==rating]) layers on top of the usual status/genre/search filters.
 - **Compare libraries**: from a followed user's profile, `compare_libraries` shows the union of both
   libraries with each side's status + rating (`ComparisonSheet`).
 - **Calendar**: `/calendar` — upcoming episodes of your Watching / Want-to-Watch series, grouped by day,
