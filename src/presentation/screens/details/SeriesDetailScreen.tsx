@@ -15,6 +15,7 @@ import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { ReviewSheet } from "@/presentation/components/reviews/ReviewSheet";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { SeriesStateCard } from "@/presentation/components/series/SeriesStateCard";
+import { ShareCardSheet } from "@/presentation/components/series/ShareCardSheet";
 import { StatusPicker } from "@/presentation/components/series/StatusPicker";
 import { Button } from "@/presentation/components/ui/Button";
 import { RatingInput } from "@/presentation/components/ui/Rating";
@@ -62,6 +63,7 @@ export function SeriesDetailScreen() {
   const [statusSheetOpen, setStatusSheetOpen] = useState(false);
   const [reviewSheetOpen, setReviewSheetOpen] = useState(false);
   const [addToListOpen, setAddToListOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<SeriesStatus | null>(null);
   const [selectedActor, setSelectedActor] = useState<{ id: number; name: string } | null>(null);
 
@@ -135,8 +137,19 @@ export function SeriesDetailScreen() {
         </div>
 
         <div className="pt-safe absolute inset-x-0 top-0 px-4">
-          <div className="pt-3">
+          <div className="flex items-center justify-between pt-3">
             <BackButton />
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              aria-label="Share a card"
+              className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-950/60 text-mist-100 backdrop-blur-md active:bg-ink-900"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+                <path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12 15V3M8 7l4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -402,6 +415,15 @@ export function SeriesDetailScreen() {
         onClose={() => setAddToListOpen(false)}
         tmdbId={tmdbId}
         detail={detail}
+      />
+
+      <ShareCardSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        posterPath={detail.posterPath}
+        name={detail.name}
+        year={year ? String(year) : null}
+        rating={tracking?.rating ?? null}
       />
     </>
   );
