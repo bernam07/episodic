@@ -223,15 +223,15 @@ then "Continue"/"Skip" calls `completeOnboarding` (sets the flag + optimisticall
 **Rewatches are a count, not a status.** `user_series_status.rewatch_count` (independent of `status`
 and `is_favorite`), bumped via `bump_rewatch(series_id, delta)` (clamps ≥ 0, own-row only). Exposed
 in the `user_series_progress` view + `getStatus`; the series page has a +/− stepper (shown once the
-series is in the library), and the Library has a "Rewatched" filter (`rewatch_count > 0`). Because
-only a count is stored (no per-rewatch timestamp), rewatches deliberately do **not** appear in the
-activity/diary feed.
+series is in the library). Because only a count is stored (no per-rewatch timestamp), rewatches
+deliberately do **not** appear in the activity/diary feed.
 
 **Favorites** are stored as `is_favorite boolean` on `user_series_status`. Toggling uses the
 `toggle_favorite(p_series_id)` RPC, which flips the flag (and upserts with `want_to_watch` if
 the series isn't in the library yet). Favorites are exposed in `user_series_progress` (own
-library) and `get_user_library` (other users' libraries, follow-gated). They appear as a
-dedicated "Favorites" filter tab in the Library screen and as a poster grid section on profiles.
+library) and `get_user_library` (other users' libraries, follow-gated). They appear as a poster
+grid section on profiles. (There is no dedicated Favorites/Rated/Rewatched filter tab in the
+Library — the Library filters are All + the four statuses only.)
 
 ---
 
@@ -518,10 +518,11 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   Data from `/series/:id/credits` edge function route (top 20).
 - **Profile editing**: EditProfileSheet — avatar upload (tap avatar, hidden file input), display
   name, bio (160 chars with counter). Followers/following lists via FollowListSheet (tap counts).
-- **Favorites**: Heart toggle on series detail, "Favorites" tab in Library, poster grid on profiles.
+- **Favorites**: Heart toggle on series detail, poster grid on profiles (no Library filter tab).
 - **Library filter persistence**: Filter state stored in URL search params (`?status=watching`).
-  Navigating to series detail and pressing Back restores the active filter. Profile stat tiles
-  deep-link to the correct library filter.
+  Navigating to series detail and pressing Back restores the active filter. The **stats page**
+  Library-breakdown rows deep-link to the matching library status filter (the profile itself no
+  longer shows per-status count tiles — the breakdown lives on `/stats`).
 - **Up Next**: Home rail showing the next unwatched aired episode of each *watching* series
   (`get_up_next`), with a one-tap check-off that advances to the following episode.
 - **Activity feed / Diary**: the **Friends** tab is a chronological milestone feed of the people you
@@ -531,17 +532,16 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   action), list detail at `/list/:id` (owner can manage/remove/edit/delete), and an "Add to list"
   sheet on the series detail screen. See Data model for the privacy + caching rules.
 - **Community ratings**: a half-star histogram (average + total) on the series page, above reviews.
-- **Rewatch counter**: +/− stepper on the series page; "Rewatched" Library filter (see Data model).
+- **Rewatch counter**: +/− stepper on the series page (see Data model).
 - **Seen-it cues**: posters across Home, Search, browse and More Like This carry one corner badge,
   in this precedence — your rating star (`useMyRatings`) → watched check (`useMyWatched`) → an
   **in-library** dot in the status colour with a glyph (`useMyLibraryStatus`), so a series you
   merely added is still visibly *yours* when scrolling a big catalogue. Suppressed where a
   `StatusBadge` already states the status (Library, profiles). Ratings/reviews are decoupled (see
   Data model).
-- **Finding a rating you can't place**: the Library has a **Rated** filter (sorted by `updated_at`,
-  so a just-set rating is first) and the stats histogram bars deep-link to
-  `/library?status=rated&rating=<n>`, with a dismissable chip. Re-tapping the same star on the
-  series page clears the rating (`set_rating` with `null`).
+- **Clearing a rating**: re-tapping the same star on the series page clears the rating (`set_rating`
+  with `null`). (The old dedicated **Rated** Library filter and the stats-histogram deep-link into it
+  were removed — the ratings histogram on `/stats` is now display-only.)
 - **Compare libraries**: from a followed user's profile, `compare_libraries` shows the union of both
   libraries with each side's status + rating (`ComparisonSheet`).
 - **Calendar**: `/calendar` — upcoming episodes of your Watching / Want-to-Watch series, grouped by day,
