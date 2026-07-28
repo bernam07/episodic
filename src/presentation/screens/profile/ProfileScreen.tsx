@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { computeLibraryStats } from "@/domain/entities/LibraryStats";
 import { ListsSection } from "@/presentation/components/lists/ListsSection";
-import { SERIES_STATUS_LABELS, SERIES_STATUSES, type SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { RatingBadge, WatchedBadge } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
@@ -20,13 +19,6 @@ import { useOwnReviews } from "@/presentation/hooks/useReviews";
 import { useProfileSummary } from "@/presentation/hooks/useSocial";
 import { useLibrary } from "@/presentation/hooks/useTracking";
 import { pluralize } from "@/presentation/utils/plural";
-
-const STATUS_DOTS: Record<SeriesStatus, string> = {
-  want_to_watch: "bg-[#d97706]",
-  watching: "bg-[#3b82f6]",
-  watched: "bg-[#059669]",
-  abandoned: "bg-[#f43f5e]",
-};
 
 function Header({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { profile, user } = useAuth();
@@ -159,26 +151,6 @@ function Stats() {
             <InlineStat value={<Duration minutes={watchTimeMinutes} />} label="watched" />
           ) : null}
         </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3.5 px-1 sm:grid-cols-4">
-        {SERIES_STATUSES.map((status) => (
-          <Link
-            key={status}
-            to={`/library?status=${status}`}
-            className="tap-none flex items-center gap-2.5 active:opacity-70"
-          >
-            <span className={`size-2 shrink-0 rounded-full ${STATUS_DOTS[status]}`} />
-            <span className="min-w-0 flex-1">
-              <span className="block text-[16px] leading-none font-bold text-mist-100">
-                {library.filter((item) => item.status === status).length}
-              </span>
-              <span className="mt-1 block truncate text-[11px] text-mist-500">
-                {SERIES_STATUS_LABELS[status]}
-              </span>
-            </span>
-          </Link>
-        ))}
       </div>
     </section>
   );

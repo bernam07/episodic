@@ -21,9 +21,8 @@ type ShareCardSheetProps = {
   rating: number | null;
 };
 
-type Option =
-  | { id: string; kind: "image"; url: string; thumb: string }
-  | { id: string; kind: "gradient" | "dark" };
+type Mode = "image" | "gradient" | "dark";
+type ImageCandidate = { id: string; url: string; thumb: string };
 
 function slugify(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "episodic";
@@ -45,7 +44,8 @@ export function ShareCardSheet({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cache = useRef<Map<string, HTMLImageElement>>(new Map());
 
-  const [selected, setSelected] = useState("poster");
+  const [mode, setMode] = useState<Mode>("image");
+  const [selectedImage, setSelectedImage] = useState("poster");
   const [posterImage, setPosterImage] = useState<HTMLImageElement | null>(null);
   const [posterFailed, setPosterFailed] = useState(false);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
@@ -55,34 +55,35 @@ export function ShareCardSheet({
   const handle = profile?.username ? `@${profile.username}` : "Episodic";
   const posterSource = posterUrl(posterPath, "w500");
 
-  const options = useMemo<Option[]>(() => {
-    const list: Option[] = [];
+  const imageCandidates = useMemo<ImageCandidate[]>(() => {
+    const list: ImageCandidate[] = [];
     const poster = posterUrl(posterPath, "w500");
     const posterThumb = posterUrl(posterPath, "w154");
     if (poster && posterThumb) {
-      list.push({ id: "poster", kind: "image", url: poster, thumb: posterThumb });
+      list.push({ id: "poster", url: poster, thumb: posterThumb });
     }
 
-    const images = backdrops.length > 0 ? backdrops : backdropPath ? [backdropPath] : [];
-    images.forEach((path, index) => {
+    const paths = backdrops.length > 0 ? backdrops : backdropPath ? [backdropPath] : [];
+    paths.forEach((path, index) => {
       const url = backdropUrl(path, "w1280");
       const thumb = backdropUrl(path, "w300");
       if (url && thumb) {
-        list.push({ id: `image-${index}`, kind: "image", url, thumb });
+        list.push({ id: `image-${index}`, url, thumb });
       }
     });
 
-    list.push({ id: "gradient", kind: "gradient" });
-    list.push({ id: "dark", kind: "dark" });
     return list;
   }, [posterPath, backdropPath, backdrops]);
+
+  const selectedCandidate = imageCandidates.find((item) => item.id === selectedImage) ?? imageCandidates[0];
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    setSelected(options[0]?.id ?? "gradient");
+    setMode(imageCandidates.length > 0 ? "image" : "gradient");
+    setSelectedImage(imageCandidates[0]?.id ?? "poster");
     setBgImage(null);
     setError(null);
     setPosterImage(null);
@@ -110,60 +111,53 @@ export function ShareCardSheet({
     return () => {
       active = false;
     };
-  }, [open, posterSource, options]);
+  }, [open, posterSource, imageCandidates]);
 
   useEffect(() => {
-    if (!open) {
+    if (!open || mode !== "image" || !selectedCandidate) {
       return;
     }
 
-    const option = options.find((item) => item.id === selected);
-    if (!option || option.kind !== "image") {
-      setBgImage(null);
+    if (selectedCandidate.id === "poster") {
+      setBgImage(posterImage);
       return;
     }
 
-    const cached = cache.current.get(option.url);
+    const cached = cache.current.get(selectedCandidate.url);
     if (cached) {
       setBgImage(cached);
       return;
     }
 
-    if (option.url === posterSource) {
-      setBgImage(null);
-      return;
-    }
-
     let active = true;
     setBgImage(null);
-    loadImage(option.url)
+    loadImage(selectedCandidate.url)
       .then((image) => {
         if (active) {
-          cache.current.set(option.url, image);
+          cache.current.set(selectedCandidate.url, image);
           setBgImage(image);
         }
       })
       .catch(() => {
         if (active) {
-          setSelected("gradient");
+          setMode("gradient");
         }
       });
 
     return () => {
       active = false;
     };
-  }, [open, selected, options, posterSource, posterImage]);
+  }, [open, mode, selectedCandidate, posterImage]);
 
   useEffect(() => {
     if (!open || !canvasRef.current) {
       return;
     }
 
-    const option = options.find((item) => item.id === selected);
     let background: ShareCardBackground;
-    if (option?.kind === "gradient") {
+    if (mode === "gradient") {
       background = { kind: "gradient" };
-    } else if (option?.kind === "dark") {
+    } else if (mode === "dark") {
       background = { kind: "dark" };
     } else if (bgImage) {
       background = { kind: "image", image: bgImage };
@@ -172,7 +166,7 @@ export function ShareCardSheet({
     }
 
     drawShareCard(canvasRef.current, { poster: posterImage, name, year, rating, handle, background });
-  }, [open, selected, options, bgImage, posterImage, name, year, rating, handle]);
+  }, [open, mode, bgImage, posterImage, name, year, rating, handle]);
 
   async function exportCard(action: (file: File, blob: Blob) => Promise<void>) {
     if (!canvasRef.current) {
@@ -220,6 +214,12 @@ export function ShareCardSheet({
     return exportCard(async (_file, blob) => download(blob));
   }
 
+  const modes: { id: Mode; label: string; disabled?: boolean }[] = [
+    { id: "image", label: "Poster", disabled: imageCandidates.length === 0 },
+    { id: "gradient", label: "Gradient" },
+    { id: "dark", label: "Midnight" },
+  ];
+
   return (
     <Sheet open={open} onClose={onClose} title="Share card">
       <div className="mx-auto w-full max-w-[240px] overflow-hidden rounded-2xl border border-ink-700 bg-ink-950 shadow-xl">
@@ -234,33 +234,49 @@ export function ShareCardSheet({
 
       <div className="mt-5">
         <p className="mb-2 text-[12px] font-medium text-mist-400">Background</p>
-        <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          {options.map((option) => {
-            const active = selected === option.id;
-            const ring = active ? "border-accent-500 ring-2 ring-accent-500/40" : "border-ink-700";
-            return (
-              <button
-                key={option.id}
-                type="button"
-                aria-pressed={active}
-                aria-label={
-                  option.kind === "image" ? "Image background" : option.kind === "gradient" ? "Gradient background" : "Midnight background"
-                }
-                onClick={() => setSelected(option.id)}
-                className={`tap-none size-14 shrink-0 overflow-hidden rounded-xl border transition-colors ${ring}`}
-              >
-                {option.kind === "image" ? (
-                  <img src={option.thumb} alt="" className="size-full object-cover" />
-                ) : option.kind === "gradient" ? (
-                  <span className="block size-full bg-gradient-to-br from-accent-500 via-accent-600 to-ink-950" />
-                ) : (
-                  <span className="block size-full bg-ink-950" />
-                )}
-              </button>
-            );
-          })}
+        <div className="flex gap-2">
+          {modes.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              disabled={option.disabled}
+              aria-pressed={mode === option.id}
+              onClick={() => setMode(option.id)}
+              className={`tap-none min-h-[40px] flex-1 rounded-xl border text-[13px] font-semibold transition-colors disabled:opacity-40 ${
+                mode === option.id
+                  ? "border-accent-500 bg-accent-600/15 text-accent-300"
+                  : "border-ink-700 bg-ink-850 text-mist-300 active:bg-ink-800"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </div>
+
+      {mode === "image" && imageCandidates.length > 1 ? (
+        <div className="mt-3">
+          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            {imageCandidates.map((candidate) => {
+              const active = selectedCandidate?.id === candidate.id;
+              return (
+                <button
+                  key={candidate.id}
+                  type="button"
+                  aria-pressed={active}
+                  aria-label={candidate.id === "poster" ? "Poster image" : "Backdrop image"}
+                  onClick={() => setSelectedImage(candidate.id)}
+                  className={`tap-none h-14 w-20 shrink-0 overflow-hidden rounded-lg border transition-colors ${
+                    active ? "border-accent-500 ring-2 ring-accent-500/40" : "border-ink-700"
+                  }`}
+                >
+                  <img src={candidate.thumb} alt="" className="size-full object-cover" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       {error ? (
         <p role="alert" className="mt-3 text-[13px] text-danger-500">

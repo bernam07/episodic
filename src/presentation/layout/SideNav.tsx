@@ -1,9 +1,11 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { NAV_TABS } from "./navigation";
+import { useTabReselect } from "./useTabReselect";
 
 export function SideNav() {
   const { profile } = useAuth();
+  const onTabClick = useTabReselect();
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-ink-800 bg-ink-900 px-4 py-6 md:flex">
@@ -23,6 +25,7 @@ export function SideNav() {
               <NavLink
                 to={tab.to}
                 end={tab.to === "/"}
+                onClick={onTabClick(tab.to)}
                 className={({ isActive }) =>
                   `tap-none flex min-h-[44px] items-center gap-3 rounded-xl px-3 text-[14px] font-medium transition-colors ${
                     isActive
