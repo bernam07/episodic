@@ -29,6 +29,7 @@ export type SeriesDetail = SeriesSummary & {
   nextEpisodeToAir: EpisodeStub | null;
   seasonsMeta: SeasonMeta[];
   episodeRunTime: number[];
+  backdrops: string[];
 };
 
 export function releaseYear(series: Pick<SeriesSummary, "firstAirDate">): string | null {

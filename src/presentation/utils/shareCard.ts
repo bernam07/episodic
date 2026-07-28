@@ -1,10 +1,7 @@
-export type ShareCardBackground = "poster" | "gradient" | "dark";
-
-export const SHARE_CARD_BACKGROUNDS: { id: ShareCardBackground; label: string }[] = [
-  { id: "poster", label: "Poster" },
-  { id: "gradient", label: "Gradient" },
-  { id: "dark", label: "Midnight" },
-];
+export type ShareCardBackground =
+  | { kind: "image"; image: HTMLImageElement }
+  | { kind: "gradient" }
+  | { kind: "dark" };
 
 export type ShareCardInput = {
   poster: HTMLImageElement | null;
@@ -16,7 +13,7 @@ export type ShareCardInput = {
 };
 
 const WIDTH = 1080;
-const HEIGHT = 1350;
+const HEIGHT = 1920;
 const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";
 
 const INK_950 = "#060b16";
@@ -24,6 +21,7 @@ const INK_800 = "#111b2f";
 const MIST_100 = "#e8edf7";
 const MIST_400 = "#7c8db0";
 const ACCENT = "#3b82f6";
+const ACCENT_LIGHT = "#60a5fa";
 const STAR = "#fbbf24";
 
 export function loadImage(url: string): Promise<HTMLImageElement> {
@@ -77,8 +75,8 @@ function starPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, outer: 
 }
 
 function drawStars(ctx: CanvasRenderingContext2D, centerX: number, y: number, rating: number) {
-  const size = 34;
-  const gap = 82;
+  const size = 42;
+  const gap = 100;
   const total = 5;
   const startX = centerX - ((total - 1) * gap) / 2;
 
@@ -103,6 +101,22 @@ function drawStars(ctx: CanvasRenderingContext2D, centerX: number, y: number, ra
       ctx.restore();
     }
   }
+}
+
+function drawLogo(ctx: CanvasRenderingContext2D, cx: number, cy: number, height: number) {
+  const bw = height * 0.28;
+  const gap = height * 0.18;
+  const heights = [height * 0.6, height, height * 0.78];
+  const colors = [ACCENT_LIGHT, ACCENT, ACCENT_LIGHT];
+  const totalW = bw * 3 + gap * 2;
+  let x = cx - totalW / 2;
+
+  heights.forEach((barHeight, i) => {
+    roundedRect(ctx, x, cy - barHeight / 2, bw, barHeight, bw * 0.42);
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    x += bw + gap;
+  });
 }
 
 function drawCover(ctx: CanvasRenderingContext2D, image: HTMLImageElement, w: number, h: number) {
@@ -158,14 +172,18 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: ShareCardInput) 
 
   ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-  if (input.background === "poster" && input.poster) {
+  if (input.background.kind === "image") {
     ctx.save();
-    ctx.filter = "blur(60px)";
-    drawCover(ctx, input.poster, WIDTH, HEIGHT);
+    ctx.filter = "blur(64px)";
+    drawCover(ctx, input.background.image, WIDTH, HEIGHT);
     ctx.restore();
-    ctx.fillStyle = "rgba(6,11,22,0.72)";
+    const shade = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+    shade.addColorStop(0, "rgba(6,11,22,0.68)");
+    shade.addColorStop(0.5, "rgba(6,11,22,0.62)");
+    shade.addColorStop(1, "rgba(6,11,22,0.86)");
+    ctx.fillStyle = shade;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  } else if (input.background === "gradient") {
+  } else if (input.background.kind === "gradient") {
     const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
     gradient.addColorStop(0, ACCENT);
     gradient.addColorStop(0.55, "#12224a");
@@ -175,29 +193,29 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: ShareCardInput) 
   } else {
     ctx.fillStyle = INK_950;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    const glow = ctx.createRadialGradient(WIDTH / 2, HEIGHT * 0.34, 80, WIDTH / 2, HEIGHT * 0.34, 760);
-    glow.addColorStop(0, "rgba(37,99,235,0.28)");
+    const glow = ctx.createRadialGradient(WIDTH / 2, HEIGHT * 0.34, 120, WIDTH / 2, HEIGHT * 0.34, 980);
+    glow.addColorStop(0, "rgba(37,99,235,0.3)");
     glow.addColorStop(1, "rgba(6,11,22,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
   }
 
-  const posterW = 520;
-  const posterH = 780;
+  const posterW = 620;
+  const posterH = 930;
   const posterX = (WIDTH - posterW) / 2;
-  const posterY = 88;
+  const posterY = 250;
 
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.55)";
-  ctx.shadowBlur = 60;
-  ctx.shadowOffsetY = 28;
-  roundedRect(ctx, posterX, posterY, posterW, posterH, 28);
+  ctx.shadowBlur = 70;
+  ctx.shadowOffsetY = 34;
+  roundedRect(ctx, posterX, posterY, posterW, posterH, 32);
   ctx.fillStyle = INK_800;
   ctx.fill();
   ctx.restore();
 
   ctx.save();
-  roundedRect(ctx, posterX, posterY, posterW, posterH, 28);
+  roundedRect(ctx, posterX, posterY, posterW, posterH, 32);
   ctx.clip();
   ctx.translate(posterX, posterY);
   if (input.poster) {
@@ -206,21 +224,21 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: ShareCardInput) 
     ctx.fillStyle = INK_800;
     ctx.fillRect(0, 0, posterW, posterH);
     ctx.fillStyle = MIST_400;
-    ctx.font = `700 220px ${FONT}`;
+    ctx.font = `700 240px ${FONT}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText((input.name[0] ?? "?").toUpperCase(), posterW / 2, posterH / 2);
   }
   ctx.restore();
 
-  const contentTop = posterY + posterH + 82;
-  const lineHeight = 64;
+  const contentTop = posterY + posterH + 128;
+  const lineHeight = 84;
 
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  ctx.font = `800 56px ${FONT}`;
+  ctx.font = `800 68px ${FONT}`;
   ctx.fillStyle = MIST_100;
-  const lines = wrapLines(ctx, input.name, WIDTH - 170, 2);
+  const lines = wrapLines(ctx, input.name, WIDTH - 180, 2);
   lines.forEach((line, index) => {
     ctx.fillText(line, WIDTH / 2, contentTop + index * lineHeight);
   });
@@ -228,38 +246,36 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: ShareCardInput) 
   const lastBaseline = contentTop + Math.max(lines.length - 1, 0) * lineHeight;
 
   if (input.year) {
-    ctx.font = `500 34px ${FONT}`;
+    ctx.font = `500 40px ${FONT}`;
     ctx.fillStyle = MIST_400;
-    ctx.fillText(input.year, WIDTH / 2, lastBaseline + 46);
+    ctx.fillText(input.year, WIDTH / 2, lastBaseline + 58);
   }
 
-  const starsY = lastBaseline + (input.year ? 112 : 82);
+  const starsY = lastBaseline + (input.year ? 140 : 100);
   if (input.rating && input.rating > 0) {
     drawStars(ctx, WIDTH / 2, starsY, input.rating);
   }
 
-  const footerY = HEIGHT - 86;
+  const footerY = HEIGHT - 118;
   ctx.save();
   ctx.strokeStyle = "rgba(255,255,255,0.12)";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(120, footerY - 54);
-  ctx.lineTo(WIDTH - 120, footerY - 54);
+  ctx.moveTo(130, footerY - 72);
+  ctx.lineTo(WIDTH - 130, footerY - 72);
   ctx.stroke();
   ctx.restore();
 
   ctx.textBaseline = "middle";
   ctx.textAlign = "left";
-  ctx.font = `600 36px ${FONT}`;
+  ctx.font = `600 42px ${FONT}`;
   ctx.fillStyle = MIST_400;
-  ctx.fillText(input.handle, 120, footerY);
+  ctx.fillText(input.handle, 130, footerY);
 
   ctx.textAlign = "right";
-  ctx.font = `800 36px ${FONT}`;
+  ctx.font = `800 44px ${FONT}`;
   ctx.fillStyle = MIST_100;
-  ctx.fillText("EPISODIC", WIDTH - 158, footerY);
-  ctx.beginPath();
-  ctx.arc(WIDTH - 132, footerY, 12, 0, Math.PI * 2);
-  ctx.fillStyle = ACCENT;
-  ctx.fill();
+  ctx.fillText("EPISODIC", WIDTH - 130, footerY);
+  const wordmarkWidth = ctx.measureText("EPISODIC").width;
+  drawLogo(ctx, WIDTH - 130 - wordmarkWidth - 40, footerY, 52);
 }

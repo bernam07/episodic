@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { posterUrl } from "@/data/tmdb/images";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { backdropUrl, posterUrl } from "@/data/tmdb/images";
 import { Button } from "@/presentation/components/ui/Button";
 import { Sheet } from "@/presentation/components/ui/Sheet";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import {
-  SHARE_CARD_BACKGROUNDS,
   canvasToBlob,
   drawShareCard,
   loadImage,
@@ -15,69 +14,167 @@ type ShareCardSheetProps = {
   open: boolean;
   onClose: () => void;
   posterPath: string | null;
+  backdropPath: string | null;
+  backdrops: string[];
   name: string;
   year: string | null;
   rating: number | null;
 };
 
+type Option =
+  | { id: string; kind: "image"; url: string; thumb: string }
+  | { id: string; kind: "gradient" | "dark" };
+
 function slugify(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "episodic";
 }
 
-export function ShareCardSheet({ open, onClose, posterPath, name, year, rating }: ShareCardSheetProps) {
+const canShareFiles = typeof navigator !== "undefined" && typeof navigator.canShare === "function";
+
+export function ShareCardSheet({
+  open,
+  onClose,
+  posterPath,
+  backdropPath,
+  backdrops,
+  name,
+  year,
+  rating,
+}: ShareCardSheetProps) {
   const { profile } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [poster, setPoster] = useState<HTMLImageElement | null>(null);
+  const cache = useRef<Map<string, HTMLImageElement>>(new Map());
+
+  const [selected, setSelected] = useState("poster");
+  const [posterImage, setPosterImage] = useState<HTMLImageElement | null>(null);
   const [posterFailed, setPosterFailed] = useState(false);
-  const [background, setBackground] = useState<ShareCardBackground>("poster");
+  const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handle = profile?.username ? `@${profile.username}` : "Episodic";
+  const posterSource = posterUrl(posterPath, "w500");
+
+  const options = useMemo<Option[]>(() => {
+    const list: Option[] = [];
+    const poster = posterUrl(posterPath, "w500");
+    const posterThumb = posterUrl(posterPath, "w154");
+    if (poster && posterThumb) {
+      list.push({ id: "poster", kind: "image", url: poster, thumb: posterThumb });
+    }
+
+    const images = backdrops.length > 0 ? backdrops : backdropPath ? [backdropPath] : [];
+    images.forEach((path, index) => {
+      const url = backdropUrl(path, "w1280");
+      const thumb = backdropUrl(path, "w300");
+      if (url && thumb) {
+        list.push({ id: `image-${index}`, kind: "image", url, thumb });
+      }
+    });
+
+    list.push({ id: "gradient", kind: "gradient" });
+    list.push({ id: "dark", kind: "dark" });
+    return list;
+  }, [posterPath, backdropPath, backdrops]);
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    let active = true;
+    setSelected(options[0]?.id ?? "gradient");
+    setBgImage(null);
     setError(null);
-    setPoster(null);
+    setPosterImage(null);
     setPosterFailed(false);
 
-    const url = posterUrl(posterPath, "w500");
-    if (!url) {
+    if (!posterSource) {
       setPosterFailed(true);
       return;
     }
 
-    loadImage(url)
+    let active = true;
+    loadImage(posterSource)
       .then((image) => {
         if (active) {
-          setPoster(image);
+          cache.current.set(posterSource, image);
+          setPosterImage(image);
         }
       })
       .catch(() => {
         if (active) {
           setPosterFailed(true);
-          setBackground((current) => (current === "poster" ? "gradient" : current));
         }
       });
 
     return () => {
       active = false;
     };
-  }, [open, posterPath]);
+  }, [open, posterSource, options]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const option = options.find((item) => item.id === selected);
+    if (!option || option.kind !== "image") {
+      setBgImage(null);
+      return;
+    }
+
+    const cached = cache.current.get(option.url);
+    if (cached) {
+      setBgImage(cached);
+      return;
+    }
+
+    if (option.url === posterSource) {
+      setBgImage(null);
+      return;
+    }
+
+    let active = true;
+    setBgImage(null);
+    loadImage(option.url)
+      .then((image) => {
+        if (active) {
+          cache.current.set(option.url, image);
+          setBgImage(image);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setSelected("gradient");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [open, selected, options, posterSource, posterImage]);
 
   useEffect(() => {
     if (!open || !canvasRef.current) {
       return;
     }
 
-    drawShareCard(canvasRef.current, { poster, name, year, rating, handle, background });
-  }, [open, poster, name, year, rating, handle, background]);
+    const option = options.find((item) => item.id === selected);
+    let background: ShareCardBackground;
+    if (option?.kind === "gradient") {
+      background = { kind: "gradient" };
+    } else if (option?.kind === "dark") {
+      background = { kind: "dark" };
+    } else if (bgImage) {
+      background = { kind: "image", image: bgImage };
+    } else {
+      background = { kind: "gradient" };
+    }
 
-  async function withCanvas(action: (blob: Blob, file: File) => Promise<void>) {
+    drawShareCard(canvasRef.current, { poster: posterImage, name, year, rating, handle, background });
+  }, [open, selected, options, bgImage, posterImage, name, year, rating, handle]);
+
+  async function exportCard(action: (file: File, blob: Blob) => Promise<void>) {
     if (!canvasRef.current) {
       return;
     }
@@ -88,75 +185,77 @@ export function ShareCardSheet({ open, onClose, posterPath, name, year, rating }
     try {
       const blob = await canvasToBlob(canvasRef.current);
       const file = new File([blob], `${slugify(name)}-episodic.png`, { type: "image/png" });
-      await action(blob, file);
+      await action(file, blob);
     } catch (caught) {
       if ((caught as Error)?.name !== "AbortError") {
-        setError("Couldn't export the card. Try saving it instead.");
+        setError("Couldn't export the card. Try again.");
       }
     } finally {
       setBusy(false);
     }
   }
 
-  function handleShare() {
-    return withCanvas(async (_blob, file) => {
-      const shareData = { files: [file], title: name, text: `${name} on Episodic` };
+  function download(blob: Blob) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${slugify(name)}-episodic.png`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
 
+  function handleShare() {
+    return exportCard(async (file, blob) => {
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share(shareData);
+        await navigator.share({ files: [file], title: name, text: `${name} on Episodic` });
       } else {
-        handleSave();
+        download(blob);
       }
     });
   }
 
   function handleSave() {
-    return withCanvas(async (blob) => {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${slugify(name)}-episodic.png`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-    });
+    return exportCard(async (_file, blob) => download(blob));
   }
-
-  const canShareFiles =
-    typeof navigator !== "undefined" && typeof navigator.canShare === "function";
 
   return (
     <Sheet open={open} onClose={onClose} title="Share card">
-      <div className="mx-auto w-full max-w-[300px] overflow-hidden rounded-2xl border border-ink-700 bg-ink-950 shadow-xl">
+      <div className="mx-auto w-full max-w-[240px] overflow-hidden rounded-2xl border border-ink-700 bg-ink-950 shadow-xl">
         <canvas ref={canvasRef} className="block h-auto w-full" />
       </div>
 
       {posterFailed ? (
         <p className="mt-3 text-center text-[12px] text-mist-500">
-          Poster couldn't be loaded — using a coloured background.
+          Poster couldn't be loaded — pick another background.
         </p>
       ) : null}
 
       <div className="mt-5">
         <p className="mb-2 text-[12px] font-medium text-mist-400">Background</p>
-        <div className="flex gap-2">
-          {SHARE_CARD_BACKGROUNDS.map((option) => {
-            const disabled = option.id === "poster" && posterFailed;
+        <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          {options.map((option) => {
+            const active = selected === option.id;
+            const ring = active ? "border-accent-500 ring-2 ring-accent-500/40" : "border-ink-700";
             return (
               <button
                 key={option.id}
                 type="button"
-                disabled={disabled}
-                aria-pressed={background === option.id}
-                onClick={() => setBackground(option.id)}
-                className={`tap-none min-h-[40px] flex-1 rounded-xl border text-[13px] font-semibold transition-colors disabled:opacity-40 ${
-                  background === option.id
-                    ? "border-accent-500 bg-accent-600/15 text-accent-300"
-                    : "border-ink-700 bg-ink-850 text-mist-300 active:bg-ink-800"
-                }`}
+                aria-pressed={active}
+                aria-label={
+                  option.kind === "image" ? "Image background" : option.kind === "gradient" ? "Gradient background" : "Midnight background"
+                }
+                onClick={() => setSelected(option.id)}
+                className={`tap-none size-14 shrink-0 overflow-hidden rounded-xl border transition-colors ${ring}`}
               >
-                {option.label}
+                {option.kind === "image" ? (
+                  <img src={option.thumb} alt="" className="size-full object-cover" />
+                ) : option.kind === "gradient" ? (
+                  <span className="block size-full bg-gradient-to-br from-accent-500 via-accent-600 to-ink-950" />
+                ) : (
+                  <span className="block size-full bg-ink-950" />
+                )}
               </button>
             );
           })}
@@ -169,15 +268,16 @@ export function ShareCardSheet({ open, onClose, posterPath, name, year, rating }
         </p>
       ) : null}
 
-      <div className="mt-5 flex gap-2">
+      <div className="mt-5">
         {canShareFiles ? (
           <Button fullWidth loading={busy} onClick={handleShare}>
             Share
           </Button>
-        ) : null}
-        <Button variant={canShareFiles ? "secondary" : "primary"} fullWidth loading={busy} onClick={handleSave}>
-          Save image
-        </Button>
+        ) : (
+          <Button fullWidth loading={busy} onClick={handleSave}>
+            Save image
+          </Button>
+        )}
       </div>
     </Sheet>
   );

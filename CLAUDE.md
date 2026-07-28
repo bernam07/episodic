@@ -554,12 +554,18 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
 - **Where to Watch**: streaming/rent/buy provider logos on the series page (`/series/:id/providers`
   edge route, JustWatch-sourced via TMDB; region from `navigator.language`, PT fallback → US).
 - **Share cards**: a Letterboxd-style shareable card generated on the series page (share icon, top-right
-  of the backdrop). `ShareCardSheet` renders a 1080×1350 `<canvas>` via the pure `shareCard.ts` drawer —
-  poster + title + year + your star rating + `@handle` + the Episodic wordmark — with three background
-  options (blurred **Poster**, **Gradient**, **Midnight**). Exports a PNG through the Web Share API
-  (`navigator.canShare` with a file) and always offers a download fallback. The poster is loaded
-  `crossOrigin="anonymous"`; if it can't be fetched the card falls back to a coloured background with a
-  letter placeholder, so export never hard-fails. All client-side — no backend/edge-function changes.
+  of the backdrop). `ShareCardSheet` renders a **1080×1920 (9:16, Instagram-story) `<canvas>`** via the
+  pure `shareCard.ts` drawer — poster + title + year + your star rating + `@handle` + the Episodic
+  three-bar logo. Background is picked from **thumbnail swatches**: the poster, each TMDB **backdrop**
+  (blurred behind the card), a **Gradient**, and **Midnight**. Backdrops come from the `tmdb` detail
+  route, which now appends `images` (`append_to_response=images&include_image_language=en,null`, top 6)
+  onto `SeriesDetail.backdrops`; with no backdrops it falls back to the single `backdrop_path`, so
+  there are always ≥2 image options. Export is via the Web Share API (`navigator.canShare` with a file →
+  the native share sheet, where iOS offers Instagram → Stories and the 9:16 image fills it); when file
+  sharing isn't available it shows a **Save image** download instead (so the extra Save button is hidden
+  on mobile/PWA where Share already saves). Images load `crossOrigin="anonymous"` so the canvas stays
+  untainted; a poster that can't be fetched degrades to a letter placeholder, so export never hard-fails.
+  Client-side except the additive `images` append on the `tmdb` edge function (needs a redeploy).
 - **Stats page**: `/stats` ("All stats" link on the profile panel) — watch-time hero, a part-to-whole
   **Library Breakdown** stacked bar + legend, sequential top-genre bars, an **emphasis** ratings
   histogram (the modal bucket in accent, the rest recessive gray), a backdrop **Most Watched** card,

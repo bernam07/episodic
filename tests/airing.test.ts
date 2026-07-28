@@ -33,6 +33,7 @@ function series(overrides: Partial<SeriesDetail> = {}): SeriesDetail {
       { seasonNumber: 1, episodeCount: 10, name: "S1", airDate: null, posterPath: null },
       { seasonNumber: 2, episodeCount: 10, name: "S2", airDate: null, posterPath: null },
     ],
+    backdrops: [],
     ...overrides,
   };
 }

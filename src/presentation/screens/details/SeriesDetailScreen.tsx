@@ -421,6 +421,8 @@ export function SeriesDetailScreen() {
         open={shareOpen}
         onClose={() => setShareOpen(false)}
         posterPath={detail.posterPath}
+        backdropPath={detail.backdropPath}
+        backdrops={detail.backdrops}
         name={detail.name}
         year={year ? String(year) : null}
         rating={tracking?.rating ?? null}
