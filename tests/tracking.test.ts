@@ -97,7 +97,6 @@ describe("SetSeriesStatus orchestration", () => {
   });
 
   it("writes episodes before the status so an explicit choice wins over the trigger", async () => {
-    const { useCase } = makeUseCase();
     const order: string[] = [];
     const tracking = {
       clearSeriesEpisodes: async () => {

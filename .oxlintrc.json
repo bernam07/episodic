@@ -1,0 +1,72 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "react-perf", "typescript", "jsx-a11y", "import"],
+  "categories": {
+    "correctness": "error"
+  },
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
+  "ignorePatterns": [
+    "dist",
+    "dev-dist",
+    "src/types/database.types.ts",
+    "supabase/functions"
+  ],
+  "rules": {
+    "jsx-a11y/label-has-associated-control": "error",
+    "jsx-a11y/control-has-associated-label": "error",
+    "jsx-a11y/prefer-tag-over-role": "off"
+  },
+  "overrides": [
+    {
+      "files": ["src/domain/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "react",
+                  "react-dom",
+                  "react-router",
+                  "react-router-dom",
+                  "@supabase/*",
+                  "@/data/*",
+                  "@/data/**",
+                  "@/presentation/*",
+                  "@/presentation/**"
+                ],
+                "message": "domain must not depend on React, Supabase, the data layer, or presentation. Dependencies point inward."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/presentation/**/*.ts", "src/presentation/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/data/supabase/*", "@/data/supabase/**"],
+                "message": "the UI must not import concrete Supabase implementations. Call use cases through the DI container; bind implementations only in presentation/di/container.ts."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/presentation/di/container.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ]
+}

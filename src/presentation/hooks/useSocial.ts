@@ -75,6 +75,9 @@ export function useToggleFollow() {
       queryClient.invalidateQueries({ queryKey: ["profile-summary"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });
       queryClient.invalidateQueries({ queryKey: ["user-library"] });
+      queryClient.invalidateQueries({ queryKey: ["user-favorites"] });
+      queryClient.invalidateQueries({ queryKey: ["diary"] });
+      queryClient.invalidateQueries({ queryKey: ["comparison"] });
       queryClient.invalidateQueries({ queryKey: ["followers"] });
       queryClient.invalidateQueries({ queryKey: ["following"] });
     },
