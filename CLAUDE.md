@@ -576,6 +576,10 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   order. Keep them identical here and on the profile pills: colour follows the status, not the chart.
   The emerald↔amber pair sits in the 6–8 CVD band, which is legal only because every segment carries
   a labelled legend entry and a 2px surface gap — don't drop either.
+- **Tab reselect**: tapping the bottom-nav (or sidebar) tab you're already on scrolls the window to the
+  top; tap it again at the top and it refetches the screen's active queries (`useTabReselect` →
+  `refetchQueries({ type: "active" })`). The window is the scroll container (`AppShell` has no inner
+  overflow), so this is a plain `window.scrollTo` / `window.scrollY` check.
 - **Skeleton loaders**: shape-matching placeholders (`Skeleton.tsx` kit) on Library, Home rails,
   Friends feed, diary and Search grids instead of centered spinners.
 - **New-episode alerts**: scheduled push + in-app notification when a Watching series airs a new episode
