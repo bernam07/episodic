@@ -109,6 +109,11 @@ function mapSeriesDetail(item: Record<string, unknown>) {
     ((item.status as string) ?? "").trim().toLowerCase()
   );
 
+  const backdrops = (((item.images as { backdrops?: { file_path: string }[] } | undefined)?.backdrops) ?? [])
+    .map((image) => image.file_path)
+    .filter((path): path is string => Boolean(path))
+    .slice(0, 6);
+
   let airedEpisodes: number;
   if (last) {
     const priorSeasons = seasons
@@ -138,6 +143,7 @@ function mapSeriesDetail(item: Record<string, unknown>) {
     next_episode_to_air: mapEpisodeStub(item.next_episode_to_air as TmdbEpisodeStub | null),
     seasons_meta: seasons,
     episode_run_time: ((item.episode_run_time as number[]) ?? []).filter((n) => n > 0),
+    backdrops,
   };
 }
 
@@ -226,7 +232,10 @@ async function handleRecommendations(tmdbId: string, url: URL) {
 }
 
 async function handleSeriesDetail(tmdbId: string) {
-  const data = await tmdbFetch(`/tv/${tmdbId}`);
+  const data = await tmdbFetch(`/tv/${tmdbId}`, {
+    append_to_response: "images",
+    include_image_language: "en,null",
+  });
   return json(mapSeriesDetail(data), 200, 3600);
 }
 

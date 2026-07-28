@@ -29,6 +29,7 @@ function detail(): SeriesDetail {
     lastEpisodeToAir: null,
     nextEpisodeToAir: null,
     seasonsMeta: [],
+    backdrops: [],
   };
 }
 
