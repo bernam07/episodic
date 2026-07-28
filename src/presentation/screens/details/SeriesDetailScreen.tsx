@@ -160,6 +160,15 @@ export function SeriesDetailScreen() {
             <p className="mt-1 text-[12px] text-mist-400">
               {[year, detail.tmdbStatus, `${detail.numberOfSeasons} seasons`].filter(Boolean).join(" · ")}
             </p>
+            {detail.voteAverage && detail.voteAverage > 0 ? (
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-star-500/12 px-2 py-1">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 text-star-500">
+                  <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
+                </svg>
+                <span className="text-[13px] font-bold text-mist-100">{detail.voteAverage.toFixed(1)}</span>
+                <span className="text-[11px] font-medium tracking-wide text-mist-500">/10 · TMDB</span>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

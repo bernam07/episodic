@@ -763,6 +763,64 @@ describe("get_user_favorites", () => {
   });
 });
 
+describe("favorite pins", () => {
+  const ids: string[] = [];
+
+  async function seedFav(tmdbId: number, name: string): Promise<string> {
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{ id: string }>(`select public.upsert_series_from_tmdb($1::jsonb) as id;`, [
+      JSON.stringify({ ...BREAKING_BAD, tmdb_id: tmdbId, name }),
+    ]);
+    const id = r.rows[0].id;
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, is_favorite)
+       values ($1, $2, 'watching', true)
+       on conflict (user_id, series_id) do update set is_favorite = true`,
+      [ALICE, id]
+    );
+    await reset(db);
+    return id;
+  }
+
+  beforeAll(async () => {
+    for (let i = 0; i < 4; i += 1) {
+      ids.push(await seedFav(8100 + i, `Fav ${i}`));
+    }
+  });
+
+  it("pins up to three favorites, orders them first, and refuses a fourth", async () => {
+    await asAuthenticated(db, ALICE);
+
+    for (let i = 0; i < 3; i += 1) {
+      await db.query(`select public.set_favorite_pinned($1, true)`, [ids[i]]);
+    }
+
+    await expect(db.query(`select public.set_favorite_pinned($1, true)`, [ids[3]])).rejects.toThrow(
+      /pin_limit_reached/
+    );
+
+    const favs = await db.query<{ series_id: string; pinned: boolean }>(
+      `select series_id, pinned from public.get_user_favorites($1, 60)`,
+      [ALICE]
+    );
+
+    expect(favs.rows.slice(0, 3).map((row) => row.series_id).sort()).toEqual(ids.slice(0, 3).sort());
+    expect(favs.rows.slice(0, 3).every((row) => row.pinned)).toBe(true);
+    expect(favs.rows[3].pinned).toBe(false);
+
+    await db.query(`select public.set_favorite_pinned($1, false)`, [ids[0]]);
+    await db.query(`select public.set_favorite_pinned($1, true)`, [ids[3]]);
+
+    const after = await db.query<{ n: number }>(
+      `select count(*)::int as n from public.get_user_favorites($1, 60) where pinned`,
+      [ALICE]
+    );
+    await reset(db);
+
+    expect(after.rows[0].n).toBe(3);
+  });
+});
+
 describe("lists", () => {
   let seriesId: string;
   let publicList: string;

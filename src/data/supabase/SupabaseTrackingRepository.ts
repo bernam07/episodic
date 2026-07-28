@@ -18,6 +18,7 @@ type ProgressRow = {
   backdrop_path: string | null;
   status: SeriesStatus;
   is_favorite: boolean;
+  favorite_pinned_at: string | null;
   rewatch_count: number;
   number_of_seasons: number;
   number_of_episodes: number;
@@ -40,6 +41,7 @@ function toProgress(row: ProgressRow): SeriesProgress {
     backdropPath: row.backdrop_path,
     status: row.status,
     isFavorite: row.is_favorite,
+    favoritePinnedAt: row.favorite_pinned_at ?? null,
     rewatchCount: row.rewatch_count,
     numberOfSeasons: row.number_of_seasons,
     numberOfEpisodes: row.number_of_episodes,
@@ -295,6 +297,18 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
 
     if (error) {
       throw new AppError("unknown", error.message, error);
+    }
+  }
+
+  async setFavoritePinned(seriesId: string, pinned: boolean): Promise<void> {
+    const { error } = await supabase.rpc("set_favorite_pinned" as never, {
+      p_series_id: seriesId,
+      p_pinned: pinned,
+    } as never);
+
+    if (error) {
+      const message = (error as { message: string }).message;
+      throw new AppError(message.includes("pin_limit_reached") ? "validation" : "unknown", message, error);
     }
   }
 

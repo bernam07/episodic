@@ -233,6 +233,14 @@ library) and `get_user_library` (other users' libraries, follow-gated). They app
 grid section on profiles. (There is no dedicated Favorites/Rated/Rewatched filter tab in the
 Library — the Library filters are All + the four statuses only.)
 
+**Pinned favorites float to the front.** `user_series_status.favorite_pinned_at` lets a user
+**feature up to 3 favorites** so their genuine top picks lead the profile rail instead of whatever
+they favorited most recently. `set_favorite_pinned(series_id, pinned)` (`security invoker`, own-row)
+stamps/clears the timestamp and **raises `pin_limit_reached` past 3** (the UI also disables the pin
+button at 3). `favorite_pinned_at` is on the `user_series_progress` view (own profile sorts pinned
+first client-side) and `get_user_favorites` orders `pinned` (earliest-pinned) first, then the rest by
+`updated_at` — so followers see the same featured order. Added in `…090000_favorite_pins`.
+
 ---
 
 ## Privacy model
@@ -466,6 +474,7 @@ screenshot before believing a red result.
 | `…091000_new_episode_notifications` (2026-07-24) | `notifications.actor_id` nullable + `season_number`/`episode_number` columns; `get_notifications` left-joins the actor (system notifications have none) and returns the episode |
 | `…100000_series_runtime` (2026-07-24) | `series.episode_runtime` (avg, stored by `upsert_series_from_tmdb`, exposed on the view) so profile watch-time sums from the library with zero TMDB calls |
 | `…110000_fix_up_next_absolute_numbering` (2026-07-24) | `get_up_next` rewritten to per-season watched counts — episode_number equality broke on absolutely-numbered shows (One Piece S2 = E62+) and stuck the suggestion |
+| `…090000_favorite_pins` (2026-07-26) | `user_series_status.favorite_pinned_at` (added to the `user_series_progress` view); `set_favorite_pinned` RPC (own-row, caps at 3 → `pin_limit_reached`); `get_user_favorites` returns `pinned` and orders pinned-first |
 
 ## Edge Functions
 
@@ -518,7 +527,10 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   Data from `/series/:id/credits` edge function route (top 20).
 - **Profile editing**: EditProfileSheet — avatar upload (tap avatar, hidden file input), display
   name, bio (160 chars with counter). Followers/following lists via FollowListSheet (tap counts).
-- **Favorites**: Heart toggle on series detail, poster grid on profiles (no Library filter tab).
+- **Favorites**: Heart toggle on series detail, poster grid on profiles (no Library filter tab). Own
+  profile shows a **pin** button on each favorite to feature up to 3 at the front (see Data model).
+- **Global score**: the series page shows TMDB's `vote_average` (worldwide viewer score, `x.x /10 ·
+  TMDB`) as a star chip under the title — distinct from the app's own community half-star histogram.
 - **Library filter persistence**: Filter state stored in URL search params (`?status=watching`).
   Navigating to series detail and pressing Back restores the active filter. The **stats page**
   Library-breakdown rows deep-link to the matching library status filter (the profile itself no
