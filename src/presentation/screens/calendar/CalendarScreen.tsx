@@ -150,12 +150,18 @@ export function CalendarScreen() {
 
   const airing = useMemo(() => {
     const list: { tmdbId: number; seriesId: string; name: string; posterPath: string | null; season: number }[] = [];
+    const seen = new Set<string>();
     for (const query of detailQueries) {
       const detail = query.data as SeriesDetail | undefined;
-      const season = detail?.nextEpisodeToAir?.seasonNumber;
       const sid = detail ? tmdbToSeriesId.get(detail.tmdbId) : undefined;
-      if (!detail || !season || !sid) continue;
-      list.push({ tmdbId: detail.tmdbId, seriesId: sid, name: detail.name, posterPath: detail.posterPath, season });
+      if (!detail || !sid) continue;
+      for (const season of [detail.lastEpisodeToAir?.seasonNumber, detail.nextEpisodeToAir?.seasonNumber]) {
+        if (!season) continue;
+        const key = `${detail.tmdbId}:${season}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        list.push({ tmdbId: detail.tmdbId, seriesId: sid, name: detail.name, posterPath: detail.posterPath, season });
+      }
     }
     return list;
   }, [detailQueries, tmdbToSeriesId]);

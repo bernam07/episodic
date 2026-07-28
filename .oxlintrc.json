@@ -17,9 +17,43 @@
   "rules": {
     "jsx-a11y/label-has-associated-control": "error",
     "jsx-a11y/control-has-associated-label": "error",
-    "jsx-a11y/prefer-tag-over-role": "off"
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "react-hooks/exhaustive-deps": "error",
+    "import/no-cycle": "error"
   },
   "overrides": [
+    {
+      "files": ["src/core/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/domain/*", "@/domain/**", "@/data/*", "@/data/**", "@/presentation/*", "@/presentation/**"],
+                "message": "core is framework-agnostic and must not depend on domain, data, or presentation."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/data/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/presentation/*", "@/presentation/**"],
+                "message": "the data layer must not depend on presentation. Dependencies point inward."
+              }
+            ]
+          }
+        ]
+      }
+    },
     {
       "files": ["src/domain/**/*.ts"],
       "rules": {

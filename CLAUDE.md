@@ -302,8 +302,10 @@ Screen components use **named** exports, so each lazy import maps it to default:
   is `undefined`), so `@typescript-eslint/parser` — which needs that API — cannot run without a
   second, conflicting `typescript`. `oxlint` parses TS itself, so it just works. `.oxlintrc.json`
   encodes the Clean Architecture boundaries as `no-restricted-imports` overrides (domain imports no
-  React/Supabase/data/presentation; presentation imports no `data/supabase` except
-  `di/container.ts`) plus the real jsx-a11y rules as errors. It runs in CI after typecheck.
+  React/Supabase/data/presentation; data imports no presentation; core imports no
+  domain/data/presentation; presentation imports no `data/supabase` except `di/container.ts`), plus
+  `react-hooks/exhaustive-deps` and `import/no-cycle` as errors and the real jsx-a11y rules. It runs
+  in CI after typecheck.
 - **`erasableSyntaxOnly` is left off `tsconfig.app.json`** (it's only `true` in
   `tsconfig.node.json`, for `vite.config.ts`) — it forbids constructor parameter properties, which
   the DI relies on. esbuild handles them fine.
@@ -543,8 +545,11 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
 - **Compare libraries**: from a followed user's profile, `compare_libraries` shows the union of both
   libraries with each side's status + rating (`ComparisonSheet`).
 - **Calendar**: `/calendar` — upcoming episodes of your Watching / Want-to-Watch series, grouped by day,
-  with a **Week / Month** toggle and prev/next navigation (enumerates the airing season, not just the
-  next episode).
+  with a **Week / Month** toggle and prev/next navigation. Enumerates the **union of the
+  `last_episode_to_air` and `next_episode_to_air` seasons** (deduped per series+season, so ≤2 season
+  fetches each) — so a finale that aired days ago still shows, and a season boundary inside the window
+  isn't missed, not just the next episode. Aired rows carry a watched-state toggle driven by the
+  per-series watched-episode set.
 - **Watch time**: profile stat summed from `series.episode_runtime` × watched episodes (no TMDB calls).
 - **Where to Watch**: streaming/rent/buy provider logos on the series page (`/series/:id/providers`
   edge route, JustWatch-sourced via TMDB; region from `navigator.language`, PT fallback → US).
