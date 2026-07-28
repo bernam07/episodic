@@ -44,6 +44,20 @@ export function LibraryScreen() {
   const filter: Filter =
     paramValue && VALID_FILTERS.has(paramValue) ? (paramValue as Filter) : "all";
 
+  const viewParam = searchParams.get("view");
+  const view =
+    viewParam === "favorites" || viewParam === "rewatched" || viewParam === "rated" ? viewParam : null;
+  const ratingParam = searchParams.get("rating");
+  const focused = view !== null;
+  const focusLabel =
+    view === "rated"
+      ? ratingParam
+        ? `Rated ${ratingParam} ★`
+        : "Rated"
+      : view === "favorites"
+        ? "Favorites"
+        : "Rewatched";
+
   const { data, isLoading } = useLibrary();
   const [sort, setSort] = useState<SortKey>("recent");
   const [search, setSearch] = useState("");
@@ -78,17 +92,24 @@ export function LibraryScreen() {
   const visible = useMemo(() => {
     if (!data) return [];
     let result = data;
+    if (view === "favorites") result = result.filter((item) => item.isFavorite);
+    else if (view === "rewatched") result = result.filter((item) => item.rewatchCount > 0);
+    else if (view === "rated") {
+      result = result.filter(
+        (item) => item.userRating !== null && (!ratingParam || item.userRating === Number(ratingParam))
+      );
+    }
     if (filter !== "all") result = result.filter((item) => item.status === filter);
     if (genreParam) result = result.filter((item) => item.genres.includes(genreParam));
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter((item) => item.name.toLowerCase().includes(q));
     }
-    if (filter !== "all") {
+    if (filter !== "all" || focused) {
       result = [...result].sort(SORT_FNS[sort]);
     }
     return result;
-  }, [data, filter, genreParam, search, sort]);
+  }, [data, filter, view, ratingParam, focused, genreParam, search, sort]);
 
   function setFilter(next: Filter) {
     const params: Record<string, string> = {};
@@ -102,6 +123,10 @@ export function LibraryScreen() {
     if (filter !== "all") params.status = filter;
     if (genre) params.genre = genre;
     setSearchParams(params, { replace: true });
+  }
+
+  function clearView() {
+    setSearchParams({}, { replace: true });
   }
 
   return (
@@ -136,29 +161,44 @@ export function LibraryScreen() {
         </div>
       </div>
 
-      <div className="no-scrollbar sticky top-[52px] z-20 flex gap-2 overflow-x-auto bg-ink-950/80 px-5 pb-4 backdrop-blur-xl">
-        {FILTERS.map((value) => (
+      {focused ? (
+        <div className="sticky top-[52px] z-20 bg-ink-950/80 px-5 pb-4 backdrop-blur-xl">
           <button
-            key={value}
             type="button"
-            onClick={() => setFilter(value)}
-            className={`tap-none flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors ${
-              filter === value ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
-            }`}
+            onClick={clearView}
+            className="tap-none inline-flex items-center gap-1.5 rounded-full bg-accent-600/15 px-3.5 py-2 text-[13px] font-semibold text-accent-300 active:bg-accent-600/25"
           >
-            {FILTER_LABELS[value]}
-            <span
-              className={`text-[11px] tabular-nums ${
-                filter === value ? "text-white/70" : "text-mist-500"
+            {focusLabel}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+      ) : (
+        <div className="no-scrollbar sticky top-[52px] z-20 flex gap-2 overflow-x-auto bg-ink-950/80 px-5 pb-4 backdrop-blur-xl">
+          {FILTERS.map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setFilter(value)}
+              className={`tap-none flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors ${
+                filter === value ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
               }`}
             >
-              {counts[value]}
-            </span>
-          </button>
-        ))}
-      </div>
+              {FILTER_LABELS[value]}
+              <span
+                className={`text-[11px] tabular-nums ${
+                  filter === value ? "text-white/70" : "text-mist-500"
+                }`}
+              >
+                {counts[value]}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
-      {allGenres.length > 0 ? (
+      {!focused && allGenres.length > 0 ? (
         <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 pb-4">
           <button
             type="button"
@@ -184,7 +224,7 @@ export function LibraryScreen() {
         </div>
       ) : null}
 
-      {filter !== "all" && visible.length > 1 ? (
+      {(focused || filter !== "all") && visible.length > 1 ? (
         <div className="flex items-center gap-1.5 px-5 pb-4">
           <span className="mr-1 text-[11px] text-mist-500">Sort</span>
           {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
@@ -219,11 +259,11 @@ export function LibraryScreen() {
 
       {!isLoading && (data?.length ?? 0) > 0 && visible.length === 0 ? (
         <p className="px-5 pt-8 text-center text-[14px] text-mist-500">
-          Nothing in {FILTER_LABELS[filter]} yet.
+          Nothing in {focused ? focusLabel : FILTER_LABELS[filter]} yet.
         </p>
       ) : null}
 
-      {visible.length > 0 && filter === "all" ? (
+      {visible.length > 0 && filter === "all" && !focused ? (
         <div className="space-y-7 px-5">
           {SERIES_STATUSES.map((status) => {
             const group = visible.filter((item) => item.status === status);
@@ -254,7 +294,7 @@ export function LibraryScreen() {
         </div>
       ) : null}
 
-      {visible.length > 0 && filter !== "all" ? (
+      {visible.length > 0 && (filter !== "all" || focused) ? (
         <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {visible.map((item) => (
             <SeriesCard

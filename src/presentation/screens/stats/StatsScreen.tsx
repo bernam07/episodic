@@ -121,12 +121,8 @@ function Ratings({ ratings }: { ratings: RatingSummary }) {
 
       <div className="px-5">
         <div className="flex h-28 items-end gap-1">
-          {ratings.buckets.map((bucket, index) => (
-            <div
-              key={bucket.rating}
-              className="flex h-full flex-1 flex-col justify-end"
-              title={bucket.count > 0 ? `${bucket.rating} ★ · ${plural(bucket.count, "series", "series")}` : undefined}
-            >
+          {ratings.buckets.map((bucket, index) => {
+            const bar = (
               <div
                 className={`bar-grow-y w-full rounded-t-[3px] ${
                   bucket.count === 0
@@ -140,8 +136,25 @@ function Ratings({ ratings }: { ratings: RatingSummary }) {
                   animationDelay: `${index * 35}ms`,
                 }}
               />
-            </div>
-          ))}
+            );
+
+            return (
+              <div key={bucket.rating} className="flex h-full flex-1 flex-col justify-end">
+                {bucket.count > 0 ? (
+                  <Link
+                    to={`/library?view=rated&rating=${bucket.rating}`}
+                    aria-label={`${plural(bucket.count, "series", "series")} rated ${bucket.rating} stars`}
+                    title={`${bucket.rating} ★ · ${plural(bucket.count, "series", "series")}`}
+                    className="tap-none flex h-full w-full flex-col justify-end active:opacity-70"
+                  >
+                    {bar}
+                  </Link>
+                ) : (
+                  bar
+                )}
+              </div>
+            );
+          })}
         </div>
 
         <div className="mt-2 flex gap-1 border-t border-white/5 pt-2">
@@ -268,7 +281,10 @@ export function StatsScreen() {
 
           <section className="mt-8 px-5 pb-10">
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-3 rounded-2xl bg-ink-850 px-4 py-3.5">
+              <Link
+                to="/library?view=favorites"
+                className="tap-none flex items-center gap-3 rounded-2xl bg-ink-850 px-4 py-3.5 active:opacity-70"
+              >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="size-[18px] shrink-0 text-rose-400">
                   <path d="M12 21.23l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
                 </svg>
@@ -276,8 +292,11 @@ export function StatsScreen() {
                   <p className="text-[18px] leading-none font-bold text-mist-100">{insights.favorites}</p>
                   <p className="mt-1 text-[11px] text-mist-500">favorites</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-2xl bg-ink-850 px-4 py-3.5">
+              </Link>
+              <Link
+                to="/library?view=rewatched"
+                className="tap-none flex items-center gap-3 rounded-2xl bg-ink-850 px-4 py-3.5 active:opacity-70"
+              >
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -292,7 +311,7 @@ export function StatsScreen() {
                   <p className="text-[18px] leading-none font-bold text-mist-100">{insights.rewatches}</p>
                   <p className="mt-1 text-[11px] text-mist-500">rewatches</p>
                 </div>
-              </div>
+              </Link>
             </div>
           </section>
         </>

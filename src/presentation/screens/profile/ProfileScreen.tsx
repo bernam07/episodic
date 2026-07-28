@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { computeLibraryStats } from "@/domain/entities/LibraryStats";
 import { ListsSection } from "@/presentation/components/lists/ListsSection";
@@ -17,7 +17,7 @@ import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useOwnReviews } from "@/presentation/hooks/useReviews";
 import { useProfileSummary } from "@/presentation/hooks/useSocial";
-import { useLibrary } from "@/presentation/hooks/useTracking";
+import { useLibrary, useSetFavoritePinned } from "@/presentation/hooks/useTracking";
 import { pluralize } from "@/presentation/utils/plural";
 
 function Header({ onOpenSettings }: { onOpenSettings: () => void }) {
@@ -158,37 +158,75 @@ function Stats() {
 
 function Favorites() {
   const { data } = useLibrary();
-  const favorites = (data ?? []).filter((item) => item.isFavorite);
+  const setPinned = useSetFavoritePinned();
+
+  const favorites = useMemo(() => {
+    const list = (data ?? []).filter((item) => item.isFavorite);
+    return [...list].sort((a, b) => {
+      if (a.favoritePinnedAt && b.favoritePinnedAt) {
+        return a.favoritePinnedAt.localeCompare(b.favoritePinnedAt);
+      }
+      if (a.favoritePinnedAt) return -1;
+      if (b.favoritePinnedAt) return 1;
+      return b.updatedAt.localeCompare(a.updatedAt);
+    });
+  }, [data]);
+
+  const pinnedCount = favorites.filter((item) => item.favoritePinnedAt).length;
 
   if (favorites.length === 0) return null;
 
   return (
     <section className="mt-8">
-      <h2 className="mb-3 flex items-center gap-1.5 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-        <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 text-rose-400">
-          <path d="M12 21.23l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
-        </svg>
-        Favorites
-        <span className="text-mist-600">{favorites.length}</span>
-      </h2>
+      <div className="mb-3 flex items-center justify-between px-5">
+        <h2 className="flex items-center gap-1.5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 text-rose-400">
+            <path d="M12 21.23l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
+          </svg>
+          Favorites
+          <span className="text-mist-600">{favorites.length}</span>
+        </h2>
+        {favorites.length > 1 ? (
+          <span className="text-[11px] text-mist-600">Pin up to 3 to feature</span>
+        ) : null}
+      </div>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
-        {favorites.map((item) => (
-          <Link
-            key={item.seriesId}
-            to={`/series/${item.tmdbId}`}
-            className="tap-none w-[116px] shrink-0 active:opacity-70"
-          >
-            <div className="relative overflow-hidden rounded-xl ring-1 ring-white/10">
-              <SeriesPoster path={item.posterPath} alt={item.name} />
-              {item.userRating ? (
-                <RatingBadge value={item.userRating} />
-              ) : item.status === "watched" ? (
-                <WatchedBadge />
-              ) : null}
+        {favorites.map((item) => {
+          const pinned = item.favoritePinnedAt !== null;
+          const disabled = setPinned.isPending || (!pinned && pinnedCount >= 3);
+          return (
+            <div key={item.seriesId} className="relative w-[116px] shrink-0">
+              <Link to={`/series/${item.tmdbId}`} className="tap-none block active:opacity-70">
+                <div className="relative overflow-hidden rounded-xl ring-1 ring-white/10">
+                  <SeriesPoster path={item.posterPath} alt={item.name} />
+                  {item.userRating ? (
+                    <RatingBadge value={item.userRating} />
+                  ) : item.status === "watched" ? (
+                    <WatchedBadge />
+                  ) : null}
+                </div>
+                <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
+              </Link>
+              <button
+                type="button"
+                disabled={disabled}
+                aria-pressed={pinned}
+                aria-label={pinned ? "Unpin from featured" : "Pin to featured"}
+                onClick={() => setPinned.mutate({ seriesId: item.seriesId, pinned: !pinned })}
+                className={`tap-none absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded-full backdrop-blur-md transition-colors disabled:opacity-40 ${
+                  pinned
+                    ? "bg-accent-600 text-white"
+                    : "bg-ink-950/60 text-mist-300 active:bg-ink-900"
+                }`}
+              >
+                <svg viewBox="0 0 24 24" fill={pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="size-3.5">
+                  <path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M12 15v5" strokeLinecap="round" />
+                </svg>
+              </button>
             </div>
-            <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
-          </Link>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

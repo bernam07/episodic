@@ -223,6 +223,19 @@ export function useToggleFavorite(seriesId: string | null) {
   });
 }
 
+export function useSetFavoritePinned() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ seriesId, pinned }: { seriesId: string; pinned: boolean }) =>
+      container.repositories.tracking.setFavoritePinned(seriesId, pinned),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+      queryClient.invalidateQueries({ queryKey: ["user-favorites"] });
+    },
+  });
+}
+
 export function useSetRating(seriesId: string | null) {
   const queryClient = useQueryClient();
 
