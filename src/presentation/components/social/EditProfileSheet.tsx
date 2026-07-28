@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent } from "react";
 import { toUserMessage } from "@/core/errors/AppError";
 import { MAX_BIO_LENGTH } from "@/domain/usecases/auth/AuthUseCases";
 import { Avatar } from "@/presentation/components/social/Avatar";
@@ -21,6 +21,8 @@ export function EditProfileSheet({ open, onClose }: EditProfileSheetProps) {
   const [bio, setBio] = useState(profile?.bio ?? "");
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const displayNameId = useId();
+  const bioId = useId();
 
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
@@ -102,8 +104,11 @@ export function EditProfileSheet({ open, onClose }: EditProfileSheetProps) {
 
       <div className="mt-6 flex flex-col gap-4">
         <div>
-          <label className="mb-1.5 block text-[12px] font-medium text-mist-400">Display name</label>
+          <label htmlFor={displayNameId} className="mb-1.5 block text-[12px] font-medium text-mist-400">
+            Display name
+          </label>
           <input
+            id={displayNameId}
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value.slice(0, 40))}
             placeholder="Your name"
@@ -112,8 +117,11 @@ export function EditProfileSheet({ open, onClose }: EditProfileSheetProps) {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[12px] font-medium text-mist-400">Bio</label>
+          <label htmlFor={bioId} className="mb-1.5 block text-[12px] font-medium text-mist-400">
+            Bio
+          </label>
           <textarea
+            id={bioId}
             value={bio}
             onChange={(event) => setBio(event.target.value.slice(0, MAX_BIO_LENGTH))}
             placeholder="Tell people what you're watching"

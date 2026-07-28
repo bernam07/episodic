@@ -68,6 +68,7 @@ TMDB secret. A fresh machine only needs `.env.local` + `supabase link`. Full set
 | `npm run build` | `tsc -b && vite build` |
 | `npm run preview` | Serve the production build — **required** to exercise the PWA/service worker |
 | `npm run typecheck` | Types only |
+| `npm run lint` | `oxlint` — enforces the architecture boundaries + a11y (see below) |
 | `npm test` | Run the Vitest suite (`tests/`) once — domain units + PGlite schema tests |
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run test:e2e` | Playwright smoke suite (builds, serves, drives `/auth`). Local only |
@@ -296,6 +297,13 @@ Screen components use **named** exports, so each lazy import maps it to default:
 ## Toolchain gotchas (all already hit and resolved)
 
 - **TypeScript 7 removed `baseUrl`.** Paths resolve relative to the tsconfig. Don't re-add it.
+- **Linting is `oxlint`, not ESLint.** TypeScript 7 is the native (tsgo) package: it ships a
+  `typescript-linux-x64` binary and **does not export the JS compiler API** (`ts.createSourceFile`
+  is `undefined`), so `@typescript-eslint/parser` — which needs that API — cannot run without a
+  second, conflicting `typescript`. `oxlint` parses TS itself, so it just works. `.oxlintrc.json`
+  encodes the Clean Architecture boundaries as `no-restricted-imports` overrides (domain imports no
+  React/Supabase/data/presentation; presentation imports no `data/supabase` except
+  `di/container.ts`) plus the real jsx-a11y rules as errors. It runs in CI after typecheck.
 - **`erasableSyntaxOnly` is left off `tsconfig.app.json`** (it's only `true` in
   `tsconfig.node.json`, for `vite.config.ts`) — it forbids constructor parameter properties, which
   the DI relies on. esbuild handles them fine.

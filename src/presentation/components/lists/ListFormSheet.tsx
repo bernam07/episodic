@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { toUserMessage } from "@/core/errors/AppError";
 import {
   MAX_LIST_DESCRIPTION,
@@ -25,6 +25,8 @@ export function ListFormSheet({ open, onClose, existing, onCreated }: ListFormSh
   const [description, setDescription] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const titleId = useId();
+  const descriptionId = useId();
 
   const createList = useCreateList();
   const updateList = useUpdateList(existing?.id ?? "");
@@ -60,8 +62,11 @@ export function ListFormSheet({ open, onClose, existing, onCreated }: ListFormSh
     <Sheet open={open} onClose={onClose} title={existing ? "Edit List" : "New List"}>
       <div className="flex flex-col gap-4">
         <div>
-          <label className="mb-1.5 block text-[12px] font-medium text-mist-400">Title</label>
+          <label htmlFor={titleId} className="mb-1.5 block text-[12px] font-medium text-mist-400">
+            Title
+          </label>
           <input
+            id={titleId}
             value={title}
             onChange={(event) => setTitle(event.target.value.slice(0, MAX_LIST_TITLE))}
             placeholder="e.g. Best sci-fi"
@@ -70,8 +75,11 @@ export function ListFormSheet({ open, onClose, existing, onCreated }: ListFormSh
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[12px] font-medium text-mist-400">Description</label>
+          <label htmlFor={descriptionId} className="mb-1.5 block text-[12px] font-medium text-mist-400">
+            Description
+          </label>
           <textarea
+            id={descriptionId}
             value={description}
             onChange={(event) => setDescription(event.target.value.slice(0, MAX_LIST_DESCRIPTION))}
             placeholder="What ties these together?"
@@ -85,6 +93,9 @@ export function ListFormSheet({ open, onClose, existing, onCreated }: ListFormSh
 
         <button
           type="button"
+          role="switch"
+          aria-checked={isPrivate}
+          aria-label="Private list"
           onClick={() => setIsPrivate((value) => !value)}
           className="tap-none flex items-center justify-between rounded-xl border border-ink-700 bg-ink-850 px-4 py-3 text-left active:bg-ink-800"
         >

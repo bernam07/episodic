@@ -52,6 +52,7 @@ export function PushToggle() {
           type="button"
           role="switch"
           aria-checked={on}
+          aria-label="Push notifications"
           disabled={disabled}
           onClick={() => toggle.mutate(!on)}
           className={`tap-none inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0 transition-colors disabled:opacity-40 ${
