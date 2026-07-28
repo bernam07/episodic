@@ -20,3 +20,7 @@ export function stillUrl(path: string | null, size: StillSize = "w300"): string 
 export function profileUrl(path: string | null, size: ProfileSize = "w185"): string | null {
   return path ? `${IMAGE_BASE}/${size}${path}` : null;
 }
+
+export function providerLogoUrl(path: string | null): string | null {
+  return path ? `${IMAGE_BASE}/w92${path}` : null;
+}

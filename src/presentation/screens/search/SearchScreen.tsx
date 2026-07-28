@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { releaseYear } from "@/domain/entities/Series";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { FollowButton } from "@/presentation/components/social/FollowButton";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
+import { useMyLibraryStatus, useMyRatings, useMyWatched } from "@/presentation/hooks/useTracking";
+import { PosterGridSkeleton } from "@/presentation/components/ui/Skeleton";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useGenres, useInfiniteDiscover, useSearchSeries } from "@/presentation/hooks/useDiscovery";
 import { useInfiniteScroll } from "@/presentation/hooks/useInfiniteScroll";
@@ -25,7 +27,12 @@ function useDebounced(value: string, delay = 350) {
 }
 
 function GenreRecommendations() {
-  const [genreId, setGenreId] = useState<number | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const genreParam = searchParams.get("genre");
+  const genreId = genreParam ? Number(genreParam) : null;
+  const ratings = useMyRatings();
+  const watched = useMyWatched();
+  const libraryStatus = useMyLibraryStatus();
   const { data: genres, isLoading: genresLoading } = useGenres();
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
     useInfiniteDiscover(genreId);
@@ -60,7 +67,7 @@ function GenreRecommendations() {
       <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto px-5">
         <button
           type="button"
-          onClick={() => setGenreId(null)}
+          onClick={() => setSearchParams({}, { replace: true })}
           className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${
             genreId === null ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
           }`}
@@ -71,7 +78,7 @@ function GenreRecommendations() {
           <button
             key={genre.id}
             type="button"
-            onClick={() => setGenreId(genre.id)}
+            onClick={() => setSearchParams({ genre: String(genre.id) }, { replace: true })}
             className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${
               genreId === genre.id
                 ? "bg-accent-600 text-white"
@@ -88,9 +95,7 @@ function GenreRecommendations() {
       </h2>
 
       {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Spinner />
-        </div>
+        <PosterGridSkeleton count={12} />
       ) : (
         <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {unique.map((series) => (
@@ -100,6 +105,9 @@ function GenreRecommendations() {
               name={series.name}
               posterPath={series.posterPath}
               year={releaseYear(series)}
+              rating={ratings.get(series.tmdbId) ?? null}
+              watched={watched.has(series.tmdbId)}
+              libraryStatus={libraryStatus.get(series.tmdbId) ?? null}
             />
           ))}
         </div>
@@ -173,17 +181,16 @@ function UserResults({ query }: { query: string }) {
 
 function SeriesResults({ query }: { query: string }) {
   const { data, isFetching } = useSearchSeries(query);
+  const ratings = useMyRatings();
+  const watched = useMyWatched();
+  const libraryStatus = useMyLibraryStatus();
 
   if (query.trim().length < 2) {
     return <GenreRecommendations />;
   }
 
   if (isFetching && !data) {
-    return (
-      <div className="flex h-40 items-center justify-center">
-        <Spinner />
-      </div>
-    );
+    return <PosterGridSkeleton count={12} />;
   }
 
   if (!data || data.results.length === 0) {
@@ -201,6 +208,9 @@ function SeriesResults({ query }: { query: string }) {
           name={series.name}
           posterPath={series.posterPath}
           year={releaseYear(series)}
+          rating={ratings.get(series.tmdbId) ?? null}
+          watched={watched.has(series.tmdbId)}
+          libraryStatus={libraryStatus.get(series.tmdbId) ?? null}
         />
       ))}
     </div>
@@ -208,9 +218,17 @@ function SeriesResults({ query }: { query: string }) {
 }
 
 export function SearchScreen() {
-  const [tab, setTab] = useState<Tab>("series");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const tab: Tab = tabParam === "users" ? "users" : "series";
   const [query, setQuery] = useState("");
   const debounced = useDebounced(query);
+
+  function setTab(next: Tab) {
+    const params: Record<string, string> = {};
+    if (next === "users") params.tab = "users";
+    setSearchParams(params, { replace: true });
+  }
 
   return (
     <>

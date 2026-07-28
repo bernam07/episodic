@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Episode } from "@/domain/entities/Episode";
+import { useMemo } from "react";
+import { hasAired, type Episode } from "@/domain/entities/Episode";
 import type { SeriesDetail } from "@/domain/entities/Series";
 import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { container } from "@/presentation/di/container";
@@ -11,6 +12,46 @@ export function useLibrary(status?: SeriesStatus) {
     queryFn: () => container.usecases.getLibrary.execute(status),
     staleTime: 1000 * 30,
   });
+}
+
+export function useMyRatings(): Map<number, number> {
+  const { data } = useLibrary();
+
+  return useMemo(() => {
+    const map = new Map<number, number>();
+    for (const item of data ?? []) {
+      if (item.userRating !== null) {
+        map.set(item.tmdbId, item.userRating);
+      }
+    }
+    return map;
+  }, [data]);
+}
+
+export function useMyLibraryStatus(): Map<number, SeriesStatus> {
+  const { data } = useLibrary();
+
+  return useMemo(() => {
+    const map = new Map<number, SeriesStatus>();
+    for (const item of data ?? []) {
+      map.set(item.tmdbId, item.status);
+    }
+    return map;
+  }, [data]);
+}
+
+export function useMyWatched(): Set<number> {
+  const { data } = useLibrary();
+
+  return useMemo(() => {
+    const set = new Set<number>();
+    for (const item of data ?? []) {
+      if (item.status === "watched") {
+        set.add(item.tmdbId);
+      }
+    }
+    return set;
+  }, [data]);
 }
 
 export function useContinueWatching() {
@@ -40,13 +81,19 @@ export function useMarkUpNext() {
       nextSeason: number;
       nextEpisode: number;
     }) => {
-      const season = await queryClient.fetchQuery({
-        queryKey: queryKeys.season(item.tmdbId, item.nextSeason),
-        queryFn: () => container.usecases.getSeason.execute(item.tmdbId, item.nextSeason),
-        staleTime: 1000 * 60 * 60 * 12,
-      });
+      const [season, watchedIds] = await Promise.all([
+        queryClient.fetchQuery({
+          queryKey: queryKeys.season(item.tmdbId, item.nextSeason),
+          queryFn: () => container.usecases.getSeason.execute(item.tmdbId, item.nextSeason),
+          staleTime: 1000 * 60 * 60 * 12,
+        }),
+        container.usecases.getWatchedEpisodes.execute(item.seriesId),
+      ]);
 
-      const episode = season.episodes.find((candidate) => candidate.episodeNumber === item.nextEpisode);
+      const ordered = [...season.episodes].sort((a, b) => a.episodeNumber - b.episodeNumber);
+      const episode =
+        ordered.find((candidate) => hasAired(candidate) && !watchedIds.has(candidate.tmdbEpisodeId)) ??
+        ordered[item.nextEpisode - 1];
 
       if (!episode) {
         return;
@@ -54,8 +101,8 @@ export function useMarkUpNext() {
 
       await container.repositories.tracking.markEpisode(item.seriesId, {
         tmdbEpisodeId: episode.tmdbEpisodeId,
-        seasonNumber: item.nextSeason,
-        episodeNumber: item.nextEpisode,
+        seasonNumber: episode.seasonNumber,
+        episodeNumber: episode.episodeNumber,
       });
     },
     onSuccess: (_result, item) => invalidate(item.seriesId),
@@ -104,6 +151,8 @@ function useTrackingInvalidator() {
     queryClient.invalidateQueries({ queryKey: ["library"] });
     queryClient.invalidateQueries({ queryKey: queryKeys.continueWatching });
     queryClient.invalidateQueries({ queryKey: queryKeys.upNext });
+    queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });
+    queryClient.invalidateQueries({ queryKey: ["diary"] });
   };
 }
 
@@ -167,6 +216,33 @@ export function useToggleFavorite(seriesId: string | null) {
 
   return useMutation({
     mutationFn: () => container.usecases.toggleFavorite.execute(seriesId as string),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracking(seriesId) });
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
+}
+
+export function useSetRating(seriesId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (rating: number | null) =>
+      container.usecases.setRating.execute(seriesId as string, rating),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracking(seriesId) });
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ratingSummary(seriesId) });
+    },
+  });
+}
+
+export function useBumpRewatch(seriesId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (delta: number) =>
+      container.repositories.tracking.bumpRewatch(seriesId as string, delta),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tracking(seriesId) });
       queryClient.invalidateQueries({ queryKey: ["library"] });

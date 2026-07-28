@@ -1,4 +1,5 @@
 import { AppError } from "@/core/errors/AppError";
+import { env } from "@/core/config/env";
 import type { AuthUser, Profile } from "@/domain/entities/Profile";
 import type {
   IAuthRepository,
@@ -26,7 +27,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
   async getProfile(userId: string): Promise<Profile | null> {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, username, display_name, avatar_url, bio")
+      .select("id, username, display_name, avatar_url, bio, onboarded")
       .eq("id", userId)
       .maybeSingle();
 
@@ -44,6 +45,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
       displayName: data.display_name,
       avatarUrl: data.avatar_url,
       bio: data.bio,
+      onboarded: data.onboarded,
     };
   }
 
@@ -52,7 +54,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
       .from("profiles")
       .update({ display_name: input.displayName, bio: input.bio })
       .eq("id", userId)
-      .select("id, username, display_name, avatar_url, bio")
+      .select("id, username, display_name, avatar_url, bio, onboarded")
       .single();
 
     if (error) {
@@ -65,7 +67,16 @@ export class SupabaseAuthRepository implements IAuthRepository {
       displayName: data.display_name,
       avatarUrl: data.avatar_url,
       bio: data.bio,
+      onboarded: data.onboarded,
     };
+  }
+
+  async completeOnboarding(userId: string): Promise<void> {
+    const { error } = await supabase.from("profiles").update({ onboarded: true }).eq("id", userId);
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
   }
 
   async uploadAvatar(userId: string, file: File): Promise<string> {
@@ -95,17 +106,20 @@ export class SupabaseAuthRepository implements IAuthRepository {
   }
 
   async signIn({ identifier, password }: SignInInput): Promise<AuthUser> {
-    const { data, error } = await supabase.functions.invoke<{
-      access_token: string;
-      refresh_token: string;
-    }>("auth-login", {
+    const response = await fetch(`${env.supabaseUrl}/functions/v1/auth-login`, {
       method: "POST",
-      body: { identifier, password },
+      headers: {
+        "Content-Type": "application/json",
+        apikey: env.supabasePublishableKey,
+      },
+      body: JSON.stringify({ identifier, password }),
     });
 
-    if (error || !data?.access_token) {
-      throw new AppError("auth", "Incorrect username or password.", error);
+    if (!response.ok) {
+      throw new AppError("auth", "Incorrect username or password.");
     }
+
+    const data: { access_token: string; refresh_token: string } = await response.json();
 
     const { data: session, error: sessionError } = await supabase.auth.setSession({
       access_token: data.access_token,

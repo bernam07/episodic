@@ -2,6 +2,7 @@ import type { CastMember } from "../entities/Cast";
 import type { Season } from "../entities/Episode";
 import type { PersonDetail } from "../entities/Person";
 import type { SeriesDetail, SeriesSummary } from "../entities/Series";
+import type { WatchProviders } from "../entities/WatchProviders";
 
 export type SearchResult = {
   page: number;
@@ -24,4 +25,5 @@ export interface ITmdbRepository {
   getSeason(tmdbId: number, seasonNumber: number): Promise<Season>;
   getCredits(tmdbId: number): Promise<CastMember[]>;
   getPersonDetail(personId: number): Promise<PersonDetail>;
+  getWatchProviders(tmdbId: number, region: string): Promise<WatchProviders>;
 }

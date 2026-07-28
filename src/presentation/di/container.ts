@@ -1,10 +1,27 @@
+import { SupabaseActivityRepository } from "@/data/supabase/SupabaseActivityRepository";
 import { SupabaseAuthRepository } from "@/data/supabase/SupabaseAuthRepository";
+import { SupabaseListRepository } from "@/data/supabase/SupabaseListRepository";
+import { SupabasePushRepository } from "@/data/supabase/SupabasePushRepository";
 import { SupabaseNotificationRepository } from "@/data/supabase/SupabaseNotificationRepository";
 import { SupabaseReviewRepository } from "@/data/supabase/SupabaseReviewRepository";
 import { SupabaseSeriesRepository } from "@/data/supabase/SupabaseSeriesRepository";
 import { SupabaseSocialRepository } from "@/data/supabase/SupabaseSocialRepository";
 import { SupabaseTrackingRepository } from "@/data/supabase/SupabaseTrackingRepository";
 import { TmdbRepository } from "@/data/tmdb/TmdbRepository";
+import {
+  GetFriendsFeed as GetActivityFeed,
+  GetUserDiary,
+} from "@/domain/usecases/activity/ActivityUseCases";
+import {
+  AddToList,
+  CreateList,
+  DeleteList,
+  GetList,
+  GetListItems,
+  GetUserLists,
+  RemoveFromList,
+  UpdateList,
+} from "@/domain/usecases/lists/ListUseCases";
 import {
   CheckUsernameAvailable,
   DeleteAccount,
@@ -25,6 +42,7 @@ import {
   GetSeason,
   GetSeriesDetail,
   GetTrending,
+  GetWatchProviders,
   SearchSeries,
 } from "@/domain/usecases/discovery/DiscoveryUseCases";
 import {
@@ -36,14 +54,16 @@ import {
   DeleteReview,
   GetOwnReview,
   GetOwnReviews,
+  GetRatingSummary,
   GetSeriesReviews,
   SubmitReview,
 } from "@/domain/usecases/reviews/ReviewUseCases";
 import {
+  CompareLibraries,
   GetFollowers,
   GetFollowing,
-  GetFollowingFeed,
   GetProfileSummary,
+  GetUserFavorites,
   GetUserLibrary,
   SearchProfiles,
   ToggleFollow,
@@ -59,6 +79,7 @@ import {
   RemoveFromLibrary,
   SetSeriesStatus,
   ToggleEpisodeWatched,
+  SetRating,
   ToggleFavorite,
   ToggleSeasonWatched,
 } from "@/domain/usecases/tracking/TrackingUseCases";
@@ -70,6 +91,9 @@ const trackingRepository = new SupabaseTrackingRepository();
 const reviewRepository = new SupabaseReviewRepository();
 const socialRepository = new SupabaseSocialRepository();
 const notificationRepository = new SupabaseNotificationRepository();
+const activityRepository = new SupabaseActivityRepository();
+const listRepository = new SupabaseListRepository();
+const pushRepository = new SupabasePushRepository();
 
 const ensureSeriesCached = new EnsureSeriesCached(tmdbRepository, seriesRepository);
 const collectAiredEpisodes = new CollectAiredEpisodes(tmdbRepository);
@@ -83,6 +107,9 @@ export const container = {
     reviews: reviewRepository,
     social: socialRepository,
     notifications: notificationRepository,
+    activity: activityRepository,
+    lists: listRepository,
+    push: pushRepository,
   },
   usecases: {
     signIn: new SignIn(authRepository),
@@ -104,6 +131,7 @@ export const container = {
     getSeason: new GetSeason(tmdbRepository),
     getCredits: new GetCredits(tmdbRepository),
     getPersonDetail: new GetPersonDetail(tmdbRepository),
+    getWatchProviders: new GetWatchProviders(tmdbRepository),
 
     ensureSeriesCached,
     collectAiredEpisodes,
@@ -115,6 +143,7 @@ export const container = {
     toggleEpisodeWatched: new ToggleEpisodeWatched(trackingRepository),
     toggleSeasonWatched: new ToggleSeasonWatched(trackingRepository),
     toggleFavorite: new ToggleFavorite(trackingRepository),
+    setRating: new SetRating(trackingRepository),
     getContinueWatching: new GetContinueWatching(trackingRepository),
     getUpNext: new GetUpNext(trackingRepository),
 
@@ -123,17 +152,31 @@ export const container = {
     getOwnReview: new GetOwnReview(reviewRepository),
     getOwnReviews: new GetOwnReviews(reviewRepository),
     deleteReview: new DeleteReview(reviewRepository),
+    getRatingSummary: new GetRatingSummary(reviewRepository),
 
     searchProfiles: new SearchProfiles(socialRepository),
     getProfileSummary: new GetProfileSummary(socialRepository),
-    getFollowingFeed: new GetFollowingFeed(socialRepository),
     getUserLibrary: new GetUserLibrary(socialRepository),
+    getUserFavorites: new GetUserFavorites(socialRepository),
     getFollowers: new GetFollowers(socialRepository),
     getFollowing: new GetFollowing(socialRepository),
     toggleFollow: new ToggleFollow(socialRepository),
+    compareLibraries: new CompareLibraries(socialRepository),
 
     getNotifications: new GetNotifications(notificationRepository),
     getUnreadCount: new GetUnreadCount(notificationRepository),
     markNotificationsRead: new MarkNotificationsRead(notificationRepository),
+
+    getActivityFeed: new GetActivityFeed(activityRepository),
+    getUserDiary: new GetUserDiary(activityRepository),
+
+    getUserLists: new GetUserLists(listRepository),
+    getList: new GetList(listRepository),
+    getListItems: new GetListItems(listRepository),
+    createList: new CreateList(listRepository),
+    updateList: new UpdateList(listRepository),
+    deleteList: new DeleteList(listRepository),
+    addToList: new AddToList(listRepository, ensureSeriesCached),
+    removeFromList: new RemoveFromList(listRepository),
   },
 } as const;

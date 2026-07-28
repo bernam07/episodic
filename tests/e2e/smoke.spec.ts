@@ -10,12 +10,12 @@ test("renders the sign-in form", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /Track every episode/ })).toBeVisible();
   await expect(page.getByPlaceholder("Username or email")).toBeVisible();
   await expect(page.getByPlaceholder("Password")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sign In" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
 });
 
 test("sign up requires a username", async ({ page }) => {
   await page.goto("/auth");
-  await page.getByText("No account? Create one").click();
+  await page.getByRole("button", { name: "Sign up", exact: true }).click();
   const username = page.getByPlaceholder("Username", { exact: true });
   await expect(username).toBeVisible();
   await expect(username).toHaveAttribute("required", "");

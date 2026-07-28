@@ -1,8 +1,23 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { AppShell } from "@/presentation/layout/AppShell";
 import { FullScreenSpinner } from "@/presentation/components/ui/Spinner";
+import { useAuth } from "@/presentation/hooks/useAuth";
 import { ProtectedRoute } from "./ProtectedRoute";
+
+const OnboardingScreen = lazy(() =>
+  import("@/presentation/screens/onboarding/OnboardingScreen").then((m) => ({ default: m.OnboardingScreen }))
+);
+
+function OnboardingGate() {
+  const { profile } = useAuth();
+
+  if (profile && !profile.onboarded) {
+    return <OnboardingScreen />;
+  }
+
+  return <Outlet />;
+}
 
 const AuthScreen = lazy(() =>
   import("@/presentation/screens/auth/AuthScreen").then((m) => ({ default: m.AuthScreen }))
@@ -31,6 +46,15 @@ const UserProfileScreen = lazy(() =>
 const SeriesDetailScreen = lazy(() =>
   import("@/presentation/screens/details/SeriesDetailScreen").then((m) => ({ default: m.SeriesDetailScreen }))
 );
+const ListDetailScreen = lazy(() =>
+  import("@/presentation/screens/lists/ListDetailScreen").then((m) => ({ default: m.ListDetailScreen }))
+);
+const StatsScreen = lazy(() =>
+  import("@/presentation/screens/stats/StatsScreen").then((m) => ({ default: m.StatsScreen }))
+);
+const CalendarScreen = lazy(() =>
+  import("@/presentation/screens/calendar/CalendarScreen").then((m) => ({ default: m.CalendarScreen }))
+);
 
 export function AppRouter() {
   return (
@@ -41,6 +65,7 @@ export function AppRouter() {
           <Route path="/reset-password" element={<ResetPasswordScreen />} />
 
           <Route element={<ProtectedRoute />}>
+            <Route element={<OnboardingGate />}>
             <Route element={<AppShell />}>
               <Route path="/" element={<HomeScreen />} />
               <Route path="/search" element={<SearchScreen />} />
@@ -49,6 +74,10 @@ export function AppRouter() {
               <Route path="/profile" element={<ProfileScreen />} />
               <Route path="/user/:username" element={<UserProfileScreen />} />
               <Route path="/series/:tmdbId" element={<SeriesDetailScreen />} />
+              <Route path="/list/:id" element={<ListDetailScreen />} />
+              <Route path="/calendar" element={<CalendarScreen />} />
+              <Route path="/stats" element={<StatsScreen />} />
+            </Route>
             </Route>
           </Route>
 

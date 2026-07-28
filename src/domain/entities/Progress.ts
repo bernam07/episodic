@@ -8,8 +8,12 @@ export type SeriesProgress = {
   backdropPath: string | null;
   status: SeriesStatus;
   isFavorite: boolean;
+  rewatchCount: number;
   numberOfSeasons: number;
   numberOfEpisodes: number;
+  airedEpisodes: number;
+  episodeRuntime: number;
+  genres: string[];
   watchedEpisodes: number;
   remainingEpisodes: number;
   progressPercent: number;

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { posterUrl } from "@/data/tmdb/images";
 import type { AppNotification } from "@/domain/entities/Notification";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { Sheet } from "@/presentation/components/ui/Sheet";
@@ -15,19 +16,20 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(seconds / 86400)}d`;
 }
 
-function notificationText(notification: AppNotification): string {
-  if (notification.type === "follow") {
-    return "started following you";
-  }
-
-  return `reviewed ${notification.seriesName ?? "a series"}`;
-}
-
 function NotificationItem({ notification }: { notification: AppNotification }) {
+  const isEpisode = notification.type === "new_episode";
   const href =
-    notification.type === "review" && notification.seriesTmdbId
+    (notification.type === "review" || isEpisode) && notification.seriesTmdbId
       ? `/series/${notification.seriesTmdbId}`
-      : `/user/${notification.actorUsername}`;
+      : notification.actorUsername
+        ? `/user/${notification.actorUsername}`
+        : "/";
+
+  const poster = posterUrl(notification.seriesPosterPath, "w154");
+  const episodeLabel =
+    notification.seasonNumber && notification.episodeNumber
+      ? ` · S${notification.seasonNumber} E${notification.episodeNumber}`
+      : "";
 
   return (
     <Link
@@ -36,16 +38,41 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
         notification.read ? "" : "bg-ink-850"
       }`}
     >
-      <Avatar
-        username={notification.actorUsername}
-        displayName={notification.actorDisplayName}
-        avatarUrl={notification.actorAvatarUrl}
-        size="sm"
-      />
+      {isEpisode ? (
+        <div className="h-12 w-8 shrink-0 overflow-hidden rounded-md bg-ink-800">
+          {poster ? <img src={poster} alt="" loading="lazy" className="size-full object-cover" /> : null}
+        </div>
+      ) : (
+        <Avatar
+          username={notification.actorUsername ?? "?"}
+          displayName={notification.actorDisplayName}
+          avatarUrl={notification.actorAvatarUrl}
+          size="sm"
+        />
+      )}
       <div className="min-w-0 flex-1">
         <p className="text-[13px] text-mist-200">
-          <span className="font-semibold">{notification.actorDisplayName || notification.actorUsername}</span>{" "}
-          {notificationText(notification)}
+          {isEpisode ? (
+            <>
+              New episode of{" "}
+              <span className="font-semibold">{notification.seriesName ?? "a series"}</span>
+              {episodeLabel}
+            </>
+          ) : notification.type === "follow" ? (
+            <>
+              <span className="font-semibold">
+                {notification.actorDisplayName || notification.actorUsername}
+              </span>{" "}
+              started following you
+            </>
+          ) : (
+            <>
+              <span className="font-semibold">
+                {notification.actorDisplayName || notification.actorUsername}
+              </span>{" "}
+              reviewed {notification.seriesName ?? "a series"}
+            </>
+          )}
         </p>
         <p className="mt-0.5 text-[11px] text-mist-500">{timeAgo(notification.createdAt)}</p>
       </div>
@@ -60,13 +87,13 @@ type NotificationSheetProps = {
 
 export function NotificationSheet({ open, onClose }: NotificationSheetProps) {
   const { data: notifications, isLoading } = useNotifications();
-  const markRead = useMarkNotificationsRead();
+  const { mutate: markRead } = useMarkNotificationsRead();
 
   useEffect(() => {
     if (open && notifications && notifications.some((n) => !n.read)) {
-      markRead.mutate();
+      markRead();
     }
-  }, [open, notifications]);
+  }, [open, notifications, markRead]);
 
   return (
     <Sheet open={open} onClose={onClose} title="Notifications">

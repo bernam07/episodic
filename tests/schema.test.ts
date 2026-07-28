@@ -346,7 +346,7 @@ describe("notifications", () => {
 
   it("a review notifies each follower", async () => {
     await asAuthenticated(db, BOB);
-    await db.query(`insert into public.reviews (user_id, series_id, rating) values ($1, $2, 4.5)`, [
+    await db.query(`insert into public.reviews (user_id, series_id, rating, body) values ($1, $2, 4.5, 'Great show')`, [
       BOB,
       seriesId,
     ]);
@@ -474,14 +474,26 @@ describe("get_up_next", () => {
     expect(rows[0]).toMatchObject({ next_season: 1, next_episode: 3 });
   });
 
-  it("fills a gap when episodes were watched out of order", async () => {
+  it("counts out-of-order watching per season (client resolves the exact gap)", async () => {
     await asAuthenticated(db, EDDIE);
     await db.query(`delete from public.episode_tracking where user_id = $1`, [EDDIE]);
     await watch(1, 1, 1001);
     await watch(1, 3, 1003);
     await reset(db);
     const rows = await upNext();
-    expect(rows[0]).toMatchObject({ next_season: 1, next_episode: 2 });
+    expect(rows[0]).toMatchObject({ next_season: 1, next_episode: 3 });
+  });
+
+  it("survives absolute episode numbering inside a season (One Piece-style)", async () => {
+    await asAuthenticated(db, EDDIE);
+    await db.query(`delete from public.episode_tracking where user_id = $1`, [EDDIE]);
+    await watch(1, 1, 1001);
+    await watch(1, 2, 1002);
+    await watch(1, 3, 1003);
+    await watch(2, 62, 2062);
+    await reset(db);
+    const rows = await upNext();
+    expect(rows[0]).toMatchObject({ next_season: 2, next_episode: 2 });
   });
 
   it("crosses into the next season", async () => {
@@ -513,5 +525,532 @@ describe("get_up_next", () => {
     const rows = await db.query(`select * from public.get_up_next(20)`);
     await reset(db);
     expect(rows.rows.every((r: { tmdb_id: number }) => r.tmdb_id !== 9999)).toBe(true);
+  });
+});
+
+describe("activity feed", () => {
+  const FRANK = "66666666-6666-6666-6666-666666666666";
+  const GRETA = "77777777-7777-7777-7777-777777777777";
+  let seriesId: string;
+
+  const SHOW = {
+    tmdb_id: 8888,
+    name: "Diary Show",
+    number_of_seasons: 1,
+    number_of_episodes: 4,
+    aired_episodes: 4,
+    genres: ["Drama"],
+    seasons_meta: [{ season_number: 1, episode_count: 4 }],
+  };
+
+  type Event = {
+    event_type: string;
+    actor_id: string;
+    episode_count: number | null;
+    rating: string | null;
+  };
+
+  async function watchOn(user: string, epId: number, episode: number, day: string) {
+    await db.query(
+      `insert into public.episode_tracking (user_id, series_id, tmdb_episode_id, season_number, episode_number, watched_at)
+       values ($1, $2, $3, 1, $4, $5) on conflict (user_id, tmdb_episode_id) do nothing`,
+      [user, seriesId, epId, episode, day]
+    );
+  }
+
+  async function feed(viewer: string): Promise<Event[]> {
+    await asAuthenticated(db, viewer);
+    const r = await db.query<Event>(
+      `select event_type, actor_id, episode_count, rating from public.get_friends_feed(50)`
+    );
+    await reset(db);
+    return r.rows;
+  }
+
+  async function diary(viewer: string, target: string): Promise<Event[]> {
+    await asAuthenticated(db, viewer);
+    const r = await db.query<Event>(
+      `select event_type, actor_id, episode_count, rating from public.get_user_diary($1, 50)`,
+      [target]
+    );
+    await reset(db);
+    return r.rows;
+  }
+
+  beforeAll(async () => {
+    await db.exec(`delete from public.follows;`);
+    await createAuthUser(db, FRANK, "frank");
+    await createAuthUser(db, GRETA, "greta");
+    await asAuthenticated(db, GRETA);
+    const r = await db.query<{ id: string }>(`select public.upsert_series_from_tmdb($1::jsonb) as id;`, [
+      JSON.stringify(SHOW),
+    ]);
+    seriesId = r.rows[0].id;
+    await reset(db);
+    await db.query(`insert into public.follows (follower_id, following_id) values ($1, $2)`, [FRANK, GRETA]);
+  });
+
+  afterEach(async () => {
+    await db.exec(
+      `delete from public.episode_tracking where series_id = '${seriesId}';
+       delete from public.reviews where series_id = '${seriesId}';
+       delete from public.user_series_status where series_id = '${seriesId}';`
+    );
+  });
+
+  it("collapses same-day check-ins into one progress event carrying the count", async () => {
+    await asAuthenticated(db, GRETA);
+    await watchOn(GRETA, 8001, 1, "2026-07-10T10:00:00Z");
+    await watchOn(GRETA, 8002, 2, "2026-07-10T11:00:00Z");
+    await watchOn(GRETA, 8003, 3, "2026-07-10T12:00:00Z");
+    await reset(db);
+
+    const progress = (await feed(FRANK)).filter((e) => e.event_type === "progress");
+    expect(progress).toHaveLength(1);
+    expect(progress[0].episode_count).toBe(3);
+  });
+
+  it("suppresses progress and started on the day a backfill marks a series finished", async () => {
+    await asAuthenticated(db, GRETA);
+    await watchOn(GRETA, 8001, 1, "2026-07-11T10:00:00Z");
+    await watchOn(GRETA, 8002, 2, "2026-07-11T10:01:00Z");
+    await watchOn(GRETA, 8003, 3, "2026-07-11T10:02:00Z");
+    await watchOn(GRETA, 8004, 4, "2026-07-11T10:03:00Z");
+    await reset(db);
+    await db.query(
+      `update public.user_series_status
+         set status = 'watched', started_at = '2026-07-11T08:00:00Z', completed_at = '2026-07-11T12:00:00Z'
+       where user_id = $1 and series_id = $2`,
+      [GRETA, seriesId]
+    );
+
+    const rows = await feed(FRANK);
+    expect(rows.filter((e) => e.event_type === "progress")).toHaveLength(0);
+    expect(rows.filter((e) => e.event_type === "started")).toHaveLength(0);
+    expect(rows.filter((e) => e.event_type === "finished")).toHaveLength(1);
+  });
+
+  it("surfaces a written review but keeps a bare rating silent", async () => {
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating) values ($1, $2, 'watching', 4.5)
+       on conflict (user_id, series_id) do update set rating = 4.5`,
+      [GRETA, seriesId]
+    );
+    expect((await feed(FRANK)).filter((e) => e.event_type === "reviewed")).toHaveLength(0);
+
+    await db.query(`insert into public.reviews (user_id, series_id, body) values ($1, $2, 'Great')`, [GRETA, seriesId]);
+    expect((await feed(FRANK)).filter((e) => e.event_type === "reviewed")).toHaveLength(1);
+  });
+
+  it("carries the author's stars on a reviewed event so the feed can show them", async () => {
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating) values ($1, $2, 'watching', 4.5)
+       on conflict (user_id, series_id) do update set rating = 4.5`,
+      [GRETA, seriesId]
+    );
+    await db.query(`insert into public.reviews (user_id, series_id, body) values ($1, $2, 'Loved it')`, [
+      GRETA,
+      seriesId,
+    ]);
+
+    const reviewed = (await feed(FRANK)).filter((e) => e.event_type === "reviewed");
+    expect(reviewed).toHaveLength(1);
+    expect(Number(reviewed[0].rating)).toBe(4.5);
+  });
+
+  it("friends feed shows followed users' events but never the viewer's own", async () => {
+    await asAuthenticated(db, GRETA);
+    await watchOn(GRETA, 8001, 1, "2026-07-12T10:00:00Z");
+    await reset(db);
+    await asAuthenticated(db, FRANK);
+    await watchOn(FRANK, 8101, 1, "2026-07-12T10:00:00Z");
+    await reset(db);
+
+    const rows = await feed(FRANK);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((e) => e.actor_id === GRETA)).toBe(true);
+  });
+
+  it("diary is visible to the owner and followers, hidden from everyone else", async () => {
+    await asAuthenticated(db, GRETA);
+    await watchOn(GRETA, 8001, 1, "2026-07-13T10:00:00Z");
+    await reset(db);
+
+    expect((await diary(GRETA, GRETA)).length).toBeGreaterThan(0);
+    expect((await diary(FRANK, GRETA)).length).toBeGreaterThan(0);
+    expect(await diary(CAROL, GRETA)).toHaveLength(0);
+  });
+});
+
+describe("community rating summary", () => {
+  let seriesId: string;
+
+  beforeAll(async () => {
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{ id: string }>(`select public.upsert_series_from_tmdb($1::jsonb) as id;`, [
+      JSON.stringify({ ...BREAKING_BAD, tmdb_id: 7777, name: "Rated Show" }),
+    ]);
+    seriesId = r.rows[0].id;
+    await reset(db);
+  });
+
+  it("groups reviews into rating buckets", async () => {
+    await asAuthenticated(db, ALICE);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating)
+       values ($1, $2, 'watching', 4.5)
+       on conflict (user_id, series_id) do update set rating = 4.5`,
+      [ALICE, seriesId]
+    );
+    await reset(db);
+    await asAuthenticated(db, BOB);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating)
+       values ($1, $2, 'watching', 4.5)
+       on conflict (user_id, series_id) do update set rating = 4.5`,
+      [BOB, seriesId]
+    );
+    await reset(db);
+    await asAuthenticated(db, CAROL);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating)
+       values ($1, $2, 'watching', 3.0)
+       on conflict (user_id, series_id) do update set rating = 3.0`,
+      [CAROL, seriesId]
+    );
+
+    const r = await db.query<{ rating: number; count: number }>(
+      `select rating, count from public.get_series_rating_summary($1) order by rating`,
+      [seriesId]
+    );
+    await reset(db);
+
+    expect(r.rows.map((row) => ({ rating: Number(row.rating), count: row.count }))).toEqual([
+      { rating: 3, count: 1 },
+      { rating: 4.5, count: 2 },
+    ]);
+  });
+});
+
+describe("get_user_favorites", () => {
+  let seriesId: string;
+
+  beforeAll(async () => {
+    await db.exec(`delete from public.follows;`);
+    seriesId = await seedSeries();
+    await asAuthenticated(db, ALICE);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, is_favorite)
+       values ($1, $2, 'watching', true)
+       on conflict (user_id, series_id) do update set is_favorite = true`,
+      [ALICE, seriesId]
+    );
+    await reset(db);
+    await db.query(`insert into public.follows (follower_id, following_id) values ($1, $2)`, [BOB, ALICE]);
+  });
+
+  it("returns favorites to followers and hides them from strangers", async () => {
+    await asAuthenticated(db, BOB);
+    const asFollower = await db.query(`select series_id from public.get_user_favorites($1, 60)`, [ALICE]);
+    await reset(db);
+
+    await asAuthenticated(db, CAROL);
+    const asStranger = await db.query(`select series_id from public.get_user_favorites($1, 60)`, [ALICE]);
+    await reset(db);
+
+    expect(asFollower.rows).toHaveLength(1);
+    expect(asStranger.rows).toHaveLength(0);
+  });
+});
+
+describe("lists", () => {
+  let seriesId: string;
+  let publicList: string;
+  let privateList: string;
+
+  beforeAll(async () => {
+    seriesId = await seedSeries();
+    await asAuthenticated(db, ALICE);
+    const pub = await db.query<{ id: string }>(
+      `insert into public.lists (user_id, title, is_private) values ($1, 'Best sci-fi', false) returning id`,
+      [ALICE]
+    );
+    publicList = pub.rows[0].id;
+    const priv = await db.query<{ id: string }>(
+      `insert into public.lists (user_id, title, is_private) values ($1, 'Guilty pleasures', true) returning id`,
+      [ALICE]
+    );
+    privateList = priv.rows[0].id;
+    await db.query(`insert into public.list_items (list_id, series_id) values ($1, $2)`, [publicList, seriesId]);
+    await reset(db);
+  });
+
+  it("exposes item count and posters to the owner", async () => {
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{ id: string; item_count: number; poster_paths: string[] }>(
+      `select id, item_count, poster_paths from public.get_user_lists($1)`,
+      [ALICE]
+    );
+    await reset(db);
+    expect(r.rows).toHaveLength(2);
+    expect(r.rows.find((row) => row.id === publicList)?.item_count).toBe(1);
+  });
+
+  it("hides private lists from other viewers", async () => {
+    await asAuthenticated(db, BOB);
+    const lists = await db.query<{ id: string }>(`select id from public.get_user_lists($1)`, [ALICE]);
+    const one = await db.query(`select id from public.get_list($1)`, [privateList]);
+    await reset(db);
+    expect(lists.rows.map((row) => row.id)).toEqual([publicList]);
+    expect(one.rows).toHaveLength(0);
+  });
+
+  it("lets non-owners read a public list and its items", async () => {
+    await asAuthenticated(db, BOB);
+    const meta = await db.query(`select id, is_own from public.get_list($1)`, [publicList]);
+    const items = await db.query(`select series_id from public.get_list_items($1)`, [publicList]);
+    await reset(db);
+    expect(meta.rows).toHaveLength(1);
+    expect((meta.rows[0] as { is_own: boolean }).is_own).toBe(false);
+    expect(items.rows).toHaveLength(1);
+  });
+
+  it("forbids adding items to someone else's list", async () => {
+    await asAuthenticated(db, BOB);
+    let rejected = false;
+    try {
+      await db.query(`insert into public.list_items (list_id, series_id) values ($1, $2)`, [privateList, seriesId]);
+    } catch {
+      rejected = true;
+    }
+    await reset(db);
+    expect(rejected).toBe(true);
+  });
+});
+
+describe("bump_rewatch", () => {
+  let seriesId: string;
+
+  beforeAll(async () => {
+    seriesId = await seedSeries();
+    await asAuthenticated(db, CAROL);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status) values ($1, $2, 'watched')
+       on conflict (user_id, series_id) do update set status = 'watched'`,
+      [CAROL, seriesId]
+    );
+    await reset(db);
+  });
+
+  it("increments and clamps the rewatch count at zero", async () => {
+    await asAuthenticated(db, CAROL);
+    const up = await db.query<{ bump_rewatch: number }>(`select public.bump_rewatch($1, 1)`, [seriesId]);
+    const up2 = await db.query<{ bump_rewatch: number }>(`select public.bump_rewatch($1, 1)`, [seriesId]);
+    const down = await db.query<{ bump_rewatch: number }>(`select public.bump_rewatch($1, -5)`, [seriesId]);
+    await reset(db);
+
+    expect(up.rows[0].bump_rewatch).toBe(1);
+    expect(up2.rows[0].bump_rewatch).toBe(2);
+    expect(down.rows[0].bump_rewatch).toBe(0);
+  });
+
+  it("surfaces the count through the progress view", async () => {
+    await asAuthenticated(db, CAROL);
+    await db.query(`select public.bump_rewatch($1, 3)`, [seriesId]);
+    const r = await db.query<{ rewatch_count: number }>(
+      `select rewatch_count from public.user_series_progress where series_id = $1`,
+      [seriesId]
+    );
+    await reset(db);
+    expect(r.rows[0].rewatch_count).toBe(3);
+  });
+});
+
+describe("push subscriptions", () => {
+  it("keeps a subscription visible only to its owner", async () => {
+    await asAuthenticated(db, ALICE);
+    await db.query(
+      `insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+       values ($1, 'https://push.example/alice', 'p', 'a')`,
+      [ALICE]
+    );
+    const own = await db.query(`select count(*)::int as n from public.push_subscriptions`);
+    await reset(db);
+
+    await asAuthenticated(db, BOB);
+    const other = await db.query(`select count(*)::int as n from public.push_subscriptions`);
+    await reset(db);
+
+    expect((own.rows[0] as { n: number }).n).toBe(1);
+    expect((other.rows[0] as { n: number }).n).toBe(0);
+  });
+});
+
+describe("compare_libraries", () => {
+  let s1: string;
+  let s2: string;
+
+  async function seed(tmdbId: number, name: string): Promise<string> {
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{ id: string }>(`select public.upsert_series_from_tmdb($1::jsonb) as id`, [
+      JSON.stringify({ ...BREAKING_BAD, tmdb_id: tmdbId, name }),
+    ]);
+    await reset(db);
+    return r.rows[0].id;
+  }
+
+  beforeAll(async () => {
+    await db.exec(`delete from public.follows;`);
+    s1 = await seed(6001, "Shared Show");
+    s2 = await seed(6002, "Bob Only");
+    await db.query(`insert into public.follows (follower_id, following_id) values ($1, $2)`, [ALICE, BOB]);
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating) values ($1, $2, 'watching', 4.0)
+       on conflict (user_id, series_id) do update set status = 'watching', rating = 4.0`,
+      [ALICE, s1]
+    );
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status, rating) values ($1, $2, 'watched', 5.0)
+       on conflict (user_id, series_id) do update set status = 'watched', rating = 5.0`,
+      [BOB, s1]
+    );
+    await db.query(
+      `insert into public.user_series_status (user_id, series_id, status) values ($1, $2, 'watching')
+       on conflict (user_id, series_id) do update set status = 'watching'`,
+      [BOB, s2]
+    );
+  });
+
+  it("returns the union of both libraries with each side's status and rating", async () => {
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{
+      tmdb_id: number;
+      my_status: string | null;
+      my_rating: string | null;
+      their_status: string | null;
+      their_rating: string | null;
+    }>(
+      `select tmdb_id, my_status, my_rating, their_status, their_rating from public.compare_libraries($1) order by tmdb_id`,
+      [BOB]
+    );
+    await reset(db);
+
+    const byId = new Map(r.rows.map((row) => [row.tmdb_id, row]));
+    expect(byId.get(6001)).toMatchObject({ my_status: "watching", their_status: "watched" });
+    expect(Number(byId.get(6001)!.my_rating)).toBe(4);
+    expect(Number(byId.get(6001)!.their_rating)).toBe(5);
+    expect(byId.get(6002)).toMatchObject({ my_status: null, their_status: "watching" });
+  });
+
+  it("refuses to compare with a user you don't follow", async () => {
+    await asAuthenticated(db, CAROL);
+    let rejected = false;
+    try {
+      await db.query(`select * from public.compare_libraries($1)`, [BOB]);
+    } catch {
+      rejected = true;
+    }
+    await reset(db);
+    expect(rejected).toBe(true);
+  });
+});
+
+describe("set_rating and review sync", () => {
+  let seriesId: string;
+
+  beforeAll(async () => {
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{ id: string }>(`select public.upsert_series_from_tmdb($1::jsonb) as id`, [
+      JSON.stringify({ ...BREAKING_BAD, tmdb_id: 6003, name: "Rating Sync Show" }),
+    ]);
+    seriesId = r.rows[0].id;
+    await db.query(`insert into public.user_series_status (user_id, series_id, status) values ($1, $2, 'watching')`, [
+      ALICE,
+      seriesId,
+    ]);
+    await reset(db);
+  });
+
+  afterEach(async () => {
+    await db.exec(`delete from public.reviews where series_id = '${seriesId}';`);
+  });
+
+  it("writes the rating onto the status row and the progress view", async () => {
+    await asAuthenticated(db, ALICE);
+    await db.query(`select public.set_rating($1, 4.5)`, [seriesId]);
+    const r = await db.query<{ user_rating: string }>(
+      `select user_rating from public.user_series_progress where user_id = $1 and series_id = $2`,
+      [ALICE, seriesId]
+    );
+    await reset(db);
+    expect(Number(r.rows[0].user_rating)).toBe(4.5);
+  });
+
+  it("refuses to rate a series not in the library", async () => {
+    await asAuthenticated(db, BOB);
+    let rejected = false;
+    try {
+      await db.query(`select public.set_rating($1, 3.0)`, [seriesId]);
+    } catch {
+      rejected = true;
+    }
+    await reset(db);
+    expect(rejected).toBe(true);
+  });
+
+  it("back-fills a new review's rating from the status rating", async () => {
+    await asAuthenticated(db, ALICE);
+    await db.query(`select public.set_rating($1, 4.0)`, [seriesId]);
+    await db.query(`insert into public.reviews (user_id, series_id, body) values ($1, $2, 'Great show')`, [
+      ALICE,
+      seriesId,
+    ]);
+    const r = await db.query<{ rating: string | null }>(
+      `select rating from public.reviews where user_id = $1 and series_id = $2`,
+      [ALICE, seriesId]
+    );
+    await reset(db);
+    expect(Number(r.rows[0].rating)).toBe(4);
+  });
+
+  it("syncs a later rating change onto an existing review", async () => {
+    await asAuthenticated(db, ALICE);
+    await db.query(`select public.set_rating($1, 4.0)`, [seriesId]);
+    await db.query(`insert into public.reviews (user_id, series_id, body) values ($1, $2, 'Great')`, [ALICE, seriesId]);
+    await db.query(`select public.set_rating($1, 2.5)`, [seriesId]);
+    const r = await db.query<{ rating: string }>(
+      `select rating from public.reviews where user_id = $1 and series_id = $2`,
+      [ALICE, seriesId]
+    );
+    await reset(db);
+    expect(Number(r.rows[0].rating)).toBe(2.5);
+  });
+});
+
+describe("new_episode notifications", () => {
+  it("delivers a system notification with no actor and the episode number", async () => {
+    const seriesId = await seedSeries();
+    await db.query(
+      `insert into public.notifications (user_id, type, series_id, season_number, episode_number)
+       values ($1, 'new_episode', $2, 2, 5)`,
+      [ALICE, seriesId]
+    );
+
+    await asAuthenticated(db, ALICE);
+    const r = await db.query<{
+      type: string;
+      actor_id: string | null;
+      season_number: number;
+      episode_number: number;
+      series_name: string | null;
+    }>(
+      `select type, actor_id, season_number, episode_number, series_name
+       from public.get_notifications(50) where type = 'new_episode'`
+    );
+    await reset(db);
+
+    expect(r.rows).toHaveLength(1);
+    expect(r.rows[0]).toMatchObject({ type: "new_episode", actor_id: null, season_number: 2, episode_number: 5 });
+    expect(r.rows[0].series_name).toBeTruthy();
   });
 });

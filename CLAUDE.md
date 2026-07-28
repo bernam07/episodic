@@ -17,18 +17,21 @@ cd episodic
 npm install
 ```
 
-**`.env.local` is gitignored and is NOT in this repo.** You must recreate it:
+**`.env.local` is gitignored and is NOT in this repo.** Create it manually:
 
-```bash
-cp .env.example .env.local
+```
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<anon key from dashboard>
+VITE_VAPID_PUBLIC_KEY=BDWCO0WiZD14NUtDyIqXja41lvPPenkt-S74SSkBGo1eF_xC_nAuiGIJQQg0Iv8ziK5UhvSQqVWl41-fV6I0CZc
 ```
 
-Fill it from **Supabase dashboard → Project Settings → API**:
+Fill the first two from **Supabase dashboard → Project Settings → API**:
 
 | Variable | Where |
 |---|---|
 | `VITE_SUPABASE_URL` | Project URL |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Publishable (anon) key |
+| `VITE_VAPID_PUBLIC_KEY` | Web Push public key — not secret; the value above is the real one |
 
 The publishable key is safe in the client — RLS is what protects data. **Never** put the
 Supabase secret key or the TMDB key in a `VITE_*` variable; anything so prefixed is inlined
@@ -70,7 +73,7 @@ TMDB secret. A fresh machine only needs `.env.local` + `supabase link`. Full set
 | `npm run test:e2e` | Playwright smoke suite (builds, serves, drives `/auth`). Local only |
 | `supabase db push` | Apply migrations to the linked project |
 | `supabase gen types typescript --linked --schema public > src/types/database.types.ts` | Regenerate DB types — **run after every migration** |
-| `supabase functions deploy tmdb` / `auth-login` | Deploy Edge Functions |
+| `supabase functions deploy tmdb` / `auth-login` / `push` | Deploy Edge Functions |
 | `supabase config push` | Apply `config.toml` (auth settings) to the project |
 
 ---
@@ -108,7 +111,8 @@ src/
 ```
 
 Routes: `/auth`, `/reset-password`, `/` (home), `/search`, `/library`, `/friends`, `/profile`,
-`/user/:username`, `/series/:tmdbId`. Five bottom-nav tabs on mobile; sidebar from `md` up.
+`/user/:username`, `/series/:tmdbId`, `/list/:id`, `/calendar`, `/stats`. Five bottom-nav tabs on
+mobile; sidebar from `md` up.
 
 ---
 
@@ -145,12 +149,82 @@ only an ended series with every episode watched is *finished*. Aired counts deri
 
 **"Up Next" / `aired_episodes`.** `series.aired_episodes` stores the aired-episode count (computed
 in the `tmdb` edge function from `last_episode_to_air`, mirroring `airedEpisodeCount`; the client
-also sends it via `cacheSeries`). The `get_up_next` RPC uses it: for each *watching* series it
-expands `seasons_meta` into an ordered episode list, finds the first **unwatched** episode whose
-ordinal ≤ `aired_episodes` (so it never suggests an unaired episode and correctly fills gaps if you
-watched out of order), and returns its season/episode number. The Home "Up Next" rail shows that
-episode with a one-tap check-off: `useMarkUpNext` fetches the season (TanStack-cached) to resolve
-the `tmdb_episode_id`, then marks it — because Postgres stores counts, not episode IDs.
+also sends it via `cacheSeries`). The `get_up_next` RPC works on **per-season watched counts, never
+on `(season, episode)` equality**: for each *watching* series it walks `seasons_meta` in order,
+picks the first season whose watched count < `episode_count`, and returns `next_episode` as the
+**index within that season** (`watched + 1`), only when its global ordinal ≤ `aired_episodes` (never
+suggests unaired). This is deliberate: TMDB numbers some shows **absolutely within seasons** (One
+Piece S2 starts at E62), so joining tracking rows by episode_number silently never matched and the
+suggestion stuck forever (fixed in `…110000_fix_up_next_absolute_numbering`). The one-tap check-off
+(`useMarkUpNext`) resolves the *exact* episode client-side: fetches the season (TanStack-cached) +
+the watched-id set, and marks the first aired unwatched episode — which also fills out-of-order gaps
+precisely. Postgres stores counts, not episode IDs; only the client sees real numbering.
+
+**Activity feed / Diary are built from *milestones*, never raw episode rows.** This is the whole
+trick to a diary that survives someone adding a series they watched a year ago (which backfills
+hundreds of `episode_tracking` rows all stamped `now()`). The `_activity_events` engine derives four
+event types and *collapses the noise*:
+- **started** — `user_series_status.started_at`
+- **finished** — `user_series_status.completed_at`
+- **reviewed** — `reviews` (carries body text; only fires when body is non-empty)
+- **progress** — `episode_tracking` **grouped by (user, series, day)** → "watched N episodes of X",
+  so a week of Up Next one-taps is one line, not seven.
+
+Two suppression rules kill the backfill flood: a **progress** event is dropped when a **finished**
+milestone exists for the same series on the same day (so marking a whole series watched reads as one
+"Finished X", not "watched 400 episodes"); and a **started** event is dropped when it finished the
+same day (a binge-add reads as just "Finished X"). Everything is dated by when it was *logged*
+(Letterboxd-style) — there is deliberately **no** custom "I watched this earlier" date in v1.
+
+`_activity_events` is `security definer` and **not granted** (revoked from `public`); the two public
+RPCs decide *which* user_ids reach it: `get_friends_feed` passes the users you follow (never
+yourself), `get_user_diary(p_user_id)` passes `[p_user_id]` only if you are that user or follow them,
+else `[]`. So the same follow-gating as libraries, enforced in Postgres. The **Friends** tab renders
+the feed; profiles (own + others, follow-gated) render a "Recent Activity" diary via the shared
+`ActivityRow` (`showActor={false}` on diaries). The Friends tab uses `get_friends_feed`; the old
+status-snapshot `get_following_feed` (RPC + `FeedItem` type + `GetFollowingFeed` use case) was
+removed in `…130000_drop_following_feed`.
+
+**Lists are public/private, not follow-gated.** `lists` + `list_items` (composite PK
+`(list_id, series_id)`). RLS: a list (and its items) is selectable when `not is_private or
+auth.uid() = user_id`; writes are owner-only. So public lists are visible to everyone — unlike
+libraries, which are follow-gated — matching Letterboxd. The read RPCs are `security invoker`, so
+RLS does the privacy filtering for free (`get_user_lists` returns only public lists to non-owners,
+`get_list` returns zero rows for a private list you don't own). `touch_list_updated_at` bumps the
+parent list's `updated_at` on item add/remove so lists sort by recent activity. **Adding a series
+to a list ensures it's cached first** (`AddToList` → `EnsureSeriesCached`), because a series only in
+a list — never added to any library — would otherwise have no `series` row; `addItem` upserts with
+`ignoreDuplicates` so re-adding is a no-op. Lists show as a grid on profiles (own + others' public),
+open at `/list/:id`, and series are added from the detail screen's `AddToListSheet`.
+
+**Ratings are decoupled from reviews.** A rating is a lightweight star action stored on
+`user_series_status.rating` (set via the `set_rating` RPC — own-row only, refuses a series not in your
+library); a **review** is a separate text post (`reviews.body` required, non-empty). Ratings are
+deliberately **silent** — rating something creates **no** activity/feed event; only a written review
+surfaces, as a `reviewed` event (text, no stars). Two triggers keep `reviews.rating` a synced *display
+copy* of `user_series_status.rating` (`fill_review_rating` on review insert, `sync_rating_to_review` on
+a later rating change), so a review can show its author's stars without re-entry — but the source of
+truth is `user_series_status.rating`. The star badge (`RatingBadge`) is overlaid on posters everywhere
+via a `useMyRatings()` (tmdbId→rating) lookup; watched-but-unrated series get a `WatchedBadge` check
+(`useMyWatched()`) — a "seen it" cue across Home, Search and favorites.
+
+**Community rating summary.** `get_series_rating_summary(series_id)` returns grouped `(rating, count)`
+buckets from `user_series_status.rating` (so it captures ratings even without a review); `summarizeRatings`
+(pure) expands them to the full 10 half-star buckets + weighted average + total, rendered as a histogram
+on the series page. `security definer`, aggregate-only — exposes nothing per-user.
+
+**Onboarding is add-series-only** (no "follow people" step — deliberately cut). `profiles.onboarded`
+gates it; existing rows were backfilled `true`, so only new signups see it. `OnboardingGate` (a
+layout route inside `ProtectedRoute`) renders `OnboardingScreen` full-screen — outside `AppShell`, so
+no bottom nav — whenever `profile.onboarded === false`; tapping posters adds them as `want_to_watch`,
+then "Continue"/"Skip" calls `completeOnboarding` (sets the flag + optimistically flips it locally).
+
+**Rewatches are a count, not a status.** `user_series_status.rewatch_count` (independent of `status`
+and `is_favorite`), bumped via `bump_rewatch(series_id, delta)` (clamps ≥ 0, own-row only). Exposed
+in the `user_series_progress` view + `getStatus`; the series page has a +/− stepper (shown once the
+series is in the library), and the Library has a "Rewatched" filter (`rewatch_count > 0`). Because
+only a count is stored (no per-rewatch timestamp), rewatches deliberately do **not** appear in the
+activity/diary feed.
 
 **Favorites** are stored as `is_favorite boolean` on `user_series_status`. Toggling uses the
 `toggle_favorite(p_series_id)` RPC, which flips the flag (and upserts with `want_to_watch` if
@@ -242,6 +316,15 @@ Screen components use **named** exports, so each lazy import maps it to default:
 - **Supabase CLI in Codespaces**: `supabase login` requires a TTY. Use
   `export SUPABASE_ACCESS_TOKEN=<token>` then `npx supabase db push`.
 
+## Own-library queries MUST filter by `auth.uid()`
+
+`user_series_status` select is **follow-gated** (a follower can read the followed user's rows — needed
+for viewing profiles). So any query against `user_series_status` or the `user_series_progress` view that
+is meant to be *your own* library **must** add `.eq("user_id", currentUserId)` — RLS alone is not enough,
+or a follower's own Library/series-detail leaks the followed user's entries. This bit `getLibrary`,
+`getStatus`, and `getSeriesProgress` (fixed 2026-07-19). `episode_tracking` is own-only by RLS, so its
+queries don't need the filter.
+
 ## Bugs already fixed — do not reintroduce
 
 1. `uuid_generate_v4()` → `gen_random_uuid()` (extension not resolvable).
@@ -297,11 +380,11 @@ extensions to the shim**: PGlite installs them into `public`, which masks the ve
 UI is driven with **Playwright** (Chromium) at iPhone 15 Pro / iPad Pro / 1440px desktop, against
 `npm run preview`, using two real accounts that follow each other.
 
-**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 85 tests:
+**Tests now live in the repo** under `tests/` and run with **Vitest** (`npm test`) — 116 tests:
 - `tests/*.test.ts` — pure-function units (airing/watch-state, rating/username/email/avatar
   validators, plural, initials, releaseYear, hasAired) and the `SetSeriesStatus` orchestration
   (watched backfills, want_to_watch resets, episodes-before-status ordering) with fake repos.
-- `tests/schema.test.ts` — the schema/RLS/social/notification/delete/hardening/up-next checks against real
+- `tests/schema.test.ts` — the schema/RLS/social/notification/delete/hardening/up-next/activity-feed/ratings/lists/rewatch/favorites/push/compare-libraries/set-rating+review-sync/new-episode checks against real
   Postgres via **PGlite**, using the shared harness in `tests/support/pglite.ts` (`createMigratedDb`
   applies all migrations under the shim). Runs in CI — no browser, no live backend.
 
@@ -356,20 +439,69 @@ screenshot before believing a red result.
 | `…110000_notifications_and_delete_account` | `notifications` table + RLS, `notify_on_follow` / `notify_on_review` triggers, `get_notifications` / `mark_notifications_read` / `get_unread_notification_count`, `delete_own_account` |
 | `…120000_harden_series_cache` | `upsert_series_from_tmdb` → `security definer` (+ auth guard), drop the direct insert/update policies on `series`, revoke insert/update/delete from `authenticated`. The RPC is now the only write path into the cache |
 | `…090000_up_next` (2026-07-18) | `aired_episodes` column on `series` (backfilled = total for ended series), `upsert_series_from_tmdb` stores it, `get_up_next` RPC |
+| `…090000_activity_feed` (2026-07-19) | `_activity_events(user_ids, limit)` internal event engine (`security definer`, not granted), `get_friends_feed` (followed users) + `get_user_diary(user_id)` (follow-gated) RPCs |
+| `…100000_community_ratings` (2026-07-19) | `get_series_rating_summary(series_id)` → grouped `(rating, count)` buckets (`security invoker`; reviews are `select_all`) |
+| `…110000_onboarding` (2026-07-19) | `profiles.onboarded boolean` (existing rows backfilled `true`); gates the first-run add-series flow |
+| `…120000_lists` (2026-07-19) | `lists` + `list_items` tables, public/private RLS, `handle_updated_at` + `touch_list_updated_at` triggers, `get_user_lists` / `get_list` / `get_list_items` RPCs (all `security invoker`, privacy via RLS) |
+| `…130000_drop_following_feed` (2026-07-19) | drops the dead `get_following_feed` RPC (superseded by the activity feed) |
+| `…140000_push_subscriptions` (2026-07-19) | `push_subscriptions` table (endpoint-unique) + own-only RLS for Web Push |
+| `…150000_rewatch_count` (2026-07-19) | `user_series_status.rewatch_count`, `rewatch_count` added to `user_series_progress` view, `bump_rewatch(series_id, delta)` RPC (clamps ≥ 0) |
+| `…160000_user_favorites` (2026-07-19) | `get_user_favorites(user_id)` RPC — favorites for a profile without the 60-row library truncation |
+| `…090000_genres_calendar_compare` (2026-07-21) | `genres` + `aired_episodes` added to the `user_series_progress` view; `compare_libraries(other_user_id)` RPC (`security definer`, follow-gated) |
+| `…090000_decouple_rating_from_reviews` (2026-07-22) | `user_series_status.rating` (backfilled from reviews), `reviews.rating` nullable, view uses `uss.rating`, `set_rating` RPC, `compare_libraries` + `get_series_rating_summary` read `uss.rating` |
+| `…100000_silent_ratings` (2026-07-22) | `get_user_library` reads `uss.rating`; `_activity_events` `rated`→`reviewed` (text-only, ratings silent in the feed) |
+| `…090000_review_rating_sync` (2026-07-23) | `fill_review_rating` / `sync_rating_to_review` triggers keep `reviews.rating` in sync with `uss.rating`; `notify_on_review` fires only when body is non-empty |
+| `…100000_favorites_rating` (2026-07-23) | `get_user_favorites` returns `uss.rating` (ratings show on other profiles' favorites) |
+| `…090000_new_episode_type` (2026-07-24) | adds `'new_episode'` to the `notification_type` enum (isolated so the value commits before use) |
+| `…091000_new_episode_notifications` (2026-07-24) | `notifications.actor_id` nullable + `season_number`/`episode_number` columns; `get_notifications` left-joins the actor (system notifications have none) and returns the episode |
+| `…100000_series_runtime` (2026-07-24) | `series.episode_runtime` (avg, stored by `upsert_series_from_tmdb`, exposed on the view) so profile watch-time sums from the library with zero TMDB calls |
+| `…110000_fix_up_next_absolute_numbering` (2026-07-24) | `get_up_next` rewritten to per-season watched counts — episode_number equality broke on absolutely-numbered shows (One Piece S2 = E62+) and stuck the suggestion |
 
 ## Edge Functions
 
 | Function | `verify_jwt` | Routes |
 |---|---|---|
-| `tmdb` | `true` | `/search?q=`, `/trending`, `/genres`, `/discover?genre=`, `/series/:id`, `/series/:id/recommendations`, `/series/:id/season/:n`, `/series/:id/credits` |
+| `tmdb` | `true` | `/search?q=`, `/trending`, `/genres`, `/discover?genre=`, `/series/:id`, `/series/:id/recommendations`, `/series/:id/season/:n`, `/series/:id/credits`, `/series/:id/providers?region=` |
 | `auth-login` | **`false`** | `POST` `{ identifier, password }` → `{ access_token, refresh_token }` |
+| `push` | `true` | `POST` `{ type: "follow", followingId }` or `{ type: "review", seriesId }` → sends Web Push to recipients |
+| `notify-new-episodes` | **`false`** | `POST` (guarded by `x-cron-secret`) → for every *watching* series checks TMDB for newly-aired episodes, updates `series.aired_episodes`, and notifies watchers (in-app + Web Push) |
+
+**New-episode notifications (scheduled).** No `pg_cron`/`pg_net` (keeps the zero-extensions rule) —
+a **GitHub Actions** cron (`.github/workflows/episode-check.yml`, every 12h + manual dispatch) POSTs the
+`notify-new-episodes` function with the `x-cron-secret` header. The function diffs each watching series'
+TMDB `last_episode_to_air`-derived aired count against the stored `series.aired_episodes`; on an increase
+it updates the row (the stored count is the **dedup marker**) and inserts a `new_episode` notification +
+Web Push for each watcher. First-time computation from a `0` baseline updates silently (no false "new
+episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo secrets `SUPABASE_URL` +
+`CRON_SECRET` must be added for the workflow to run. Notifications with no actor render the series poster
+(not an avatar) in the bell sheet.
+
+**Web Push.** VAPID-signed browser push, additive to the in-app `notifications` bell. Pieces:
+- **Keys**: VAPID keypair. Public key is **not secret** — lives in `VITE_VAPID_PUBLIC_KEY` (committed in
+  `.env.local`, inlined via `vite.config.ts` `define`, read by `env.vapidPublicKey`). Private key +
+  subject are Supabase **secrets** (`VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) used only in the edge function.
+- **Subscriptions**: `push_subscriptions` (endpoint-unique, own-only RLS). The client subscribes via the
+  service worker's `pushManager`, then upserts the subscription; the edge function reads all recipients'
+  subs with the **service role**.
+- **Delivery is client-triggered, not a DB trigger** (no `pg_net`/webhooks — keeps the zero-extensions
+  rule). After a follow/review succeeds, the hook fire-and-forgets `push.notifyFollow(followingId)` /
+  `push.notifyReview(seriesId)`; the `push` function resolves recipients server-side (a follow → that one
+  user; a review → the reviewer's followers, fanned out server-side so the client never enumerates them),
+  fetches their subs, and sends via `npm:web-push`. Dead subs (404/410) are deleted.
+- **Service worker**: the Workbox `generateSW` output `importScripts('/push-sw.js')` (in `public/`, wired
+  through `workbox.importScripts`) — that file holds the `push` + `notificationclick` handlers. Custom SW
+  code without abandoning the generated caching. **Push only works in `preview`/production** (the SW is
+  disabled in `dev`), and on iOS only inside the **installed** PWA (iOS 16.4+).
+- **UI**: a `PushToggle` in the profile settings (hidden unless `pushSupported()`), requests permission +
+  subscribes on enable, unsubscribes + deletes the row on disable.
 
 ---
 
 ## Key UI features
 
-- **Auth landing page**: Poster-wall backdrop from trending series, feature highlights, auth form.
-  Two-column layout on desktop (poster wall left, form right).
+- **Auth landing page**: slowly drifting poster-wall backdrop from trending series, feature
+  highlights, and the form. Two-column on desktop; segmented Sign in / Sign up control, forgot-password
+  as its own mode, icon-prefixed fields, and a password show/hide toggle.
 - **Episode detail**: Tap any episode row → bottom sheet with still image, formatted air date,
   runtime, TMDB rating, full description, mark-watched toggle.
 - **Cast rail**: Horizontal scroll of circular actor photos + name + character on series detail.
@@ -382,6 +514,48 @@ screenshot before believing a red result.
   deep-link to the correct library filter.
 - **Up Next**: Home rail showing the next unwatched aired episode of each *watching* series
   (`get_up_next`), with a one-tap check-off that advances to the following episode.
+- **Activity feed / Diary**: the **Friends** tab is a chronological milestone feed of the people you
+  follow (started / finished / reviewed / "watched N episodes of"); profiles show the same events as a
+  "Recent Activity" diary (own + follow-gated others). Backfills collapse to one line — see Data model.
+- **Lists**: custom public/private collections. "Lists" section on every profile (own has a New-list
+  action), list detail at `/list/:id` (owner can manage/remove/edit/delete), and an "Add to list"
+  sheet on the series detail screen. See Data model for the privacy + caching rules.
+- **Community ratings**: a half-star histogram (average + total) on the series page, above reviews.
+- **Rewatch counter**: +/− stepper on the series page; "Rewatched" Library filter (see Data model).
+- **Seen-it cues**: posters across Home, Search, browse and More Like This carry one corner badge,
+  in this precedence — your rating star (`useMyRatings`) → watched check (`useMyWatched`) → an
+  **in-library** dot in the status colour with a glyph (`useMyLibraryStatus`), so a series you
+  merely added is still visibly *yours* when scrolling a big catalogue. Suppressed where a
+  `StatusBadge` already states the status (Library, profiles). Ratings/reviews are decoupled (see
+  Data model).
+- **Finding a rating you can't place**: the Library has a **Rated** filter (sorted by `updated_at`,
+  so a just-set rating is first) and the stats histogram bars deep-link to
+  `/library?status=rated&rating=<n>`, with a dismissable chip. Re-tapping the same star on the
+  series page clears the rating (`set_rating` with `null`).
+- **Compare libraries**: from a followed user's profile, `compare_libraries` shows the union of both
+  libraries with each side's status + rating (`ComparisonSheet`).
+- **Calendar**: `/calendar` — upcoming episodes of your Watching / Want-to-Watch series, grouped by day,
+  with a **Week / Month** toggle and prev/next navigation (enumerates the airing season, not just the
+  next episode).
+- **Watch time**: profile stat summed from `series.episode_runtime` × watched episodes (no TMDB calls).
+- **Where to Watch**: streaming/rent/buy provider logos on the series page (`/series/:id/providers`
+  edge route, JustWatch-sourced via TMDB; region from `navigator.language`, PT fallback → US).
+- **More Like This**: recommendations rail at the bottom of the series page, with seen-it badges.
+- **Stats page**: `/stats` ("All stats" link on the profile panel) — watch-time hero, a part-to-whole
+  **Library Breakdown** stacked bar + legend, sequential top-genre bars, an **emphasis** ratings
+  histogram (the modal bucket in accent, the rest recessive gray), a backdrop **Most Watched** card,
+  and favorites/rewatch tiles. All computed client-side by `computeLibraryInsights` (pure) from the
+  already-loaded library. **The four status colors are a validated categorical palette**
+  (`#3b82f6` watching / `#d97706` want / `#059669` watched / `#f43f5e` abandoned) — checked with the
+  dataviz validator for CVD separation, chroma and contrast on the `ink-850` surface, in that hue
+  order. Keep them identical here and on the profile pills: colour follows the status, not the chart.
+  The emerald↔amber pair sits in the 6–8 CVD band, which is legal only because every segment carries
+  a labelled legend entry and a 2px surface gap — don't drop either.
+- **Skeleton loaders**: shape-matching placeholders (`Skeleton.tsx` kit) on Library, Home rails,
+  Friends feed, diary and Search grids instead of centered spinners.
+- **New-episode alerts**: scheduled push + in-app notification when a Watching series airs a new episode
+  (see Edge Functions / notify-new-episodes).
+- **Onboarding**: first-run, add-series-only poster picker for new signups (`OnboardingScreen`).
 - **Notifications**: Bell on the home header with an unread badge, opening `NotificationSheet`
   (follow + review activity). Marked read on open.
 - **Delete account**: Danger action at the bottom of the profile; `DeleteAccountSheet` gates it

@@ -1,5 +1,5 @@
+import type { ComparisonItem } from "@/domain/entities/Comparison";
 import type {
-  FeedItem,
   ProfileSearchResult,
   ProfileSummary,
   UserLibraryItem,
@@ -30,19 +30,19 @@ export class GetProfileSummary {
   }
 }
 
-export class GetFollowingFeed {
-  constructor(private readonly social: ISocialRepository) {}
-
-  async execute(limit = 40): Promise<FeedItem[]> {
-    return this.social.getFollowingFeed(limit);
-  }
-}
-
 export class GetUserLibrary {
   constructor(private readonly social: ISocialRepository) {}
 
   async execute(userId: string, limit = 60): Promise<UserLibraryItem[]> {
     return this.social.getUserLibrary(userId, limit);
+  }
+}
+
+export class GetUserFavorites {
+  constructor(private readonly social: ISocialRepository) {}
+
+  async execute(userId: string, limit = 60): Promise<UserLibraryItem[]> {
+    return this.social.getUserFavorites(userId, limit);
   }
 }
 
@@ -71,5 +71,13 @@ export class ToggleFollow {
     }
 
     return this.social.unfollow(userId);
+  }
+}
+
+export class CompareLibraries {
+  constructor(private readonly social: ISocialRepository) {}
+
+  async execute(otherUserId: string): Promise<ComparisonItem[]> {
+    return this.social.compareLibraries(otherUserId);
   }
 }

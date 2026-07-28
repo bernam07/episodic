@@ -1,6 +1,6 @@
 import { AppError } from "@/core/errors/AppError";
+import type { ComparisonItem } from "@/domain/entities/Comparison";
 import type {
-  FeedItem,
   ProfileSearchResult,
   ProfileSummary,
   UserLibraryItem,
@@ -104,28 +104,6 @@ export class SupabaseSocialRepository implements ISocialRepository {
     return (data ?? []).map(toProfileSearchResult);
   }
 
-  async getFollowingFeed(limit = 40): Promise<FeedItem[]> {
-    const { data, error } = await supabase.rpc("get_following_feed", { p_limit: limit });
-
-    if (error) {
-      throw new AppError("unknown", error.message, error);
-    }
-
-    return (data ?? []).map((row) => ({
-      userId: row.user_id,
-      username: row.username,
-      displayName: row.display_name,
-      avatarUrl: row.avatar_url,
-      seriesId: row.series_id,
-      tmdbId: row.tmdb_id,
-      seriesName: row.series_name,
-      posterPath: row.poster_path,
-      status: row.status,
-      rating: row.rating === null ? null : Number(row.rating),
-      updatedAt: row.updated_at,
-    }));
-  }
-
   async getUserLibrary(userId: string, limit = 60): Promise<UserLibraryItem[]> {
     const { data, error } = await supabase.rpc("get_user_library", {
       p_user_id: userId,
@@ -145,6 +123,60 @@ export class SupabaseSocialRepository implements ISocialRepository {
       isFavorite: row.is_favorite,
       rating: row.rating === null ? null : Number(row.rating),
       updatedAt: row.updated_at,
+    }));
+  }
+
+  async getUserFavorites(userId: string, limit = 60): Promise<UserLibraryItem[]> {
+    const { data, error } = await supabase.rpc("get_user_favorites", {
+      p_user_id: userId,
+      p_limit: limit,
+    });
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
+
+    return (data ?? []).map((row) => ({
+      seriesId: row.series_id,
+      tmdbId: row.tmdb_id,
+      seriesName: row.series_name,
+      posterPath: row.poster_path,
+      status: row.status,
+      isFavorite: true,
+      rating: row.rating === null ? null : Number(row.rating),
+      updatedAt: row.updated_at,
+    }));
+  }
+
+  async compareLibraries(otherUserId: string): Promise<ComparisonItem[]> {
+    const { data, error } = await supabase.rpc("compare_libraries" as never, {
+      p_other_user_id: otherUserId,
+    } as never);
+
+    if (error) {
+      throw new AppError("unknown", (error as { message: string }).message, error);
+    }
+
+    type ComparisonRow = {
+      tmdb_id: number;
+      series_name: string;
+      poster_path: string | null;
+      genres: string[];
+      my_status: string | null;
+      my_rating: number | null;
+      their_status: string | null;
+      their_rating: number | null;
+    };
+
+    return ((data ?? []) as ComparisonRow[]).map((row) => ({
+      tmdbId: row.tmdb_id,
+      seriesName: row.series_name,
+      posterPath: row.poster_path,
+      genres: row.genres ?? [],
+      myStatus: (row.my_status as ComparisonItem["myStatus"]) ?? null,
+      myRating: row.my_rating === null ? null : Number(row.my_rating),
+      theirStatus: (row.their_status as ComparisonItem["theirStatus"]) ?? null,
+      theirRating: row.their_rating === null ? null : Number(row.their_rating),
     }));
   }
 

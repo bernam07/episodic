@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { ComparisonSheet } from "@/presentation/components/social/ComparisonSheet";
 import { SERIES_STATUS_LABELS, SERIES_STATUSES } from "@/domain/entities/SeriesStatus";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { Avatar } from "@/presentation/components/social/Avatar";
+import { ListsSection } from "@/presentation/components/lists/ListsSection";
+import { DiarySection } from "@/presentation/components/social/DiarySection";
 import { FollowButton } from "@/presentation/components/social/FollowButton";
 import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
 import { FullScreenSpinner, Spinner } from "@/presentation/components/ui/Spinner";
-import { useProfileSummary, useUserLibrary } from "@/presentation/hooks/useSocial";
+import { useProfileSummary, useUserFavorites, useUserLibrary } from "@/presentation/hooks/useSocial";
 import { pluralize } from "@/presentation/utils/plural";
 
 function StatTile({ value, label }: { value: number; label: string }) {
@@ -25,7 +28,11 @@ export function UserProfileScreen() {
   const { data: library, isLoading: libraryLoading } = useUserLibrary(
     summary && !summary.isSelf ? summary.id : null
   );
+  const { data: favorites } = useUserFavorites(
+    summary && !summary.isSelf && summary.isFollowing ? summary.id : null
+  );
   const [followMode, setFollowMode] = useState<"followers" | "following" | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   if (isLoading) {
     return <FullScreenSpinner />;
@@ -107,8 +114,20 @@ export function UserProfileScreen() {
           <p className="mt-3 text-[14px] whitespace-pre-wrap text-mist-300">{summary.bio}</p>
         ) : null}
 
-        <div className="mt-4">
+        <div className="mt-4 flex gap-3">
           <FollowButton userId={summary.id} isFollowing={summary.isFollowing} size="md" />
+          {summary.isFollowing ? (
+            <button
+              type="button"
+              onClick={() => setCompareOpen(true)}
+              className="tap-none flex min-h-[40px] items-center gap-2 rounded-xl bg-ink-800 px-4 text-[13px] font-semibold text-mist-300 active:bg-ink-700"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                <path d="M16 3h5v5M8 3H3v5M21 3l-7 7M3 3l7 7M16 21h5v-5M8 21H3v-5M21 21l-7-7M3 21l7-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Compare
+            </button>
+          ) : null}
         </div>
 
         <FollowListSheet
@@ -127,6 +146,8 @@ export function UserProfileScreen() {
         </div>
       </section>
 
+      <ListsSection userId={summary.id} isOwn={false} />
+
       {!summary.isFollowing ? (
         <div className="mx-5 mt-6 rounded-card border border-ink-700 bg-ink-850 p-5 text-center">
           <p className="text-[14px] font-semibold text-mist-200">This library is private</p>
@@ -136,28 +157,26 @@ export function UserProfileScreen() {
         </div>
       ) : (
         <>
-          {(() => {
-            const favorites = (library ?? []).filter((item) => item.isFavorite);
-            return favorites.length > 0 ? (
-              <section className="mt-7 px-5">
-                <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-                  Favorites
-                  <span className="ml-1.5 text-mist-600">{favorites.length}</span>
-                </h2>
-                <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5">
-                  {favorites.map((item) => (
-                    <SeriesCard
-                      key={item.seriesId}
-                      tmdbId={item.tmdbId}
-                      name={item.seriesName}
-                      posterPath={item.posterPath}
-                      status={item.status}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null;
-          })()}
+          {favorites && favorites.length > 0 ? (
+            <section className="mt-7 px-5">
+              <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+                Favorites
+                <span className="ml-1.5 text-mist-600">{favorites.length}</span>
+              </h2>
+              <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5">
+                {favorites.map((item) => (
+                  <SeriesCard
+                    key={item.seriesId}
+                    tmdbId={item.tmdbId}
+                    name={item.seriesName}
+                    posterPath={item.posterPath}
+                    status={item.status}
+                    rating={item.rating}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="mt-7">
             <div className="mb-3 flex items-center justify-between px-5">
@@ -187,14 +206,23 @@ export function UserProfileScreen() {
                     name={item.seriesName}
                     posterPath={item.posterPath}
                     status={item.status}
-                    caption={item.rating !== null ? `Rated ${item.rating.toFixed(1)}` : undefined}
+                    rating={item.rating}
                   />
                 ))}
               </div>
             )}
           </section>
+
+          <DiarySection userId={summary.id} />
         </>
       )}
+
+      <ComparisonSheet
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        userId={summary.id}
+        displayName={summary.displayName || summary.username}
+      />
     </>
   );
 }

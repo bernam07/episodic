@@ -18,8 +18,12 @@ type ProgressRow = {
   backdrop_path: string | null;
   status: SeriesStatus;
   is_favorite: boolean;
+  rewatch_count: number;
   number_of_seasons: number;
   number_of_episodes: number;
+  aired_episodes: number;
+  episode_runtime: number;
+  genres: string[];
   watched_episodes: number;
   remaining_episodes: number;
   progress_percent: number;
@@ -36,8 +40,12 @@ function toProgress(row: ProgressRow): SeriesProgress {
     backdropPath: row.backdrop_path,
     status: row.status,
     isFavorite: row.is_favorite,
+    rewatchCount: row.rewatch_count,
     numberOfSeasons: row.number_of_seasons,
     numberOfEpisodes: row.number_of_episodes,
+    airedEpisodes: row.aired_episodes ?? 0,
+    episodeRuntime: row.episode_runtime ?? 0,
+    genres: row.genres ?? [],
     watchedEpisodes: row.watched_episodes,
     remainingEpisodes: row.remaining_episodes,
     progressPercent: Number(row.progress_percent),
@@ -58,7 +66,13 @@ async function currentUserId(): Promise<string> {
 
 export class SupabaseTrackingRepository implements ITrackingRepository {
   async getLibrary(status?: SeriesStatus): Promise<SeriesProgress[]> {
-    let query = supabase.from("user_series_progress").select("*").order("updated_at", { ascending: false });
+    const userId = await currentUserId();
+
+    let query = supabase
+      .from("user_series_progress")
+      .select("*")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
 
     if (status) {
       query = query.eq("status", status);
@@ -70,13 +84,16 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       throw new AppError("unknown", error.message, error);
     }
 
-    return (data as ProgressRow[]).map(toProgress);
+    return (data as unknown as ProgressRow[]).map(toProgress);
   }
 
   async getSeriesProgress(seriesId: string): Promise<SeriesProgress | null> {
+    const userId = await currentUserId();
+
     const { data, error } = await supabase
       .from("user_series_progress")
       .select("*")
+      .eq("user_id", userId)
       .eq("series_id", seriesId)
       .maybeSingle();
 
@@ -84,13 +101,16 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       throw new AppError("unknown", error.message, error);
     }
 
-    return data ? toProgress(data as ProgressRow) : null;
+    return data ? toProgress(data as unknown as ProgressRow) : null;
   }
 
   async getStatus(seriesId: string): Promise<UserSeriesStatus | null> {
+    const userId = await currentUserId();
+
     const { data, error } = await supabase
       .from("user_series_status")
-      .select("id, user_id, series_id, status, is_favorite, started_at, completed_at")
+      .select("*")
+      .eq("user_id", userId)
       .eq("series_id", seriesId)
       .maybeSingle();
 
@@ -102,14 +122,18 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       return null;
     }
 
+    const row = data as unknown as Record<string, unknown>;
+
     return {
-      id: data.id,
-      userId: data.user_id,
-      seriesId: data.series_id,
-      status: data.status,
-      isFavorite: data.is_favorite,
-      startedAt: data.started_at,
-      completedAt: data.completed_at,
+      id: row.id as string,
+      userId: row.user_id as string,
+      seriesId: row.series_id as string,
+      status: row.status as SeriesStatus,
+      isFavorite: row.is_favorite as boolean,
+      rewatchCount: (row.rewatch_count as number) ?? 0,
+      rating: (row.rating as number | null) ?? null,
+      startedAt: row.started_at as string | null,
+      completedAt: row.completed_at as string | null,
     };
   }
 
@@ -272,6 +296,30 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
     if (error) {
       throw new AppError("unknown", error.message, error);
     }
+  }
+
+  async setRating(seriesId: string, rating: number | null): Promise<void> {
+    const { error } = await supabase.rpc("set_rating" as never, {
+      p_series_id: seriesId,
+      p_rating: rating,
+    } as never);
+
+    if (error) {
+      throw new AppError("unknown", (error as { message: string }).message, error);
+    }
+  }
+
+  async bumpRewatch(seriesId: string, delta: number): Promise<number> {
+    const { data, error } = await supabase.rpc("bump_rewatch", {
+      p_series_id: seriesId,
+      p_delta: delta,
+    });
+
+    if (error) {
+      throw new AppError("unknown", error.message, error);
+    }
+
+    return data ?? 0;
   }
 
   async getContinueWatching(limit = 10): Promise<ContinueWatchingItem[]> {

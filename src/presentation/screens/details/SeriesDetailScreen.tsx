@@ -7,23 +7,29 @@ import { releaseYear } from "@/domain/entities/Series";
 import { SERIES_STATUS_LABELS, type SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { ActorDetailSheet } from "@/presentation/components/actors/ActorDetailSheet";
 import { SeasonAccordion } from "@/presentation/components/episodes/SeasonAccordion";
+import { AddToListSheet } from "@/presentation/components/lists/AddToListSheet";
+import { MoreLikeThisRail } from "@/presentation/components/series/MoreLikeThisRail";
+import { WatchProvidersSection } from "@/presentation/components/series/WatchProvidersSection";
+import { RatingSummaryCard } from "@/presentation/components/reviews/RatingSummaryCard";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { ReviewSheet } from "@/presentation/components/reviews/ReviewSheet";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { SeriesStateCard } from "@/presentation/components/series/SeriesStateCard";
 import { StatusPicker } from "@/presentation/components/series/StatusPicker";
 import { Button } from "@/presentation/components/ui/Button";
-import { RatingDisplay } from "@/presentation/components/ui/Rating";
+import { RatingInput } from "@/presentation/components/ui/Rating";
 import { Sheet } from "@/presentation/components/ui/Sheet";
 import { FullScreenSpinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useCredits, useSeriesDetail } from "@/presentation/hooks/useDiscovery";
-import { useOwnReview, useSeriesReviews } from "@/presentation/hooks/useReviews";
+import { useOwnReview, useRatingSummary, useSeriesReviews } from "@/presentation/hooks/useReviews";
 import {
+  useBumpRewatch,
   useLocalSeriesId,
   useRemoveFromLibrary,
   useSeasonProgress,
   useSeriesTracking,
+  useSetRating,
   useSetSeriesStatus,
   useToggleEpisode,
   useToggleFavorite,
@@ -55,6 +61,7 @@ export function SeriesDetailScreen() {
 
   const [statusSheetOpen, setStatusSheetOpen] = useState(false);
   const [reviewSheetOpen, setReviewSheetOpen] = useState(false);
+  const [addToListOpen, setAddToListOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<SeriesStatus | null>(null);
   const [selectedActor, setSelectedActor] = useState<{ id: number; name: string } | null>(null);
 
@@ -65,6 +72,7 @@ export function SeriesDetailScreen() {
   const { data: watchedIds } = useWatchedEpisodes(seriesId ?? null);
   const { data: reviews } = useSeriesReviews(seriesId ?? null);
   const { data: ownReview } = useOwnReview(seriesId ?? null);
+  const { data: ratingSummary } = useRatingSummary(seriesId ?? null);
   const { data: cast } = useCredits(tmdbId);
 
   const setStatus = useSetSeriesStatus(tmdbId, detail);
@@ -72,6 +80,8 @@ export function SeriesDetailScreen() {
   const toggleEpisode = useToggleEpisode(seriesId ?? null);
   const toggleSeason = useToggleSeason(seriesId ?? null);
   const toggleFavorite = useToggleFavorite(seriesId ?? null);
+  const bumpRewatch = useBumpRewatch(seriesId ?? null);
+  const setRating = useSetRating(seriesId ?? null);
 
   if (isLoading || !detail) {
     return <FullScreenSpinner />;
@@ -181,20 +191,74 @@ export function SeriesDetailScreen() {
             </button>
           ) : null}
 
-          <Button
-            variant="secondary"
-            className="flex-1"
-            disabled={!seriesId}
-            onClick={() => setReviewSheetOpen(true)}
+          <button
+            type="button"
+            onClick={() => setAddToListOpen(true)}
+            aria-label="Add to list"
+            className="tap-none flex size-11 shrink-0 items-center justify-center rounded-xl border border-ink-700 bg-ink-800 text-mist-400 transition-colors active:opacity-70"
           >
-            {ownReview ? "Edit Review" : "Rate"}
-          </Button>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[22px]">
+              <path d="M4 6h11M4 12h11M4 18h7M17 15v6M14 18h6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
         </div>
 
-        {ownReview ? (
-          <div className="mt-3 flex items-center gap-2">
-            <RatingDisplay value={ownReview.rating} />
-            <span className="text-[12px] text-mist-500">Your rating</span>
+        {seriesId ? (
+          <div className="mt-4 flex items-center justify-between">
+            <RatingInput
+              value={tracking?.rating ?? 0}
+              onChange={(rating) => setRating.mutate(rating || null)}
+            />
+            <button
+              type="button"
+              onClick={() => setReviewSheetOpen(true)}
+              className="tap-none text-[13px] font-medium text-accent-400 active:text-accent-300"
+            >
+              {ownReview?.body ? "Edit review" : "Write a review"}
+            </button>
+          </div>
+        ) : null}
+
+        {tracking ? (
+          <div className="mt-3 flex items-center gap-3 rounded-xl bg-ink-850 px-4 py-2.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-mist-400">
+              <path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="min-w-0 flex-1 text-[13px] text-mist-300">
+              {(tracking.rewatchCount ?? 0) > 0 ? (
+                <>
+                  Rewatched <span className="font-semibold text-mist-100">{tracking.rewatchCount}×</span>
+                </>
+              ) : (
+                "Log a rewatch"
+              )}
+            </span>
+            {(tracking.rewatchCount ?? 0) > 0 ? (
+              <button
+                type="button"
+                onClick={() => bumpRewatch.mutate(-1)}
+                disabled={bumpRewatch.isPending}
+                aria-label="Remove a rewatch"
+                className="tap-none flex size-8 items-center justify-center rounded-full border border-ink-600 text-mist-400 active:bg-ink-700 disabled:opacity-50"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+                  <path d="M5 12h14" strokeLinecap="round" />
+                </svg>
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => bumpRewatch.mutate(1)}
+              disabled={bumpRewatch.isPending}
+              aria-label="Add a rewatch"
+              className="tap-none flex size-8 items-center justify-center rounded-full bg-accent-600 text-white active:bg-accent-500 disabled:opacity-50"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
         ) : null}
 
@@ -219,6 +283,8 @@ export function SeriesDetailScreen() {
             ))}
           </div>
         ) : null}
+
+        <WatchProvidersSection tmdbId={tmdbId} />
       </div>
 
       {cast && cast.length > 0 ? (
@@ -285,6 +351,11 @@ export function SeriesDetailScreen() {
 
         <section className="mt-7">
           <h2 className="mb-1 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">Reviews</h2>
+          {ratingSummary && ratingSummary.total > 0 ? (
+            <div className="mb-4 mt-2">
+              <RatingSummaryCard summary={ratingSummary} />
+            </div>
+          ) : null}
           <ReviewList
             reviews={reviews ?? []}
             currentUserId={user?.id}
@@ -292,6 +363,8 @@ export function SeriesDetailScreen() {
           />
         </section>
       </div>
+
+      <MoreLikeThisRail tmdbId={tmdbId} />
 
       <Sheet
         open={statusSheetOpen}
@@ -322,6 +395,13 @@ export function SeriesDetailScreen() {
         onClose={() => setSelectedActor(null)}
         personId={selectedActor?.id ?? null}
         personName={selectedActor?.name ?? ""}
+      />
+
+      <AddToListSheet
+        open={addToListOpen}
+        onClose={() => setAddToListOpen(false)}
+        tmdbId={tmdbId}
+        detail={detail}
       />
     </>
   );

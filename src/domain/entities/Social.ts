@@ -18,20 +18,6 @@ export type ProfileSummary = ProfileSearchResult & {
   isSelf: boolean;
 };
 
-export type FeedItem = {
-  userId: string;
-  username: string;
-  displayName: string | null;
-  avatarUrl: string | null;
-  seriesId: string;
-  tmdbId: number;
-  seriesName: string;
-  posterPath: string | null;
-  status: SeriesStatus;
-  rating: number | null;
-  updatedAt: string;
-};
-
 export type UserLibraryItem = {
   seriesId: string;
   tmdbId: number;

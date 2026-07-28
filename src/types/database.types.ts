@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -92,30 +92,107 @@ export type Database = {
           },
         ]
       }
+      list_items: {
+        Row: {
+          added_at: string
+          list_id: string
+          series_id: string
+        }
+        Insert: {
+          added_at?: string
+          list_id: string
+          series_id: string
+        }
+        Update: {
+          added_at?: string
+          list_id?: string
+          series_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_items_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_private: boolean
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_private?: boolean
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_private?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lists_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
-          actor_id: string
+          actor_id: string | null
           created_at: string
+          episode_number: number | null
           id: string
           read: boolean
+          season_number: number | null
           series_id: string | null
           type: Database["public"]["Enums"]["notification_type"]
           user_id: string
         }
         Insert: {
-          actor_id: string
+          actor_id?: string | null
           created_at?: string
+          episode_number?: number | null
           id?: string
           read?: boolean
+          season_number?: number | null
           series_id?: string | null
           type: Database["public"]["Enums"]["notification_type"]
           user_id: string
         }
         Update: {
-          actor_id?: string
+          actor_id?: string | null
           created_at?: string
+          episode_number?: number | null
           id?: string
           read?: boolean
+          season_number?: number | null
           series_id?: string | null
           type?: Database["public"]["Enums"]["notification_type"]
           user_id?: string
@@ -151,6 +228,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          onboarded: boolean
           updated_at: string
           username: string
         }
@@ -160,6 +238,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          onboarded?: boolean
           updated_at?: string
           username: string
         }
@@ -169,10 +248,49 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          onboarded?: boolean
           updated_at?: string
           username?: string
         }
         Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -180,7 +298,7 @@ export type Database = {
           contains_spoilers: boolean
           created_at: string
           id: string
-          rating: number
+          rating: number | null
           series_id: string
           updated_at: string
           user_id: string
@@ -190,7 +308,7 @@ export type Database = {
           contains_spoilers?: boolean
           created_at?: string
           id?: string
-          rating: number
+          rating?: number | null
           series_id: string
           updated_at?: string
           user_id: string
@@ -200,7 +318,7 @@ export type Database = {
           contains_spoilers?: boolean
           created_at?: string
           id?: string
-          rating?: number
+          rating?: number | null
           series_id?: string
           updated_at?: string
           user_id?: string
@@ -227,6 +345,7 @@ export type Database = {
           aired_episodes: number
           backdrop_path: string | null
           created_at: string
+          episode_runtime: number
           first_air_date: string | null
           genres: string[]
           id: string
@@ -247,6 +366,7 @@ export type Database = {
           aired_episodes?: number
           backdrop_path?: string | null
           created_at?: string
+          episode_runtime?: number
           first_air_date?: string | null
           genres?: string[]
           id?: string
@@ -267,6 +387,7 @@ export type Database = {
           aired_episodes?: number
           backdrop_path?: string | null
           created_at?: string
+          episode_runtime?: number
           first_air_date?: string | null
           genres?: string[]
           id?: string
@@ -291,6 +412,8 @@ export type Database = {
           created_at: string
           id: string
           is_favorite: boolean
+          rating: number | null
+          rewatch_count: number
           series_id: string
           started_at: string | null
           status: Database["public"]["Enums"]["series_watch_status"]
@@ -302,6 +425,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_favorite?: boolean
+          rating?: number | null
+          rewatch_count?: number
           series_id: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["series_watch_status"]
@@ -313,6 +438,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_favorite?: boolean
+          rating?: number | null
+          rewatch_count?: number
           series_id?: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["series_watch_status"]
@@ -340,8 +467,11 @@ export type Database = {
     Views: {
       user_series_progress: {
         Row: {
+          aired_episodes: number | null
           backdrop_path: string | null
           completed_at: string | null
+          episode_runtime: number | null
+          genres: string[] | null
           is_favorite: boolean | null
           name: string | null
           number_of_episodes: number | null
@@ -349,6 +479,7 @@ export type Database = {
           poster_path: string | null
           progress_percent: number | null
           remaining_episodes: number | null
+          rewatch_count: number | null
           series_id: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["series_watch_status"] | null
@@ -377,7 +508,42 @@ export type Database = {
       }
     }
     Functions: {
+      _activity_events: {
+        Args: { p_limit?: number; p_user_ids: string[] }
+        Returns: {
+          actor_id: string
+          avatar_url: string
+          display_name: string
+          episode_count: number
+          event_type: string
+          occurred_at: string
+          poster_path: string
+          rating: number
+          review_body: string
+          series_id: string
+          series_name: string
+          tmdb_id: number
+          username: string
+        }[]
+      }
+      bump_rewatch: {
+        Args: { p_delta: number; p_series_id: string }
+        Returns: number
+      }
       clear_series_episodes: { Args: { p_series_id: string }; Returns: number }
+      compare_libraries: {
+        Args: { p_other_user_id: string }
+        Returns: {
+          genres: string[]
+          my_rating: number
+          my_status: Database["public"]["Enums"]["series_watch_status"]
+          poster_path: string
+          series_name: string
+          their_rating: number
+          their_status: Database["public"]["Enums"]["series_watch_status"]
+          tmdb_id: number
+        }[]
+      }
       delete_own_account: { Args: never; Returns: undefined }
       generate_unique_username: { Args: { p_seed: string }; Returns: string }
       get_continue_watching: {
@@ -419,20 +585,48 @@ export type Database = {
           username: string
         }[]
       }
-      get_following_feed: {
+      get_friends_feed: {
         Args: { p_limit?: number }
         Returns: {
+          actor_id: string
           avatar_url: string
           display_name: string
+          episode_count: number
+          event_type: string
+          occurred_at: string
           poster_path: string
           rating: number
+          review_body: string
           series_id: string
           series_name: string
-          status: Database["public"]["Enums"]["series_watch_status"]
           tmdb_id: number
-          updated_at: string
-          user_id: string
           username: string
+        }[]
+      }
+      get_list: {
+        Args: { p_list_id: string }
+        Returns: {
+          description: string
+          id: string
+          is_own: boolean
+          is_private: boolean
+          item_count: number
+          owner_avatar_url: string
+          owner_display_name: string
+          owner_id: string
+          owner_username: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      get_list_items: {
+        Args: { p_list_id: string }
+        Returns: {
+          added_at: string
+          poster_path: string
+          series_id: string
+          series_name: string
+          tmdb_id: number
         }[]
       }
       get_notifications: {
@@ -443,8 +637,10 @@ export type Database = {
           actor_id: string
           actor_username: string
           created_at: string
+          episode_number: number
           id: string
           read: boolean
+          season_number: number
           series_id: string
           series_name: string
           series_poster_path: string
@@ -478,6 +674,13 @@ export type Database = {
           watched_episodes: number
         }[]
       }
+      get_series_rating_summary: {
+        Args: { p_series_id: string }
+        Returns: {
+          count: number
+          rating: number
+        }[]
+      }
       get_unread_notification_count: { Args: never; Returns: number }
       get_up_next: {
         Args: { p_limit?: number }
@@ -494,6 +697,36 @@ export type Database = {
           watched_episodes: number
         }[]
       }
+      get_user_diary: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          actor_id: string
+          avatar_url: string
+          display_name: string
+          episode_count: number
+          event_type: string
+          occurred_at: string
+          poster_path: string
+          rating: number
+          review_body: string
+          series_id: string
+          series_name: string
+          tmdb_id: number
+          username: string
+        }[]
+      }
+      get_user_favorites: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          poster_path: string
+          rating: number
+          series_id: string
+          series_name: string
+          status: Database["public"]["Enums"]["series_watch_status"]
+          tmdb_id: number
+          updated_at: string
+        }[]
+      }
       get_user_library: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
@@ -504,6 +737,18 @@ export type Database = {
           series_name: string
           status: Database["public"]["Enums"]["series_watch_status"]
           tmdb_id: number
+          updated_at: string
+        }[]
+      }
+      get_user_lists: {
+        Args: { p_user_id: string }
+        Returns: {
+          description: string
+          id: string
+          is_private: boolean
+          item_count: number
+          poster_paths: string[]
+          title: string
           updated_at: string
         }[]
       }
@@ -520,6 +765,10 @@ export type Database = {
           series_count: number
           username: string
         }[]
+      }
+      set_rating: {
+        Args: { p_rating: number; p_series_id: string }
+        Returns: undefined
       }
       set_season_watched: {
         Args: {
@@ -539,7 +788,7 @@ export type Database = {
       username_available: { Args: { p_username: string }; Returns: boolean }
     }
     Enums: {
-      notification_type: "follow" | "review"
+      notification_type: "follow" | "review" | "new_episode"
       series_watch_status:
         | "want_to_watch"
         | "watching"
@@ -672,7 +921,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      notification_type: ["follow", "review"],
+      notification_type: ["follow", "review", "new_episode"],
       series_watch_status: [
         "want_to_watch",
         "watching",

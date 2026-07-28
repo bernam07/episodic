@@ -13,14 +13,6 @@ export function useSearchProfiles(query: string) {
   });
 }
 
-export function useFollowingFeed() {
-  return useQuery({
-    queryKey: queryKeys.followingFeed,
-    queryFn: () => container.usecases.getFollowingFeed.execute(40),
-    staleTime: 1000 * 30,
-  });
-}
-
 export function useProfileSummary(username: string | null) {
   return useQuery({
     queryKey: queryKeys.profileSummary(username),
@@ -29,10 +21,18 @@ export function useProfileSummary(username: string | null) {
   });
 }
 
-export function useUserLibrary(userId: string | null) {
+export function useUserLibrary(userId: string | null, limit = 500) {
   return useQuery({
     queryKey: queryKeys.userLibrary(userId),
-    queryFn: () => container.usecases.getUserLibrary.execute(userId as string),
+    queryFn: () => container.usecases.getUserLibrary.execute(userId as string, limit),
+    enabled: !!userId,
+  });
+}
+
+export function useUserFavorites(userId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.userFavorites(userId),
+    queryFn: () => container.usecases.getUserFavorites.execute(userId as string),
     enabled: !!userId,
   });
 }
@@ -53,16 +53,27 @@ export function useFollowing(username: string | null) {
   });
 }
 
+export function useCompareLibraries(userId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.comparison(userId),
+    queryFn: () => container.usecases.compareLibraries.execute(userId as string),
+    enabled: !!userId,
+  });
+}
+
 export function useToggleFollow() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ userId, follow }: { userId: string; follow: boolean }) =>
       container.usecases.toggleFollow.execute(userId, follow),
-    onSuccess: () => {
+    onSuccess: (_result, { userId, follow }) => {
+      if (follow) {
+        void container.repositories.push.notifyFollow(userId).catch(() => {});
+      }
       queryClient.invalidateQueries({ queryKey: ["search-profiles"] });
       queryClient.invalidateQueries({ queryKey: ["profile-summary"] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed });
+      queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });
       queryClient.invalidateQueries({ queryKey: ["user-library"] });
       queryClient.invalidateQueries({ queryKey: ["followers"] });
       queryClient.invalidateQueries({ queryKey: ["following"] });

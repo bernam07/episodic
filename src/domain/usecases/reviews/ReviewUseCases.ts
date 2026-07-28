@@ -1,5 +1,6 @@
 import { AppError } from "@/core/errors/AppError";
-import { isValidRating, type Review } from "@/domain/entities/Review";
+import { summarizeRatings, type RatingSummary } from "@/domain/entities/RatingSummary";
+import type { Review } from "@/domain/entities/Review";
 import type { IReviewRepository, SubmitReviewInput } from "@/domain/repositories/IReviewRepository";
 
 const MAX_BODY_LENGTH = 2000;
@@ -8,17 +9,17 @@ export class SubmitReview {
   constructor(private readonly reviews: IReviewRepository) {}
 
   async execute(input: SubmitReviewInput): Promise<Review> {
-    if (!isValidRating(input.rating)) {
-      throw new AppError("validation", "Rating must be between 0.5 and 5 in half-star steps.");
+    const body = input.body.trim();
+
+    if (!body) {
+      throw new AppError("validation", "Review body cannot be empty.");
     }
 
-    const body = input.body?.trim() ?? null;
-
-    if (body && body.length > MAX_BODY_LENGTH) {
+    if (body.length > MAX_BODY_LENGTH) {
       throw new AppError("validation", `Review must be ${MAX_BODY_LENGTH} characters or fewer.`);
     }
 
-    return this.reviews.submit({ ...input, body: body || null });
+    return this.reviews.submit({ ...input, body });
   }
 }
 
@@ -51,5 +52,14 @@ export class DeleteReview {
 
   async execute(seriesId: string): Promise<void> {
     return this.reviews.remove(seriesId);
+  }
+}
+
+export class GetRatingSummary {
+  constructor(private readonly reviews: IReviewRepository) {}
+
+  async execute(seriesId: string): Promise<RatingSummary> {
+    const buckets = await this.reviews.getRatingSummary(seriesId);
+    return summarizeRatings(buckets);
   }
 }

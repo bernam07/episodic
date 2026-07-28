@@ -11,10 +11,34 @@ import { useTrending } from "@/presentation/hooks/useDiscovery";
 
 type Mode = "signin" | "signup" | "forgot";
 
-const inputClass =
-  "w-full rounded-xl border border-ink-700 bg-ink-850 px-4 py-3.5 text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none";
+const fieldClass =
+  "w-full rounded-xl border border-ink-700 bg-ink-850 py-3.5 pr-4 pl-11 text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none";
+
+const fieldIconClass =
+  "pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-mist-500";
 
 const iconClass = "size-5";
+
+const USER_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={fieldIconClass}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" strokeLinecap="round" />
+  </svg>
+);
+
+const MAIL_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={fieldIconClass}>
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="M4 7l8 5 8-5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const LOCK_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={fieldIconClass}>
+    <rect x="4" y="11" width="16" height="10" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" strokeLinecap="round" />
+  </svg>
+);
 
 const FEATURES: { label: string; icon: ReactNode }[] = [
   {
@@ -53,6 +77,23 @@ const FEATURES: { label: string; icon: ReactNode }[] = [
 
 const WALL_TILE_COUNT = 30;
 
+function PosterGrid({ tiles, eager }: { tiles: string[]; eager: boolean }) {
+  return (
+    <div className="grid grid-cols-4 gap-1 sm:grid-cols-5 md:grid-cols-6">
+      {tiles.map((path, index) => (
+        <img
+          key={index}
+          src={posterUrl(path, "w342") ?? undefined}
+          alt=""
+          loading={eager && index < 8 ? "eager" : "lazy"}
+          decoding="async"
+          className="aspect-2/3 size-full object-cover"
+        />
+      ))}
+    </div>
+  );
+}
+
 function PosterWall({ posterPaths }: { posterPaths: string[] }) {
   const tiles = useMemo(
     () =>
@@ -67,17 +108,15 @@ function PosterWall({ posterPaths }: { posterPaths: string[] }) {
   }
 
   return (
-    <div className="grid size-full grid-cols-4 gap-1 brightness-[0.45] sm:grid-cols-5 md:grid-cols-6">
-      {tiles.map((path, index) => (
-        <img
-          key={index}
-          src={posterUrl(path, "w342") ?? undefined}
-          alt=""
-          loading={index < 8 ? "eager" : "lazy"}
-          decoding="async"
-          className="aspect-2/3 size-full object-cover"
-        />
-      ))}
+    <div className="absolute inset-0 overflow-hidden brightness-[0.4]">
+      <div className="poster-drift flex flex-col">
+        <div className="mb-1">
+          <PosterGrid tiles={tiles} eager />
+        </div>
+        <div className="mb-1">
+          <PosterGrid tiles={tiles} eager={false} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -165,6 +204,7 @@ export function AuthScreen() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const usernameState = useUsernameCheck(username, mode === "signup");
   const posterPaths = useMemo(
@@ -240,63 +280,126 @@ export function AuthScreen() {
         <div className="mx-auto w-full max-w-sm">
           <FeatureRow />
 
-          <h2 className="text-[20px] font-bold text-mist-100">{copy.title}</h2>
-          <p className="mt-1 mb-6 text-[13px] text-mist-400">{copy.subtitle}</p>
+          {mode === "forgot" ? (
+            <>
+              <button
+                type="button"
+                onClick={() => switchMode("signin")}
+                className="tap-none mb-4 flex items-center gap-1.5 text-[13px] font-medium text-mist-400 active:text-mist-200"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Back to sign in
+              </button>
+              <h2 className="text-[20px] font-bold text-mist-100">{copy.title}</h2>
+              <p className="mt-1 mb-6 text-[13px] text-mist-400">{copy.subtitle}</p>
+            </>
+          ) : (
+            <>
+              <div className="mb-5 flex rounded-xl bg-ink-800 p-1">
+                {(["signin", "signup"] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => switchMode(value)}
+                    className={`tap-none flex-1 rounded-lg py-2.5 text-[13px] font-semibold transition-colors ${
+                      mode === value ? "bg-accent-600 text-white" : "text-mist-400 active:text-mist-200"
+                    }`}
+                  >
+                    {value === "signin" ? "Sign in" : "Sign up"}
+                  </button>
+                ))}
+              </div>
+              <p className="mb-5 text-[13px] text-mist-400">{copy.subtitle}</p>
+            </>
+          )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             {mode === "signin" ? (
-              <input
-                type="text"
-                autoComplete="username"
-                autoCapitalize="none"
-                autoCorrect="off"
-                placeholder="Username or email"
-                value={identifier}
-                onChange={(event) => setIdentifier(event.target.value)}
-                className={inputClass}
-                required
-              />
-            ) : (
-              <input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                autoCapitalize="none"
-                placeholder="Email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className={inputClass}
-                required
-              />
-            )}
-
-            {mode === "signup" ? (
-              <div>
+              <div className="relative">
+                {USER_ICON}
                 <input
                   type="text"
                   autoComplete="username"
                   autoCapitalize="none"
                   autoCorrect="off"
-                  placeholder="Username"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  className={inputClass}
+                  placeholder="Username or email"
+                  value={identifier}
+                  onChange={(event) => setIdentifier(event.target.value)}
+                  className={fieldClass}
                   required
                 />
+              </div>
+            ) : (
+              <div className="relative">
+                {MAIL_ICON}
+                <input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className={fieldClass}
+                  required
+                />
+              </div>
+            )}
+
+            {mode === "signup" ? (
+              <div>
+                <div className="relative">
+                  {USER_ICON}
+                  <input
+                    type="text"
+                    autoComplete="username"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    className={fieldClass}
+                    required
+                  />
+                </div>
                 {hint ? <p className={`mt-1.5 px-1 text-[12px] ${hint.className}`}>{hint.text}</p> : null}
               </div>
             ) : null}
 
             {mode !== "forgot" ? (
-              <input
-                type="password"
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                placeholder="Password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className={inputClass}
-                required
-              />
+              <div className="relative">
+                {LOCK_ICON}
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className={`${fieldClass} pr-11`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="tap-none absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-mist-500 active:text-mist-300"
+                >
+                  {showPassword ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
+                      <path d="M3 3l18 18" strokeLinecap="round" />
+                      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" strokeLinecap="round" />
+                      <path d="M9.4 5.2A9.5 9.5 0 0 1 12 5c5 0 9 4 10 7a12.7 12.7 0 0 1-2.2 3.2M6.2 6.2C3.9 7.6 2.4 9.7 2 12c1 3 5 7 10 7a9.6 9.6 0 0 0 2.8-.4" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
+                      <path d="M2 12c1-3 5-7 10-7s9 4 10 7c-1 3-5 7-10 7s-9-4-10-7z" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             ) : null}
 
             {error ? (
@@ -325,14 +428,6 @@ export function AuthScreen() {
               Forgot your password?
             </button>
           ) : null}
-
-          <button
-            type="button"
-            onClick={() => switchMode(mode === "signin" ? "signup" : "signin")}
-            className="tap-none mt-3 w-full py-3 text-center text-[14px] text-mist-400 active:text-mist-200"
-          >
-            {mode === "signin" ? "No account? Create one" : "Already have an account? Sign in"}
-          </button>
         </div>
       </div>
     </div>

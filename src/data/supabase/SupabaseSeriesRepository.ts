@@ -17,6 +17,10 @@ export class SupabaseSeriesRepository implements ISeriesRepository {
       number_of_seasons: detail.numberOfSeasons,
       number_of_episodes: detail.numberOfEpisodes,
       aired_episodes: airedEpisodeCount(detail),
+      episode_runtime:
+        detail.episodeRunTime.length > 0
+          ? Math.round(detail.episodeRunTime.reduce((sum, value) => sum + value, 0) / detail.episodeRunTime.length)
+          : 0,
       vote_average: detail.voteAverage,
       genres: detail.genres,
       tmdb_status: detail.tmdbStatus,

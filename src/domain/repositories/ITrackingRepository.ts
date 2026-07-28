@@ -28,4 +28,6 @@ export interface ITrackingRepository {
   getContinueWatching(limit?: number): Promise<ContinueWatchingItem[]>;
   getUpNext(limit?: number): Promise<UpNextItem[]>;
   toggleFavorite(seriesId: string): Promise<void>;
+  bumpRewatch(seriesId: string, delta: number): Promise<number>;
+  setRating(seriesId: string, rating: number | null): Promise<void>;
 }

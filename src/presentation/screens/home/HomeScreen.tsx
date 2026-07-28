@@ -1,17 +1,33 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { backdropUrl } from "@/data/tmdb/images";
 import type { UpNextItem } from "@/domain/entities/Progress";
 import { releaseYear, type SeriesSummary } from "@/domain/entities/Series";
 import { NotificationSheet } from "@/presentation/components/notifications/NotificationSheet";
-import { SeriesCard } from "@/presentation/components/series/SeriesCard";
+import { InLibraryBadge, RatingBadge, WatchedBadge } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
-import { Spinner } from "@/presentation/components/ui/Spinner";
-import { useGenres, useInfiniteDiscover, useRecommendations, useTrending } from "@/presentation/hooks/useDiscovery";
-import { useInfiniteScroll } from "@/presentation/hooks/useInfiniteScroll";
+import { ActivityRow } from "@/presentation/components/social/ActivityRow";
+import { RailSkeleton } from "@/presentation/components/ui/Skeleton";
+import { useFriendsFeed } from "@/presentation/hooks/useActivity";
+import { useRecommendations, useTrending } from "@/presentation/hooks/useDiscovery";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useUnreadCount } from "@/presentation/hooks/useNotifications";
-import { useLibrary, useMarkUpNext, useUpNext } from "@/presentation/hooks/useTracking";
+import {
+  useLibrary,
+  useMarkUpNext,
+  useMyLibraryStatus,
+  useMyRatings,
+  useMyWatched,
+  useUpNext,
+} from "@/presentation/hooks/useTracking";
+
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 6) return "Late night";
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
 function Hero({ series }: { series: SeriesSummary }) {
   const backdrop = backdropUrl(series.backdropPath, "w1280");
@@ -37,13 +53,16 @@ function Hero({ series }: { series: SeriesSummary }) {
   );
 }
 
-function UpNextCard({ item }: { item: UpNextItem }) {
+function UpNextCard({ item, rating }: { item: UpNextItem; rating: number | null }) {
   const mark = useMarkUpNext();
 
   return (
     <div className="w-[132px] shrink-0">
       <Link to={`/series/${item.tmdbId}`} className="tap-none block active:opacity-70">
-        <SeriesPoster path={item.posterPath} alt={item.name} />
+        <div className="relative">
+          <SeriesPoster path={item.posterPath} alt={item.name} />
+          {rating ? <RatingBadge value={rating} /> : null}
+        </div>
         <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
       </Link>
       <div className="mt-1 flex items-center justify-between gap-2">
@@ -79,12 +98,16 @@ function UpNextCard({ item }: { item: UpNextItem }) {
 
 function UpNextRail() {
   const { data, isLoading } = useUpNext();
+  const ratings = useMyRatings();
 
   if (isLoading) {
     return (
-      <div className="flex h-28 items-center justify-center">
-        <Spinner />
-      </div>
+      <section className="mt-7">
+        <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+          Continue Watching
+        </h2>
+        <RailSkeleton />
+      </section>
     );
   }
 
@@ -95,140 +118,144 @@ function UpNextRail() {
   return (
     <section className="mt-7">
       <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-        Up Next
+        Continue Watching
       </h2>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
         {data.map((item) => (
-          <UpNextCard key={item.seriesId} item={item} />
+          <UpNextCard key={item.seriesId} item={item} rating={ratings.get(item.tmdbId) ?? null} />
         ))}
       </div>
+    </section>
+  );
+}
+
+function FriendsRail() {
+  const { data } = useFriendsFeed();
+
+  if (!data || data.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="mt-7">
+      <div className="mb-2 flex items-center justify-between px-5">
+        <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">From Friends</h2>
+        <Link to="/friends" className="tap-none text-[12px] font-semibold text-accent-400 active:text-accent-300">
+          See all
+        </Link>
+      </div>
+      <ul className="divide-y divide-ink-800 px-5">
+        {data.slice(0, 4).map((event) => (
+          <ActivityRow key={`${event.actorId}-${event.eventType}-${event.seriesId}-${event.occurredAt}`} event={event} />
+        ))}
+      </ul>
     </section>
   );
 }
 
 function RecommendationsRail() {
   const { data: library } = useLibrary();
+  const ratings = useMyRatings();
+  const watched = useMyWatched();
+  const libraryStatus = useMyLibraryStatus();
 
-  const seedTmdbId = useMemo(() => {
+  const seedIndex = useRef(Math.random());
+  const seed = useMemo(() => {
     if (!library || library.length === 0) return null;
-    const watching = library.filter((item) => item.status === "watching" || item.status === "watched");
-    const pool = watching.length > 0 ? watching : library;
-    return pool[Math.floor(Math.random() * pool.length)].tmdbId;
+    const active = library.filter((item) => item.status === "watching" || item.status === "watched");
+    const pool = active.length > 0 ? active : library;
+    return pool[Math.floor(seedIndex.current * pool.length)];
   }, [library]);
 
-  const { data: recs } = useRecommendations(seedTmdbId);
+  const { data: recs } = useRecommendations(seed?.tmdbId ?? null);
 
-  if (!recs || recs.results.length === 0) {
+  const inLibrary = useMemo(() => new Set((library ?? []).map((item) => item.tmdbId)), [library]);
+  const suggestions = useMemo(
+    () => (recs?.results ?? []).filter((item) => !inLibrary.has(item.tmdbId)).slice(0, 15),
+    [recs, inLibrary]
+  );
+
+  if (suggestions.length === 0) {
     return null;
   }
 
   return (
     <section className="mt-7">
-      <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-        Recommended for You
+      <h2 className="mb-3 truncate px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+        {seed ? `Because you watched ${seed.name}` : "Recommended for You"}
       </h2>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
-        {recs.results.slice(0, 15).map((item) => (
-          <Link
-            key={item.tmdbId}
-            to={`/series/${item.tmdbId}`}
-            className="tap-none w-[132px] shrink-0 active:opacity-70"
-          >
-            <SeriesPoster path={item.posterPath} alt={item.name} />
-            <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
-            {item.firstAirDate ? (
-              <p className="mt-0.5 text-[11px] text-mist-400">{releaseYear(item)}</p>
-            ) : null}
-          </Link>
-        ))}
+        {suggestions.map((item) => {
+          const rating = ratings.get(item.tmdbId) ?? null;
+          return (
+            <Link
+              key={item.tmdbId}
+              to={`/series/${item.tmdbId}`}
+              className="tap-none w-[132px] shrink-0 active:opacity-70"
+            >
+              <div className="relative">
+                <SeriesPoster path={item.posterPath} alt={item.name} />
+                {rating ? (
+                  <RatingBadge value={rating} />
+                ) : watched.has(item.tmdbId) ? (
+                  <WatchedBadge />
+                ) : libraryStatus.has(item.tmdbId) ? (
+                  <InLibraryBadge status={libraryStatus.get(item.tmdbId)!} />
+                ) : null}
+              </div>
+              <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
+              {item.firstAirDate ? (
+                <p className="mt-0.5 text-[11px] text-mist-400">{releaseYear(item)}</p>
+              ) : null}
+            </Link>
+          );
+        })}
       </div>
     </section>
   );
 }
 
-function EndlessGrid() {
-  const [genreId, setGenreId] = useState<number | null>(null);
-  const { data: genres } = useGenres();
-  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useInfiniteDiscover(genreId);
+function TrendingRail() {
+  const { data } = useTrending();
+  const ratings = useMyRatings();
+  const watched = useMyWatched();
+  const libraryStatus = useMyLibraryStatus();
+  const items = (data?.results ?? []).slice(1, 16);
 
-  const sentinelRef = useInfiniteScroll({
-    hasNextPage: !!hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  });
-
-  const series = data?.pages.flatMap((page) => page.results) ?? [];
-  const seen = new Set<number>();
-  const unique = series.filter((item) => {
-    if (seen.has(item.tmdbId)) {
-      return false;
-    }
-    seen.add(item.tmdbId);
-    return true;
-  });
+  if (items.length === 0) return null;
 
   return (
-    <section className="mt-8">
+    <section className="mt-7">
       <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-        Browse
+        Trending This Week
       </h2>
-
-      <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto px-5">
-        <button
-          type="button"
-          onClick={() => setGenreId(null)}
-          className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${
-            genreId === null ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
-          }`}
-        >
-          Popular
-        </button>
-        {(genres ?? []).map((genre) => (
-          <button
-            key={genre.id}
-            type="button"
-            onClick={() => setGenreId(genre.id)}
-            className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${
-              genreId === genre.id
-                ? "bg-accent-600 text-white"
-                : "bg-ink-800 text-mist-400 active:bg-ink-700"
-            }`}
+      <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
+        {items.map((item) => {
+          const rating = ratings.get(item.tmdbId) ?? null;
+          return (
+          <Link
+            key={item.tmdbId}
+            to={`/series/${item.tmdbId}`}
+            className="tap-none w-[132px] shrink-0 active:opacity-70"
           >
-            {genre.name}
-          </button>
-        ))}
+            <div className="relative">
+              <SeriesPoster path={item.posterPath} alt={item.name} />
+              {rating ? (
+                <RatingBadge value={rating} />
+              ) : watched.has(item.tmdbId) ? (
+                <WatchedBadge />
+              ) : libraryStatus.has(item.tmdbId) ? (
+                <InLibraryBadge status={libraryStatus.get(item.tmdbId)!} />
+              ) : null}
+            </div>
+            <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
+            {item.firstAirDate ? (
+              <p className="mt-0.5 text-[11px] text-mist-400">{releaseYear(item)}</p>
+            ) : null}
+          </Link>
+          );
+        })}
       </div>
-
-      {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Spinner />
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-          {unique.map((item) => (
-            <SeriesCard
-              key={item.tmdbId}
-              tmdbId={item.tmdbId}
-              name={item.name}
-              posterPath={item.posterPath}
-              year={releaseYear(item)}
-            />
-          ))}
-        </div>
-      )}
-
-      <div ref={sentinelRef} className="h-px" />
-
-      {isFetchingNextPage ? (
-        <div className="flex h-16 items-center justify-center">
-          <Spinner />
-        </div>
-      ) : null}
-
-      {!hasNextPage && unique.length > 0 ? (
-        <p className="py-8 text-center text-[12px] text-mist-500">You have reached the end.</p>
-      ) : null}
     </section>
   );
 }
@@ -245,14 +272,25 @@ export function HomeScreen() {
       <header className="flex items-start justify-between px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-4">
         <div>
           <p className="text-[13px] text-mist-400">
-            {profile ? `Welcome back, ${profile.displayName || profile.username}` : "Welcome"}
+            {profile ? `${greeting()}, ${profile.displayName || profile.username}` : greeting()}
           </p>
           <h1 className="text-[28px] font-bold tracking-tight text-mist-100">Episodic</h1>
         </div>
+        <div className="mt-2 flex gap-2">
+        <Link
+          to="/calendar"
+          className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
+          aria-label="Calendar"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+            <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
         <button
           type="button"
           onClick={() => setNotificationsOpen(true)}
-          className="tap-none relative mt-2 flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
+          className="tap-none relative flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
           aria-label="Notifications"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
@@ -265,6 +303,7 @@ export function HomeScreen() {
             </span>
           ) : null}
         </button>
+        </div>
       </header>
 
       {featured ? (
@@ -274,8 +313,9 @@ export function HomeScreen() {
       ) : null}
 
       <UpNextRail />
+      <FriendsRail />
       <RecommendationsRail />
-      <EndlessGrid />
+      <TrendingRail />
 
       <NotificationSheet open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
     </>
