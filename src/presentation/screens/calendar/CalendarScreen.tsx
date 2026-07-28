@@ -70,7 +70,7 @@ function formatDay(dateStr: string): string {
   return date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
 }
 
-function CalendarEntry({ item }: { item: AiringEntry }) {
+function CalendarEntry({ item, watched }: { item: AiringEntry; watched: boolean }) {
   const toggle = useToggleEpisode(item.seriesId);
   const poster = posterUrl(item.posterPath, "w154");
 
@@ -98,9 +98,14 @@ function CalendarEntry({ item }: { item: AiringEntry }) {
         <button
           type="button"
           disabled={toggle.isPending}
-          aria-label={`Mark S${item.episode.seasonNumber} E${item.episode.episodeNumber} watched`}
-          onClick={() => toggle.mutate({ episode: item.episode, watched: true })}
-          className="tap-none flex size-8 shrink-0 items-center justify-center rounded-full border border-ink-600 text-mist-400 transition-colors active:border-accent-500 active:bg-accent-500 active:text-white disabled:opacity-50"
+          aria-pressed={watched}
+          aria-label={`Mark S${item.episode.seasonNumber} E${item.episode.episodeNumber} ${watched ? "unwatched" : "watched"}`}
+          onClick={() => toggle.mutate({ episode: item.episode, watched: !watched })}
+          className={`tap-none flex size-8 shrink-0 items-center justify-center rounded-full border transition-colors disabled:opacity-50 ${
+            watched
+              ? "border-accent-500 bg-accent-500 text-white"
+              : "border-ink-600 text-mist-400 active:border-accent-500 active:bg-accent-500 active:text-white"
+          }`}
         >
           {toggle.isPending ? (
             <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -162,6 +167,23 @@ export function CalendarScreen() {
       staleTime: 1000 * 60 * 60 * 12,
     })),
   });
+
+  const watchedQueries = useQueries({
+    queries: airing.map((item) => ({
+      queryKey: queryKeys.watchedEpisodes(item.seriesId),
+      queryFn: () => container.usecases.getWatchedEpisodes.execute(item.seriesId),
+      staleTime: 1000 * 30,
+    })),
+  });
+
+  const watchedBySeries = useMemo(() => {
+    const map = new Map<string, Set<number>>();
+    watchedQueries.forEach((query, index) => {
+      const meta = airing[index];
+      if (meta && query.data) map.set(meta.seriesId, query.data as Set<number>);
+    });
+    return map;
+  }, [watchedQueries, airing]);
 
   const isLoading =
     libraryLoading || detailQueries.some((q) => q.isLoading) || seasonQueries.some((q) => q.isLoading);
@@ -295,7 +317,11 @@ export function CalendarScreen() {
               </h2>
               <div className="space-y-2">
                 {items.map((item) => (
-                  <CalendarEntry key={`${item.tmdbId}-${item.episode.tmdbEpisodeId}`} item={item} />
+                  <CalendarEntry
+                    key={`${item.tmdbId}-${item.episode.tmdbEpisodeId}`}
+                    item={item}
+                    watched={watchedBySeries.get(item.seriesId)?.has(item.episode.tmdbEpisodeId) ?? false}
+                  />
                 ))}
               </div>
             </section>
