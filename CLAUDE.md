@@ -553,7 +553,13 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
 - **Watch time**: profile stat summed from `series.episode_runtime` × watched episodes (no TMDB calls).
 - **Where to Watch**: streaming/rent/buy provider logos on the series page (`/series/:id/providers`
   edge route, JustWatch-sourced via TMDB; region from `navigator.language`, PT fallback → US).
-- **More Like This**: recommendations rail at the bottom of the series page, with seen-it badges.
+- **Share cards**: a Letterboxd-style shareable card generated on the series page (share icon, top-right
+  of the backdrop). `ShareCardSheet` renders a 1080×1350 `<canvas>` via the pure `shareCard.ts` drawer —
+  poster + title + year + your star rating + `@handle` + the Episodic wordmark — with three background
+  options (blurred **Poster**, **Gradient**, **Midnight**). Exports a PNG through the Web Share API
+  (`navigator.canShare` with a file) and always offers a download fallback. The poster is loaded
+  `crossOrigin="anonymous"`; if it can't be fetched the card falls back to a coloured background with a
+  letter placeholder, so export never hard-fails. All client-side — no backend/edge-function changes.
 - **Stats page**: `/stats` ("All stats" link on the profile panel) — watch-time hero, a part-to-whole
   **Library Breakdown** stacked bar + legend, sequential top-genre bars, an **emphasis** ratings
   histogram (the modal bucket in accent, the rest recessive gray), a backdrop **Most Watched** card,
