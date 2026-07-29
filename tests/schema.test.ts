@@ -821,6 +821,32 @@ describe("favorite pins", () => {
   });
 });
 
+describe("watch streak", () => {
+  let seriesId: string;
+
+  beforeAll(async () => {
+    seriesId = await seedSeries();
+  });
+
+  it("counts consecutive days of manual check-ins and ignores bulk rows", async () => {
+    await asAuthenticated(db, ALICE);
+    await db.query(
+      `insert into public.episode_tracking
+         (user_id, series_id, tmdb_episode_id, season_number, episode_number, source, watched_at)
+       values
+         ($1, $2, 90001, 1, 1, 'manual', now()),
+         ($1, $2, 90002, 1, 2, 'manual', now() - interval '1 day'),
+         ($1, $2, 90003, 1, 3, 'bulk',   now() - interval '2 day')`,
+      [ALICE, seriesId]
+    );
+
+    const r = await db.query<{ s: number }>(`select public.get_watch_streak() as s`);
+    await reset(db);
+
+    expect(r.rows[0].s).toBe(2);
+  });
+});
+
 describe("lists", () => {
   let seriesId: string;
   let publicList: string;

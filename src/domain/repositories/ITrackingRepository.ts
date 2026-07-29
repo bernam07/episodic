@@ -29,6 +29,8 @@ export interface ITrackingRepository {
   getUpNext(limit?: number): Promise<UpNextItem[]>;
   toggleFavorite(seriesId: string): Promise<void>;
   setFavoritePinned(seriesId: string, pinned: boolean): Promise<void>;
+  reorderFavorites(seriesIds: string[]): Promise<void>;
+  getWatchStreak(): Promise<number>;
   bumpRewatch(seriesId: string, delta: number): Promise<number>;
   setRating(seriesId: string, rating: number | null): Promise<void>;
 }

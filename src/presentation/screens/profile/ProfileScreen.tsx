@@ -17,7 +17,12 @@ import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useOwnReviews } from "@/presentation/hooks/useReviews";
 import { useProfileSummary } from "@/presentation/hooks/useSocial";
-import { useLibrary, useSetFavoritePinned } from "@/presentation/hooks/useTracking";
+import {
+  useLibrary,
+  useReorderFavorites,
+  useSetFavoritePinned,
+  useWatchStreak,
+} from "@/presentation/hooks/useTracking";
 import { pluralize } from "@/presentation/utils/plural";
 
 function Header({ onOpenSettings }: { onOpenSettings: () => void }) {
@@ -103,6 +108,7 @@ function Header({ onOpenSettings }: { onOpenSettings: () => void }) {
 
 function Stats() {
   const { data, isLoading } = useLibrary();
+  const { data: streak } = useWatchStreak();
 
   if (isLoading) {
     return (
@@ -128,6 +134,15 @@ function Stats() {
           <p className="text-[11px] font-semibold tracking-[0.12em] text-accent-300 uppercase">
             Episodes watched
           </p>
+          <div className="flex shrink-0 items-center gap-3">
+            {streak && streak > 0 ? (
+              <span className="flex items-center gap-1 text-[12px] font-bold text-amber-400" title={`${streak}-day check-in streak`}>
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5">
+                  <path d="M12 2c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1 0-2-1-3 2 1 4 4 4 8a8 8 0 0 1-16 0c0-3 2-5 3-7 1 2 2 2 3 1 0-2-1-3-1-5z" />
+                </svg>
+                {streak}
+              </span>
+            ) : null}
           <Link
             to="/stats"
             className="tap-none flex shrink-0 items-center gap-1 text-[12px] font-semibold text-accent-400 active:text-accent-300"
@@ -137,6 +152,7 @@ function Stats() {
               <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
+          </div>
         </div>
 
         <p className="relative mt-2.5 text-[48px] leading-none font-bold tracking-tight text-mist-100">
@@ -172,7 +188,18 @@ function Favorites() {
     });
   }, [data]);
 
-  const pinnedCount = favorites.filter((item) => item.favoritePinnedAt).length;
+  const reorder = useReorderFavorites();
+  const pinnedList = favorites.filter((item) => item.favoritePinnedAt);
+  const pinnedCount = pinnedList.length;
+  const pinnedIndex = new Map(pinnedList.map((item, index) => [item.seriesId, index]));
+
+  function move(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= pinnedList.length) return;
+    const ids = pinnedList.map((item) => item.seriesId);
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    reorder.mutate(ids);
+  }
 
   if (favorites.length === 0) return null;
 
@@ -224,6 +251,32 @@ function Favorites() {
                   <path d="M12 15v5" strokeLinecap="round" />
                 </svg>
               </button>
+              {pinned && pinnedCount > 1 ? (
+                <div className="mt-1 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    disabled={reorder.isPending || (pinnedIndex.get(item.seriesId) ?? 0) === 0}
+                    aria-label="Move left"
+                    onClick={() => move(pinnedIndex.get(item.seriesId) ?? 0, -1)}
+                    className="tap-none flex size-6 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700 disabled:opacity-30"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
+                      <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={reorder.isPending || (pinnedIndex.get(item.seriesId) ?? 0) === pinnedCount - 1}
+                    aria-label="Move right"
+                    onClick={() => move(pinnedIndex.get(item.seriesId) ?? 0, 1)}
+                    className="tap-none flex size-6 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700 disabled:opacity-30"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
+                      <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+              ) : null}
             </div>
           );
         })}
