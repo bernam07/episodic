@@ -555,9 +555,11 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   sheet on the series detail screen. See Data model for the privacy + caching rules. Non-owners can
   **Save** a public list (`toggle_list_save`); the list shows **"Saved by N"** (`get_list_save_info`) —
   a save is engagement on the list, it does **not** appear on the saver's profile.
-- **Watch streak**: a flame chip on the profile stats card counts consecutive days you checked off
-  episodes **one by one** — bulk actions (mark-series-watched, whole-season toggle) are tagged
-  `source='bulk'` and don't count, so backfilling an already-watched series never fakes a streak.
+- **Watch streak**: consecutive days you checked off episodes **one by one** — bulk actions
+  (mark-series-watched, whole-season toggle) are tagged `source='bulk'` and don't count, so
+  backfilling an already-watched series never fakes a streak. Shown as a glanceable flame chip on the
+  profile stats card, and as an explained card on `/stats` (with a "no active streak" prompt at 0) so
+  the flame isn't context-free.
 - **Reorder featured favorites**: pinned favorites carry ◀ ▶ arrows on the own profile to order the
   featured three (`reorder_favorites`).
 - **Community ratings**: a half-star histogram (average + total) on the series page, above reviews.

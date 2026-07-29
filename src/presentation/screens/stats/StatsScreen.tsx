@@ -12,7 +12,7 @@ import {
   SectionHeading,
 } from "@/presentation/components/stats/StatsPrimitives";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
-import { useLibrary } from "@/presentation/hooks/useTracking";
+import { useLibrary, useWatchStreak } from "@/presentation/hooks/useTracking";
 import { plural } from "@/presentation/utils/plural";
 
 const STATUS_COLORS: Record<SeriesStatus, string> = {
@@ -179,6 +179,7 @@ function Ratings({ ratings }: { ratings: RatingSummary }) {
 export function StatsScreen() {
   const navigate = useNavigate();
   const { data: library, isLoading } = useLibrary();
+  const { data: streak } = useWatchStreak();
   const [shareOpen, setShareOpen] = useState(false);
 
   const insights = useMemo(() => computeLibraryInsights(library ?? []), [library]);
@@ -247,6 +248,40 @@ export function StatsScreen() {
                 <InlineStat value={insights.episodesWatched} label="episodes" />
                 <InlineStat value={insights.seriesTracked} label="series" />
                 <InlineStat value={insights.finished} label="finished" />
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-4 px-5">
+            <div className="flex items-center gap-4 rounded-2xl bg-ink-850 px-5 py-4">
+              <div
+                className={`flex size-11 shrink-0 items-center justify-center rounded-full ${
+                  streak && streak > 0 ? "bg-amber-500/12 text-amber-400" : "bg-ink-800 text-mist-500"
+                }`}
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-6">
+                  <path d="M12 2c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1 0-2-1-3 2 1 4 4 4 8a8 8 0 0 1-16 0c0-3 2-5 3-7 1 2 2 2 3 1 0-2-1-3-1-5z" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                {streak && streak > 0 ? (
+                  <>
+                    <p className="text-[18px] leading-none font-bold text-mist-100">
+                      <span className="text-amber-400">{streak}</span>{" "}
+                      {plural(streak, "day", "days")} streak
+                    </p>
+                    <p className="mt-1.5 text-[12px] text-mist-500">
+                      Days in a row you checked off an episode, one by one.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[15px] font-semibold text-mist-200">No active streak</p>
+                    <p className="mt-1 text-[12px] text-mist-500">
+                      Check off an episode one by one to start one — bulk actions don’t count.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </section>
