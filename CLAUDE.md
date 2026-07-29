@@ -601,6 +601,12 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   on mobile/PWA where Share already saves). Images load `crossOrigin="anonymous"` so the canvas stays
   untainted; a poster that can't be fetched degrades to a letter placeholder, so export never hard-fails.
   Client-side except the additive `images` append on the `tmdb` edge function (needs a redeploy).
+- **Watch DNA card**: an all-time "who you are as a viewer" share card on the `/stats` page (share icon,
+  top-right). `StatsShareSheet` renders a 1080×1920 canvas via `drawStatsCard` — total watch time,
+  episodes/series/finished tiles, and a top-genres bar chart, over a Gradient or Midnight background.
+  Deliberately **date-free** (computed from `computeLibraryInsights`, not check-in timestamps) so the
+  backfill-timing problem — you can't know *when* someone watched a series they add — never applies.
+  Same Web Share / Save export as the series share card.
 - **Stats page**: `/stats` ("All stats" link on the profile panel) — watch-time hero, a part-to-whole
   **Library Breakdown** stacked bar + legend, sequential top-genre bars, an **emphasis** ratings
   histogram (the modal bucket in accent, the rest recessive gray), a backdrop **Most Watched** card,
