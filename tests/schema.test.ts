@@ -847,6 +847,57 @@ describe("watch streak", () => {
   });
 });
 
+describe("saved lists", () => {
+  let pubList: string;
+  let privList: string;
+
+  beforeAll(async () => {
+    await asAuthenticated(db, BOB);
+    const a = await db.query<{ id: string }>(
+      `insert into public.lists (user_id, title, is_private) values ($1, 'Saveable', false) returning id`,
+      [BOB]
+    );
+    pubList = a.rows[0].id;
+    const b = await db.query<{ id: string }>(
+      `insert into public.lists (user_id, title, is_private) values ($1, 'Secret', true) returning id`,
+      [BOB]
+    );
+    privList = b.rows[0].id;
+    await reset(db);
+  });
+
+  afterAll(async () => {
+    await db.query(`delete from public.lists where id = any($1::uuid[])`, [[pubList, privList]]);
+  });
+
+  it("saves a public list, counts it, and refuses own or private lists", async () => {
+    await asAuthenticated(db, ALICE);
+    const saved = await db.query<{ toggle_list_save: boolean }>(
+      `select public.toggle_list_save($1) as toggle_list_save`,
+      [pubList]
+    );
+    expect(saved.rows[0].toggle_list_save).toBe(true);
+
+    const info = await db.query<{ save_count: number; saved: boolean }>(
+      `select * from public.get_list_save_info($1)`,
+      [pubList]
+    );
+    expect(info.rows[0].save_count).toBe(1);
+    expect(info.rows[0].saved).toBe(true);
+
+    await expect(db.query(`select public.toggle_list_save($1)`, [privList])).rejects.toThrow(
+      /cannot_save_list/
+    );
+    await reset(db);
+
+    await asAuthenticated(db, BOB);
+    await expect(db.query(`select public.toggle_list_save($1)`, [pubList])).rejects.toThrow(
+      /cannot_save_list/
+    );
+    await reset(db);
+  });
+});
+
 describe("lists", () => {
   let seriesId: string;
   let publicList: string;

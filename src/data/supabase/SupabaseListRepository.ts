@@ -137,4 +137,29 @@ export class SupabaseListRepository implements IListRepository {
       throw new AppError("unknown", error.message, error);
     }
   }
+
+  async getListSaveInfo(listId: string): Promise<{ saveCount: number; saved: boolean }> {
+    const { data, error } = await supabase.rpc("get_list_save_info" as never, {
+      p_list_id: listId,
+    } as never);
+
+    if (error) {
+      throw new AppError("unknown", (error as { message: string }).message, error);
+    }
+
+    const row = ((data as unknown as { save_count: number; saved: boolean }[]) ?? [])[0];
+    return { saveCount: row?.save_count ?? 0, saved: row?.saved ?? false };
+  }
+
+  async toggleListSave(listId: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc("toggle_list_save" as never, {
+      p_list_id: listId,
+    } as never);
+
+    if (error) {
+      throw new AppError("unknown", (error as { message: string }).message, error);
+    }
+
+    return (data as boolean | null) ?? false;
+  }
 }
