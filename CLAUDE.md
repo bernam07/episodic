@@ -537,6 +537,13 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   longer shows per-status count tiles — the breakdown lives on `/stats`).
 - **Up Next**: Home rail showing the next unwatched aired episode of each *watching* series
   (`get_up_next`), with a one-tap check-off that advances to the following episode.
+- **This Week on TV**: Home rail of episodes airing in the next 7 days for your *watching* series —
+  reuses the `seriesDetail`/`season` query cache (12h staleTime) shared with the Calendar, scoped to
+  watching only to bound the per-show TMDB detail fetches. Links through to the full `/calendar`.
+- **Surprise me**: a dice button beside the Library search opens a random series from your *Want to
+  Watch* (falls back to the whole library) — beats "what do I watch tonight?" paralysis.
+- **Recommendations seed from taste**: the Home "Because you watched X" rail seeds `get_recommendations`
+  from a random pick among your **5 highest-rated** series (falling back to watching/watched, then any).
 - **Activity feed / Diary**: the **Friends** tab is a chronological milestone feed of the people you
   follow (started / finished / reviewed / "watched N episodes of"); profiles show the same events as a
   "Recent Activity" diary (own + follow-gated others). Backfills collapse to one line — see Data model.
