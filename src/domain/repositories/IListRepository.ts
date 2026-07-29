@@ -9,4 +9,6 @@ export interface IListRepository {
   deleteList(listId: string): Promise<void>;
   addItem(listId: string, seriesId: string): Promise<void>;
   removeItem(listId: string, seriesId: string): Promise<void>;
+  getListSaveInfo(listId: string): Promise<{ saveCount: number; saved: boolean }>;
+  toggleListSave(listId: string): Promise<boolean>;
 }

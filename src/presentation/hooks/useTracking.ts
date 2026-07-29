@@ -151,6 +151,7 @@ function useTrackingInvalidator() {
     queryClient.invalidateQueries({ queryKey: ["library"] });
     queryClient.invalidateQueries({ queryKey: queryKeys.continueWatching });
     queryClient.invalidateQueries({ queryKey: queryKeys.upNext });
+    queryClient.invalidateQueries({ queryKey: queryKeys.watchStreak });
     queryClient.invalidateQueries({ queryKey: queryKeys.friendsFeed });
     queryClient.invalidateQueries({ queryKey: ["diary"] });
   };
@@ -233,6 +234,27 @@ export function useSetFavoritePinned() {
       queryClient.invalidateQueries({ queryKey: ["library"] });
       queryClient.invalidateQueries({ queryKey: ["user-favorites"] });
     },
+  });
+}
+
+export function useReorderFavorites() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (seriesIds: string[]) =>
+      container.repositories.tracking.reorderFavorites(seriesIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+      queryClient.invalidateQueries({ queryKey: ["user-favorites"] });
+    },
+  });
+}
+
+export function useWatchStreak() {
+  return useQuery({
+    queryKey: queryKeys.watchStreak,
+    queryFn: () => container.repositories.tracking.getWatchStreak(),
+    staleTime: 1000 * 60 * 5,
   });
 }
 

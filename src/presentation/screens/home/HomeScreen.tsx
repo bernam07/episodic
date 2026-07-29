@@ -1,8 +1,12 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQueries } from "@tanstack/react-query";
 import { backdropUrl } from "@/data/tmdb/images";
+import type { Season } from "@/domain/entities/Episode";
 import type { UpNextItem } from "@/domain/entities/Progress";
-import { releaseYear, type SeriesSummary } from "@/domain/entities/Series";
+import { releaseYear, type SeriesDetail, type SeriesSummary } from "@/domain/entities/Series";
+import { container } from "@/presentation/di/container";
+import { queryKeys } from "@/presentation/hooks/queryKeys";
 import { NotificationSheet } from "@/presentation/components/notifications/NotificationSheet";
 import { InLibraryBadge, RatingBadge, WatchedBadge } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
@@ -162,8 +166,12 @@ function RecommendationsRail() {
   const seedIndex = useRef(Math.random());
   const seed = useMemo(() => {
     if (!library || library.length === 0) return null;
+    const topRated = library
+      .filter((item) => item.userRating !== null)
+      .sort((a, b) => (b.userRating ?? 0) - (a.userRating ?? 0))
+      .slice(0, 5);
     const active = library.filter((item) => item.status === "watching" || item.status === "watched");
-    const pool = active.length > 0 ? active : library;
+    const pool = topRated.length > 0 ? topRated : active.length > 0 ? active : library;
     return pool[Math.floor(seedIndex.current * pool.length)];
   }, [library]);
 
@@ -260,6 +268,130 @@ function TrendingRail() {
   );
 }
 
+function isoDay(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function airLabel(dateStr: string): string {
+  const date = new Date(dateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  if (date.getTime() === today.getTime()) return "Today";
+  if (date.getTime() === tomorrow.getTime()) return "Tomorrow";
+  return date.toLocaleDateString("en-US", { weekday: "short" });
+}
+
+function ThisWeekRail() {
+  const { data: library } = useLibrary();
+  const watching = useMemo(
+    () => (library ?? []).filter((item) => item.status === "watching"),
+    [library]
+  );
+
+  const detailQueries = useQueries({
+    queries: watching.map((item) => ({
+      queryKey: queryKeys.seriesDetail(item.tmdbId),
+      queryFn: () => container.usecases.getSeriesDetail.execute(item.tmdbId),
+      staleTime: 1000 * 60 * 60 * 12,
+    })),
+  });
+
+  const airing = useMemo(() => {
+    const list: { tmdbId: number; name: string; posterPath: string | null; season: number }[] = [];
+    for (const query of detailQueries) {
+      const detail = query.data as SeriesDetail | undefined;
+      const season = detail?.nextEpisodeToAir?.seasonNumber;
+      if (!detail || !season) continue;
+      list.push({ tmdbId: detail.tmdbId, name: detail.name, posterPath: detail.posterPath, season });
+    }
+    return list;
+  }, [detailQueries]);
+
+  const seasonQueries = useQueries({
+    queries: airing.map((item) => ({
+      queryKey: queryKeys.season(item.tmdbId, item.season),
+      queryFn: () => container.usecases.getSeason.execute(item.tmdbId, item.season),
+      staleTime: 1000 * 60 * 60 * 12,
+    })),
+  });
+
+  const items = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date(today);
+    end.setDate(today.getDate() + 6);
+    const start = isoDay(today);
+    const endStr = isoDay(end);
+
+    const result: {
+      tmdbId: number;
+      name: string;
+      posterPath: string | null;
+      season: number;
+      episode: number;
+      airDate: string;
+      key: number;
+    }[] = [];
+
+    seasonQueries.forEach((query, index) => {
+      const season = query.data as Season | undefined;
+      const meta = airing[index];
+      if (!season || !meta) return;
+      for (const episode of season.episodes) {
+        if (episode.airDate && episode.airDate >= start && episode.airDate <= endStr) {
+          result.push({
+            tmdbId: meta.tmdbId,
+            name: meta.name,
+            posterPath: meta.posterPath,
+            season: episode.seasonNumber,
+            episode: episode.episodeNumber,
+            airDate: episode.airDate,
+            key: episode.tmdbEpisodeId,
+          });
+        }
+      }
+    });
+
+    return result.sort((a, b) => a.airDate.localeCompare(b.airDate) || a.name.localeCompare(b.name));
+  }, [seasonQueries, airing]);
+
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="mt-7">
+      <div className="mb-3 flex items-center justify-between px-5">
+        <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">This Week on TV</h2>
+        <Link to="/calendar" className="tap-none text-[12px] font-semibold text-accent-400 active:text-accent-300">
+          Calendar
+        </Link>
+      </div>
+      <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
+        {items.map((item) => (
+          <Link
+            key={`${item.tmdbId}-${item.key}`}
+            to={`/series/${item.tmdbId}`}
+            className="tap-none w-[124px] shrink-0 active:opacity-70"
+          >
+            <SeriesPoster path={item.posterPath} alt={item.name} />
+            <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
+            <p className="mt-0.5 text-[11px] font-medium text-accent-400">
+              S{item.season} · E{item.episode}
+            </p>
+            <p className="text-[11px] text-mist-500">{airLabel(item.airDate)}</p>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function HomeScreen() {
   const { profile } = useAuth();
   const { data: trending } = useTrending();
@@ -313,6 +445,7 @@ export function HomeScreen() {
       ) : null}
 
       <UpNextRail />
+      <ThisWeekRail />
       <FriendsRail />
       <RecommendationsRail />
       <TrendingRail />

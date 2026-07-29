@@ -29,6 +29,24 @@ export function useListItems(listId: string | null) {
   });
 }
 
+export function useListSaveInfo(listId: string | null) {
+  return useQuery({
+    queryKey: ["list-save", listId],
+    queryFn: () => container.repositories.lists.getListSaveInfo(listId as string),
+    enabled: !!listId,
+    staleTime: 1000 * 30,
+  });
+}
+
+export function useToggleListSave(listId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => container.repositories.lists.toggleListSave(listId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["list-save", listId] }),
+  });
+}
+
 export function useCreateList() {
   const queryClient = useQueryClient();
 

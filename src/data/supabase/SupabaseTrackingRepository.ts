@@ -323,6 +323,26 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
     }
   }
 
+  async reorderFavorites(seriesIds: string[]): Promise<void> {
+    const { error } = await supabase.rpc("reorder_favorites" as never, {
+      p_series_ids: seriesIds,
+    } as never);
+
+    if (error) {
+      throw new AppError("unknown", (error as { message: string }).message, error);
+    }
+  }
+
+  async getWatchStreak(): Promise<number> {
+    const { data, error } = await supabase.rpc("get_watch_streak" as never);
+
+    if (error) {
+      throw new AppError("unknown", (error as { message: string }).message, error);
+    }
+
+    return (data as number | null) ?? 0;
+  }
+
   async bumpRewatch(seriesId: string, delta: number): Promise<number> {
     const { data, error } = await supabase.rpc("bump_rewatch", {
       p_series_id: seriesId,

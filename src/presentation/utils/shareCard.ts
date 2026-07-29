@@ -279,3 +279,137 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: ShareCardInput) 
   const wordmarkWidth = ctx.measureText("EPISODIC").width;
   drawLogo(ctx, WIDTH - 130 - wordmarkWidth - 40, footerY, 52);
 }
+
+export type StatsCardBackground = "gradient" | "dark";
+
+export type StatsCardInput = {
+  handle: string;
+  watchTimeMinutes: number;
+  episodesWatched: number;
+  seriesTracked: number;
+  finished: number;
+  topGenres: { genre: string; count: number }[];
+  background: StatsCardBackground;
+};
+
+function formatHours(minutes: number): string {
+  const hours = Math.round(minutes / 60);
+  if (hours < 48) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  const rest = hours % 24;
+  return rest ? `${days}d ${rest}h` : `${days}d`;
+}
+
+function footer(ctx: CanvasRenderingContext2D) {
+  const footerY = HEIGHT - 118;
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.12)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(130, footerY - 72);
+  ctx.lineTo(WIDTH - 130, footerY - 72);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  ctx.font = `800 40px ${FONT}`;
+  ctx.fillStyle = MIST_100;
+  ctx.fillText("EPISODIC", 176, footerY);
+  drawLogo(ctx, 148, footerY, 48);
+}
+
+export function drawStatsCard(canvas: HTMLCanvasElement, input: StatsCardInput) {
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return;
+  }
+
+  ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+  if (input.background === "gradient") {
+    const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
+    gradient.addColorStop(0, ACCENT);
+    gradient.addColorStop(0.55, "#12224a");
+    gradient.addColorStop(1, INK_950);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  } else {
+    ctx.fillStyle = INK_950;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    const glow = ctx.createRadialGradient(WIDTH / 2, HEIGHT * 0.3, 120, WIDTH / 2, HEIGHT * 0.3, 980);
+    glow.addColorStop(0, "rgba(37,99,235,0.3)");
+    glow.addColorStop(1, "rgba(6,11,22,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  }
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+
+  ctx.font = `600 40px ${FONT}`;
+  ctx.fillStyle = MIST_400;
+  ctx.fillText(input.handle, WIDTH / 2, 210);
+
+  ctx.font = `800 82px ${FONT}`;
+  ctx.fillStyle = MIST_100;
+  ctx.fillText("Watch DNA", WIDTH / 2, 300);
+
+  ctx.font = `700 26px ${FONT}`;
+  ctx.fillStyle = ACCENT_LIGHT;
+  ctx.fillText("TOTAL WATCH TIME", WIDTH / 2, 470);
+
+  ctx.font = `800 168px ${FONT}`;
+  ctx.fillStyle = MIST_100;
+  ctx.fillText(formatHours(input.watchTimeMinutes), WIDTH / 2, 620);
+
+  const tiles: [number, string][] = [
+    [input.episodesWatched, "episodes"],
+    [input.seriesTracked, "series"],
+    [input.finished, "finished"],
+  ];
+  const tileGap = WIDTH / 3;
+  tiles.forEach(([value, label], index) => {
+    const cx = tileGap * index + tileGap / 2;
+    ctx.font = `800 66px ${FONT}`;
+    ctx.fillStyle = MIST_100;
+    ctx.fillText(String(value), cx, 780);
+    ctx.font = `500 32px ${FONT}`;
+    ctx.fillStyle = MIST_400;
+    ctx.fillText(label, cx, 828);
+  });
+
+  const genres = input.topGenres.slice(0, 4);
+  if (genres.length > 0) {
+    const max = genres[0].count || 1;
+    ctx.textAlign = "left";
+    ctx.font = `700 26px ${FONT}`;
+    ctx.fillStyle = ACCENT_LIGHT;
+    ctx.fillText("TOP GENRES", 130, 980);
+
+    genres.forEach((entry, index) => {
+      const rowY = 1050 + index * 108;
+      ctx.font = `700 40px ${FONT}`;
+      ctx.fillStyle = MIST_100;
+      ctx.fillText(entry.genre, 130, rowY);
+
+      ctx.font = `600 34px ${FONT}`;
+      ctx.fillStyle = MIST_400;
+      ctx.textAlign = "right";
+      ctx.fillText(String(entry.count), WIDTH - 130, rowY);
+      ctx.textAlign = "left";
+
+      const trackY = rowY + 26;
+      roundedRect(ctx, 130, trackY, WIDTH - 260, 12, 6);
+      ctx.fillStyle = "rgba(255,255,255,0.1)";
+      ctx.fill();
+      roundedRect(ctx, 130, trackY, Math.max((entry.count / max) * (WIDTH - 260), 12), 12, 6);
+      ctx.fillStyle = ACCENT;
+      ctx.fill();
+    });
+  }
+
+  footer(ctx);
+}

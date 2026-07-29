@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   SERIES_STATUS_LABELS,
   SERIES_STATUSES,
@@ -59,8 +59,17 @@ export function LibraryScreen() {
         : "Rewatched";
 
   const { data, isLoading } = useLibrary();
+  const navigate = useNavigate();
   const [sort, setSort] = useState<SortKey>("recent");
   const [search, setSearch] = useState("");
+
+  function surpriseMe() {
+    if (!data || data.length === 0) return;
+    const wantToWatch = data.filter((item) => item.status === "want_to_watch");
+    const pool = wantToWatch.length > 0 ? wantToWatch : data;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    navigate(`/series/${pick.tmdbId}`);
+  }
 
   const counts = useMemo(() => {
     const base: Record<Filter, number> = {
@@ -137,27 +146,46 @@ export function LibraryScreen() {
       />
 
       <div className="sticky top-0 z-20 bg-ink-950/80 px-5 pb-3 backdrop-blur-xl">
-        <div className="relative">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-mist-500"
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-mist-500"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
+            </svg>
+            <input
+              type="search"
+              inputMode="search"
+              autoCapitalize="none"
+              autoCorrect="off"
+              placeholder="Search library"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="w-full rounded-xl border border-ink-700 bg-ink-850 py-2.5 pr-4 pl-10 text-[14px] text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={surpriseMe}
+            disabled={!data || data.length === 0}
+            aria-label="Surprise me — open a random series"
+            title="Surprise me"
+            className="tap-none flex size-11 shrink-0 items-center justify-center rounded-xl border border-ink-700 bg-ink-850 text-mist-300 transition-colors active:bg-ink-800 disabled:opacity-40"
           >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
-          </svg>
-          <input
-            type="search"
-            inputMode="search"
-            autoCapitalize="none"
-            autoCorrect="off"
-            placeholder="Search library"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="w-full rounded-xl border border-ink-700 bg-ink-850 py-2.5 pr-4 pl-10 text-[14px] text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none"
-          />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+              <rect x="3" y="3" width="18" height="18" rx="4" />
+              <circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+              <circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+              <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+              <circle cx="8.5" cy="15.5" r="1.2" fill="currentColor" stroke="none" />
+              <circle cx="15.5" cy="15.5" r="1.2" fill="currentColor" stroke="none" />
+            </svg>
+          </button>
         </div>
       </div>
 

@@ -475,6 +475,9 @@ screenshot before believing a red result.
 | `…100000_series_runtime` (2026-07-24) | `series.episode_runtime` (avg, stored by `upsert_series_from_tmdb`, exposed on the view) so profile watch-time sums from the library with zero TMDB calls |
 | `…110000_fix_up_next_absolute_numbering` (2026-07-24) | `get_up_next` rewritten to per-season watched counts — episode_number equality broke on absolutely-numbered shows (One Piece S2 = E62+) and stuck the suggestion |
 | `…090000_favorite_pins` (2026-07-26) | `user_series_status.favorite_pinned_at` (added to the `user_series_progress` view); `set_favorite_pinned` RPC (own-row, caps at 3 → `pin_limit_reached`); `get_user_favorites` returns `pinned` and orders pinned-first |
+| `…090000_watch_streak` (2026-07-27) | `episode_tracking.source` ('manual' default; `set_series_watched`/`set_season_watched` write 'bulk'); `get_watch_streak()` counts consecutive days of **manual** check-ins (walks back from today with a 1-day grace, over `watched_at`) |
+| `…100000_reorder_favorites` (2026-07-27) | `reorder_favorites(ids[])` RPC rewrites `favorite_pinned_at` so the given order sorts first (own-row, pinned-only) |
+| `…110000_saved_lists` (2026-07-27) | `list_saves` table (own-only RLS); `toggle_list_save` (definer; refuses your own or a private list → `cannot_save_list`) + `get_list_save_info` (definer, aggregate count + own `saved`) |
 
 ## Edge Functions
 
@@ -537,12 +540,26 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   longer shows per-status count tiles — the breakdown lives on `/stats`).
 - **Up Next**: Home rail showing the next unwatched aired episode of each *watching* series
   (`get_up_next`), with a one-tap check-off that advances to the following episode.
+- **This Week on TV**: Home rail of episodes airing in the next 7 days for your *watching* series —
+  reuses the `seriesDetail`/`season` query cache (12h staleTime) shared with the Calendar, scoped to
+  watching only to bound the per-show TMDB detail fetches. Links through to the full `/calendar`.
+- **Surprise me**: a dice button beside the Library search opens a random series from your *Want to
+  Watch* (falls back to the whole library) — beats "what do I watch tonight?" paralysis.
+- **Recommendations seed from taste**: the Home "Because you watched X" rail seeds `get_recommendations`
+  from a random pick among your **5 highest-rated** series (falling back to watching/watched, then any).
 - **Activity feed / Diary**: the **Friends** tab is a chronological milestone feed of the people you
   follow (started / finished / reviewed / "watched N episodes of"); profiles show the same events as a
   "Recent Activity" diary (own + follow-gated others). Backfills collapse to one line — see Data model.
 - **Lists**: custom public/private collections. "Lists" section on every profile (own has a New-list
   action), list detail at `/list/:id` (owner can manage/remove/edit/delete), and an "Add to list"
-  sheet on the series detail screen. See Data model for the privacy + caching rules.
+  sheet on the series detail screen. See Data model for the privacy + caching rules. Non-owners can
+  **Save** a public list (`toggle_list_save`); the list shows **"Saved by N"** (`get_list_save_info`) —
+  a save is engagement on the list, it does **not** appear on the saver's profile.
+- **Watch streak**: a flame chip on the profile stats card counts consecutive days you checked off
+  episodes **one by one** — bulk actions (mark-series-watched, whole-season toggle) are tagged
+  `source='bulk'` and don't count, so backfilling an already-watched series never fakes a streak.
+- **Reorder featured favorites**: pinned favorites carry ◀ ▶ arrows on the own profile to order the
+  featured three (`reorder_favorites`).
 - **Community ratings**: a half-star histogram (average + total) on the series page, above reviews.
 - **Rewatch counter**: +/− stepper on the series page (see Data model).
 - **Seen-it cues**: posters across Home, Search, browse and More Like This carry one corner badge,
@@ -584,6 +601,12 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   on mobile/PWA where Share already saves). Images load `crossOrigin="anonymous"` so the canvas stays
   untainted; a poster that can't be fetched degrades to a letter placeholder, so export never hard-fails.
   Client-side except the additive `images` append on the `tmdb` edge function (needs a redeploy).
+- **Watch DNA card**: an all-time "who you are as a viewer" share card on the `/stats` page (share icon,
+  top-right). `StatsShareSheet` renders a 1080×1920 canvas via `drawStatsCard` — total watch time,
+  episodes/series/finished tiles, and a top-genres bar chart, over a Gradient or Midnight background.
+  Deliberately **date-free** (computed from `computeLibraryInsights`, not check-in timestamps) so the
+  backfill-timing problem — you can't know *when* someone watched a series they add — never applies.
+  Same Web Share / Save export as the series share card.
 - **Stats page**: `/stats` ("All stats" link on the profile panel) — watch-time hero, a part-to-whole
   **Library Breakdown** stacked bar + legend, sequential top-genre bars, an **emphasis** ratings
   histogram (the modal bucket in accent, the rest recessive gray), a backdrop **Most Watched** card,

@@ -13,6 +13,7 @@ export const queryKeys = {
   library: (status?: SeriesStatus) => ["library", status ?? "all"] as const,
   continueWatching: ["continue-watching"] as const,
   upNext: ["up-next"] as const,
+  watchStreak: ["watch-streak"] as const,
   tracking: (seriesId: string | null) => ["tracking", seriesId] as const,
   seasonProgress: (seriesId: string | null) => ["season-progress", seriesId] as const,
   watchedEpisodes: (seriesId: string | null) => ["watched-episodes", seriesId] as const,

@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { backdropUrl } from "@/data/tmdb/images";
 import { computeLibraryInsights, type GenreCount } from "@/domain/entities/LibraryInsights";
 import type { RatingSummary } from "@/domain/entities/RatingSummary";
 import { SERIES_STATUS_LABELS, SERIES_STATUSES, type SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
+import { StatsShareSheet } from "@/presentation/components/stats/StatsShareSheet";
 import {
   Duration,
   InlineStat,
@@ -178,6 +179,7 @@ function Ratings({ ratings }: { ratings: RatingSummary }) {
 export function StatsScreen() {
   const navigate = useNavigate();
   const { data: library, isLoading } = useLibrary();
+  const [shareOpen, setShareOpen] = useState(false);
 
   const insights = useMemo(() => computeLibraryInsights(library ?? []), [library]);
 
@@ -195,7 +197,30 @@ export function StatsScreen() {
           </svg>
         </button>
         <h1 className="text-[20px] font-bold tracking-tight text-mist-100">Your stats</h1>
+        {!isLoading && insights.seriesTracked > 0 ? (
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            aria-label="Share your Watch DNA"
+            className="tap-none ml-auto flex size-10 items-center justify-center rounded-full text-mist-300 active:bg-ink-800"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+              <path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 15V3M8 7l4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        ) : null}
       </div>
+
+      <StatsShareSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        watchTimeMinutes={insights.watchTimeMinutes}
+        episodesWatched={insights.episodesWatched}
+        seriesTracked={insights.seriesTracked}
+        finished={insights.finished}
+        topGenres={insights.topGenres}
+      />
 
       {isLoading ? (
         <div className="mt-4 space-y-8 px-5">

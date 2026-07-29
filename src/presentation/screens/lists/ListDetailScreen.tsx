@@ -7,7 +7,14 @@ import { Avatar } from "@/presentation/components/social/Avatar";
 import { Sheet } from "@/presentation/components/ui/Sheet";
 import { Button } from "@/presentation/components/ui/Button";
 import { FullScreenSpinner, Spinner } from "@/presentation/components/ui/Spinner";
-import { useDeleteList, useList, useListItems, useRemoveFromList } from "@/presentation/hooks/useLists";
+import {
+  useDeleteList,
+  useList,
+  useListItems,
+  useListSaveInfo,
+  useRemoveFromList,
+  useToggleListSave,
+} from "@/presentation/hooks/useLists";
 import { plural } from "@/presentation/utils/plural";
 
 function ItemCard({
@@ -53,6 +60,8 @@ export function ListDetailScreen() {
   const navigate = useNavigate();
   const { data: list, isLoading } = useList(id ?? null);
   const { data: items } = useListItems(id ?? null);
+  const { data: saveInfo } = useListSaveInfo(id ?? null);
+  const toggleSave = useToggleListSave(id ?? "");
   const deleteList = useDeleteList();
 
   const [editOpen, setEditOpen] = useState(false);
@@ -124,7 +133,39 @@ export function ListDetailScreen() {
           <p className="mt-3 text-[14px] whitespace-pre-wrap text-mist-300">{list.description}</p>
         ) : null}
 
-        <p className="mt-3 text-[12px] text-mist-500">{plural(list.itemCount, "series", "series")}</p>
+        <p className="mt-3 text-[12px] text-mist-500">
+          {plural(list.itemCount, "series", "series")}
+          {saveInfo && saveInfo.saveCount > 0
+            ? ` · Saved by ${plural(saveInfo.saveCount, "person", "people")}`
+            : ""}
+        </p>
+
+        {!list.isOwn ? (
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => toggleSave.mutate()}
+              disabled={toggleSave.isPending}
+              aria-pressed={saveInfo?.saved ?? false}
+              className={`tap-none inline-flex min-h-[38px] items-center gap-1.5 rounded-xl px-4 text-[13px] font-semibold transition-colors disabled:opacity-50 ${
+                saveInfo?.saved
+                  ? "bg-ink-800 text-mist-200 active:bg-ink-700"
+                  : "bg-accent-600 text-white active:bg-accent-500"
+              }`}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill={saveInfo?.saved ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="2"
+                className="size-4"
+              >
+                <path d="M6 4h12v16l-6-4-6 4z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {saveInfo?.saved ? "Saved" : "Save list"}
+            </button>
+          </div>
+        ) : null}
 
         {list.isOwn ? (
           <div className="mt-4 flex gap-2">
