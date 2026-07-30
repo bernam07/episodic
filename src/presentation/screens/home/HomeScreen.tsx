@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueries } from "@tanstack/react-query";
 import { backdropUrl } from "@/data/tmdb/images";
@@ -287,6 +287,24 @@ function airLabel(dateStr: string): string {
 }
 
 function ThisWeekRail() {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    if (active) return;
+    const node = sentinelRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setActive(true);
+      },
+      { rootMargin: "600px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [active]);
+
   const { data: library } = useLibrary();
   const watching = useMemo(
     () => (library ?? []).filter((item) => item.status === "watching"),
@@ -298,6 +316,7 @@ function ThisWeekRail() {
       queryKey: queryKeys.seriesDetail(item.tmdbId),
       queryFn: () => container.usecases.getSeriesDetail.execute(item.tmdbId),
       staleTime: 1000 * 60 * 60 * 12,
+      enabled: active,
     })),
   });
 
@@ -317,6 +336,7 @@ function ThisWeekRail() {
       queryKey: queryKeys.season(item.tmdbId, item.season),
       queryFn: () => container.usecases.getSeason.execute(item.tmdbId, item.season),
       staleTime: 1000 * 60 * 60 * 12,
+      enabled: active,
     })),
   });
 
@@ -361,7 +381,7 @@ function ThisWeekRail() {
   }, [seasonQueries, airing]);
 
   if (items.length === 0) {
-    return null;
+    return <div ref={sentinelRef} className="h-0" aria-hidden="true" />;
   }
 
   return (

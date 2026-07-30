@@ -478,6 +478,7 @@ screenshot before believing a red result.
 | `…090000_watch_streak` (2026-07-27) | `episode_tracking.source` ('manual' default; `set_series_watched`/`set_season_watched` write 'bulk'); `get_watch_streak()` counts consecutive days of **manual** check-ins (walks back from today with a 1-day grace, over `watched_at`) |
 | `…100000_reorder_favorites` (2026-07-27) | `reorder_favorites(ids[])` RPC rewrites `favorite_pinned_at` so the given order sorts first (own-row, pinned-only) |
 | `…110000_saved_lists` (2026-07-27) | `list_saves` table (own-only RLS); `toggle_list_save` (definer; refuses your own or a private list → `cannot_save_list`) + `get_list_save_info` (definer, aggregate count + own `saved`) |
+| `…120000_watch_streak_timezone` (2026-07-27) | `get_watch_streak(p_tz_offset_minutes)` — day bucketing follows the viewer's timezone (client sends `new Date().getTimezoneOffset()`) instead of UTC |
 
 ## Edge Functions
 
@@ -542,7 +543,9 @@ episode"). **Manual setup:** Supabase secret `CRON_SECRET` (set); GitHub repo se
   (`get_up_next`), with a one-tap check-off that advances to the following episode.
 - **This Week on TV**: Home rail of episodes airing in the next 7 days for your *watching* series —
   reuses the `seriesDetail`/`season` query cache (12h staleTime) shared with the Calendar, scoped to
-  watching only to bound the per-show TMDB detail fetches. Links through to the full `/calendar`.
+  watching only to bound the per-show TMDB detail fetches, and **lazy-loaded** (an `IntersectionObserver`
+  sentinel gates the queries with `enabled`, so a cold Home doesn't fetch until you scroll near it).
+  Links through to the full `/calendar`.
 - **Surprise me**: a dice button beside the Library search opens a random series from your *Want to
   Watch* (falls back to the whole library) — beats "what do I watch tonight?" paralysis.
 - **Recommendations seed from taste**: the Home "Because you watched X" rail seeds `get_recommendations`

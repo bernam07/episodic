@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { hasAired, type Episode } from "@/domain/entities/Episode";
+import type { SeriesProgress } from "@/domain/entities/Progress";
 import type { SeriesDetail } from "@/domain/entities/Series";
 import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { container } from "@/presentation/di/container";
@@ -243,7 +244,33 @@ export function useReorderFavorites() {
   return useMutation({
     mutationFn: (seriesIds: string[]) =>
       container.repositories.tracking.reorderFavorites(seriesIds),
-    onSuccess: () => {
+    onMutate: async (seriesIds) => {
+      const key = queryKeys.library();
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<SeriesProgress[]>(key);
+
+      if (previous) {
+        const base = Date.now();
+        const order = new Map(seriesIds.map((id, index) => [id, index]));
+        const next = previous.map((item) =>
+          order.has(item.seriesId)
+            ? {
+                ...item,
+                favoritePinnedAt: new Date(base + (order.get(item.seriesId) as number) * 1000).toISOString(),
+              }
+            : item
+        );
+        queryClient.setQueryData(key, next);
+      }
+
+      return { previous, key };
+    },
+    onError: (_error, _ids, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(context.key, context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
       queryClient.invalidateQueries({ queryKey: ["user-favorites"] });
     },
