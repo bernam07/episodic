@@ -13,7 +13,7 @@ import {
 } from "@/presentation/components/stats/StatsPrimitives";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { useLibrary, useWatchStreak } from "@/presentation/hooks/useTracking";
-import { plural } from "@/presentation/utils/plural";
+import { plural, pluralize } from "@/presentation/utils/plural";
 
 const STATUS_COLORS: Record<SeriesStatus, string> = {
   watching: "bg-[#3b82f6]",
@@ -268,7 +268,7 @@ export function StatsScreen() {
                   <>
                     <p className="text-[18px] leading-none font-bold text-mist-100">
                       <span className="text-amber-400">{streak}</span>{" "}
-                      {plural(streak, "day", "days")} streak
+                      {pluralize(streak, "day", "days")} streak
                     </p>
                     <p className="mt-1.5 text-[12px] text-mist-500">
                       Days in a row you checked off an episode, one by one.
