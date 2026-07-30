@@ -334,7 +334,9 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
   }
 
   async getWatchStreak(): Promise<number> {
-    const { data, error } = await supabase.rpc("get_watch_streak" as never);
+    const { data, error } = await supabase.rpc("get_watch_streak" as never, {
+      p_tz_offset_minutes: new Date().getTimezoneOffset(),
+    } as never);
 
     if (error) {
       throw new AppError("unknown", (error as { message: string }).message, error);
