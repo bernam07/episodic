@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { backdropUrl } from "@/data/tmdb/images";
+import { airedEpisodeCount } from "@/domain/entities/Airing";
 import type { Season } from "@/domain/entities/Episode";
 import type { UpNextItem } from "@/domain/entities/Progress";
 import { releaseYear, type SeriesDetail, type SeriesSummary } from "@/domain/entities/Series";
@@ -319,6 +320,47 @@ function ThisWeekRail() {
       enabled: active,
     })),
   });
+
+  const queryClient = useQueryClient();
+  const reconciledRef = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    const stale: SeriesDetail[] = [];
+    detailQueries.forEach((query, index) => {
+      const detail = query.data as SeriesDetail | undefined;
+      const item = watching[index];
+      if (
+        detail &&
+        item &&
+        !reconciledRef.current.has(detail.tmdbId) &&
+        airedEpisodeCount(detail) > item.airedEpisodes
+      ) {
+        stale.push(detail);
+      }
+    });
+
+    if (stale.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      for (const detail of stale) {
+        reconciledRef.current.add(detail.tmdbId);
+        try {
+          await container.repositories.series.cacheSeries(detail);
+        } catch {
+          reconciledRef.current.delete(detail.tmdbId);
+        }
+      }
+      if (!cancelled) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.upNext });
+        queryClient.invalidateQueries({ queryKey: ["library"] });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [detailQueries, watching, queryClient]);
 
   const airing = useMemo(() => {
     const list: { tmdbId: number; name: string; posterPath: string | null; season: number }[] = [];
