@@ -33,9 +33,15 @@ export function SeasonAccordion({
   const nextRef = useRef<HTMLDivElement | null>(null);
   const didScrollRef = useRef(false);
 
-  const watchedCount = progress?.watchedEpisodes ?? 0;
-  const percent = progress?.progressPercent ?? 0;
-  const allWatched = season.episodeCount > 0 && watchedCount >= season.episodeCount;
+  const liveTotal = data ? data.episodes.length : null;
+  const liveWatched = data
+    ? data.episodes.filter((ep) => watchedIds.has(ep.tmdbEpisodeId)).length
+    : null;
+
+  const total = liveTotal ?? season.episodeCount;
+  const watchedCount = Math.min(liveWatched ?? progress?.watchedEpisodes ?? 0, total);
+  const percent = total > 0 ? Math.min(Math.round((watchedCount / total) * 1000) / 10, 100) : 0;
+  const allWatched = total > 0 && watchedCount >= total;
 
   const nextUnwatched = data?.episodes.find(
     (ep) => hasAired(ep) && !watchedIds.has(ep.tmdbEpisodeId)
@@ -71,7 +77,7 @@ export function SeasonAccordion({
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[15px] font-semibold text-mist-100">{season.name}</span>
             <span className="shrink-0 text-[11px] tabular-nums text-mist-500">
-              {watchedCount}/{season.episodeCount}
+              {watchedCount}/{total}
             </span>
           </div>
           <ProgressBar value={percent} className="mt-2" />
