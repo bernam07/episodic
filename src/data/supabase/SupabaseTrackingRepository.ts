@@ -191,16 +191,32 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
   }
 
   async getWatchedEpisodes(seriesId: string): Promise<number[]> {
-    const { data, error } = await supabase
-      .from("episode_tracking")
-      .select("tmdb_episode_id")
-      .eq("series_id", seriesId);
+    const PAGE_SIZE = 1000;
+    const ids: number[] = [];
 
-    if (error) {
-      throw new AppError("unknown", error.message, error);
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data, error } = await supabase
+        .from("episode_tracking")
+        .select("tmdb_episode_id")
+        .eq("series_id", seriesId)
+        .order("tmdb_episode_id", { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) {
+        throw new AppError("unknown", error.message, error);
+      }
+
+      const rows = data ?? [];
+      for (const row of rows) {
+        ids.push(row.tmdb_episode_id);
+      }
+
+      if (rows.length < PAGE_SIZE) {
+        break;
+      }
     }
 
-    return (data ?? []).map((row) => row.tmdb_episode_id);
+    return ids;
   }
 
   async markEpisode(seriesId: string, episode: WatchedEpisodeRef): Promise<void> {
