@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { backdropUrl } from "@/data/tmdb/images";
-import { airedEpisodeCount } from "@/domain/entities/Airing";
 import type { Season } from "@/domain/entities/Episode";
 import type { UpNextItem } from "@/domain/entities/Progress";
 import { releaseYear, type SeriesDetail, type SeriesSummary } from "@/domain/entities/Series";
@@ -324,44 +323,6 @@ function ThisWeekRail() {
   const queryClient = useQueryClient();
   const reconciledRef = useRef<Set<number>>(new Set());
 
-  useEffect(() => {
-    const stale: SeriesDetail[] = [];
-    detailQueries.forEach((query, index) => {
-      const detail = query.data as SeriesDetail | undefined;
-      const item = watching[index];
-      if (
-        detail &&
-        item &&
-        !reconciledRef.current.has(detail.tmdbId) &&
-        airedEpisodeCount(detail) > item.airedEpisodes
-      ) {
-        stale.push(detail);
-      }
-    });
-
-    if (stale.length === 0) return;
-
-    let cancelled = false;
-    (async () => {
-      for (const detail of stale) {
-        reconciledRef.current.add(detail.tmdbId);
-        try {
-          await container.repositories.series.cacheSeries(detail);
-        } catch {
-          reconciledRef.current.delete(detail.tmdbId);
-        }
-      }
-      if (!cancelled) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.upNext });
-        queryClient.invalidateQueries({ queryKey: ["library"] });
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [detailQueries, watching, queryClient]);
-
   const airing = useMemo(() => {
     const list: { tmdbId: number; name: string; posterPath: string | null; season: number }[] = [];
     for (const query of detailQueries) {
@@ -381,6 +342,63 @@ function ThisWeekRail() {
       enabled: active,
     })),
   });
+
+  useEffect(() => {
+    const today = isoDay(new Date());
+    const detailByTmdb = new Map<number, SeriesDetail>();
+    for (const query of detailQueries) {
+      const detail = query.data as SeriesDetail | undefined;
+      if (detail) detailByTmdb.set(detail.tmdbId, detail);
+    }
+    const storedByTmdb = new Map<number, number>();
+    for (const item of watching) storedByTmdb.set(item.tmdbId, item.airedEpisodes);
+
+    const bumps: { detail: SeriesDetail; aired: number }[] = [];
+    seasonQueries.forEach((query, index) => {
+      const season = query.data as Season | undefined;
+      const meta = airing[index];
+      if (!season || !meta || reconciledRef.current.has(meta.tmdbId)) return;
+
+      const detail = detailByTmdb.get(meta.tmdbId);
+      const stored = storedByTmdb.get(meta.tmdbId);
+      if (!detail || stored === undefined) return;
+
+      const airedInSeason = season.episodes.reduce(
+        (max, ep) => (ep.airDate && ep.airDate <= today ? Math.max(max, ep.episodeNumber) : max),
+        0
+      );
+      if (airedInSeason === 0) return;
+
+      const prior = detail.seasonsMeta
+        .filter((s) => s.seasonNumber < meta.season)
+        .reduce((sum, s) => sum + s.episodeCount, 0);
+      const trueAired = Math.min(prior + airedInSeason, detail.numberOfEpisodes);
+
+      if (trueAired > stored) bumps.push({ detail, aired: trueAired });
+    });
+
+    if (bumps.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      for (const { detail, aired } of bumps) {
+        reconciledRef.current.add(detail.tmdbId);
+        try {
+          await container.repositories.series.cacheSeries(detail, aired);
+        } catch {
+          reconciledRef.current.delete(detail.tmdbId);
+        }
+      }
+      if (!cancelled) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.upNext });
+        queryClient.invalidateQueries({ queryKey: ["library"] });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [seasonQueries, airing, detailQueries, watching, queryClient]);
 
   const items = useMemo(() => {
     const today = new Date();

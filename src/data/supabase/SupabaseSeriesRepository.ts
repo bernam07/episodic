@@ -5,7 +5,7 @@ import type { ISeriesRepository } from "@/domain/repositories/ISeriesRepository"
 import { supabase } from "./client";
 
 export class SupabaseSeriesRepository implements ISeriesRepository {
-  async cacheSeries(detail: SeriesDetail): Promise<string> {
+  async cacheSeries(detail: SeriesDetail, airedEpisodes?: number): Promise<string> {
     const payload = {
       tmdb_id: detail.tmdbId,
       name: detail.name,
@@ -16,7 +16,7 @@ export class SupabaseSeriesRepository implements ISeriesRepository {
       last_air_date: detail.lastAirDate,
       number_of_seasons: detail.numberOfSeasons,
       number_of_episodes: detail.numberOfEpisodes,
-      aired_episodes: airedEpisodeCount(detail),
+      aired_episodes: Math.max(airedEpisodeCount(detail), airedEpisodes ?? 0),
       episode_runtime:
         detail.episodeRunTime.length > 0
           ? Math.round(detail.episodeRunTime.reduce((sum, value) => sum + value, 0) / detail.episodeRunTime.length)

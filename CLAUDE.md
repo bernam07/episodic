@@ -154,7 +154,14 @@ also sends it via `cacheSeries`). The `get_up_next` RPC works on **per-season wa
 on `(season, episode)` equality**: for each *watching* series it walks `seasons_meta` in order,
 picks the first season whose watched count < `episode_count`, and returns `next_episode` as the
 **index within that season** (`watched + 1`), only when its global ordinal ≤ `aired_episodes` (never
-suggests unaired). This is deliberate: TMDB numbers some shows **absolutely within seasons** (One
+suggests unaired). **`aired_episodes` freshness:** it derives from TMDB's `last_episode_to_air`, which
+can lag the per-episode `air_date` a season already shows — so a just-aired episode appeared on the
+series page / Calendar / This Week (per-episode `air_date`) but not in Up Next. The **This Week rail
+reconciles it**: it already fetches the airing season, so it computes the true aired count from the
+episodes' real `air_date`s (`prior seasons + max aired episode_number`) and, when higher than stored,
+pushes it via `cacheSeries(detail, trueAired)` and invalidates up-next. `upsert_series_from_tmdb` uses
+a **`greatest` high-water mark** so a later stale cache write can't undo the bump
+(`…090000_aired_episodes_high_water_mark`). This is deliberate: TMDB numbers some shows **absolutely within seasons** (One
 Piece S2 starts at E62), so joining tracking rows by episode_number silently never matched and the
 suggestion stuck forever (fixed in `…110000_fix_up_next_absolute_numbering`). The one-tap check-off
 (`useMarkUpNext`) resolves the *exact* episode client-side: fetches the season (TanStack-cached) +
@@ -479,6 +486,7 @@ screenshot before believing a red result.
 | `…100000_reorder_favorites` (2026-07-27) | `reorder_favorites(ids[])` RPC rewrites `favorite_pinned_at` so the given order sorts first (own-row, pinned-only) |
 | `…110000_saved_lists` (2026-07-27) | `list_saves` table (own-only RLS); `toggle_list_save` (definer; refuses your own or a private list → `cannot_save_list`) + `get_list_save_info` (definer, aggregate count + own `saved`) |
 | `…120000_watch_streak_timezone` (2026-07-27) | `get_watch_streak(p_tz_offset_minutes)` — day bucketing follows the viewer's timezone (client sends `new Date().getTimezoneOffset()`) instead of UTC |
+| `…090000_aired_episodes_high_water_mark` (2026-09-09) | `upsert_series_from_tmdb` conflict sets `aired_episodes = greatest(existing, incoming)` so a stale cache write (from a lagging TMDB `last_episode_to_air`) can never lower it |
 
 ## Edge Functions
 
