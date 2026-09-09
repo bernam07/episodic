@@ -122,6 +122,21 @@ describe("series cache hardening", () => {
     expect(await count(`select count(*)::int as n from public.series where tmdb_id = 1396`)).toBe(1);
   });
 
+  it("never lowers aired_episodes on re-upsert (high-water mark)", async () => {
+    await asAuthenticated(db, BOB);
+    await db.query(`select public.upsert_series_from_tmdb($1::jsonb)`, [
+      JSON.stringify({ ...BREAKING_BAD, tmdb_id: 8888, name: "High Water", aired_episodes: 20 }),
+    ]);
+    await db.query(`select public.upsert_series_from_tmdb($1::jsonb)`, [
+      JSON.stringify({ ...BREAKING_BAD, tmdb_id: 8888, name: "High Water", aired_episodes: 12 }),
+    ]);
+    const r = await db.query<{ aired_episodes: number }>(
+      `select aired_episodes from public.series where tmdb_id = 8888`
+    );
+    await reset(db);
+    expect(r.rows[0].aired_episodes).toBe(20);
+  });
+
   it("blocks a direct insert into series by an authenticated user", async () => {
     await asAuthenticated(db, ALICE);
     let blocked = false;
