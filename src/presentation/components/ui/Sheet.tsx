@@ -46,12 +46,12 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="pb-safe relative w-full max-w-screen-sm rounded-t-3xl border-t border-ink-700 bg-ink-900 md:max-w-md md:rounded-3xl md:border"
+        className="pb-safe relative flex max-h-[90dvh] w-full max-w-screen-sm flex-col rounded-t-3xl border-t border-ink-700 bg-ink-900 md:max-w-md md:rounded-3xl md:border"
       >
-        <div className="flex justify-center pt-3 pb-1 md:hidden">
+        <div className="flex shrink-0 justify-center pt-3 pb-1 md:hidden">
           <span className="h-1 w-9 rounded-full bg-ink-600" />
         </div>
-        <div className="flex items-center justify-between px-5 pt-2 pb-4">
+        <div className="flex shrink-0 items-center justify-between px-5 pt-2 pb-4">
           <h2 className="text-[17px] font-bold text-mist-100">{title}</h2>
           <button
             type="button"
@@ -64,7 +64,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
             </svg>
           </button>
         </div>
-        <div className="px-5 pb-6">{children}</div>
+        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pb-6">{children}</div>
       </div>
     </div>
   );

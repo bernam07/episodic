@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { backdropUrl, profileUrl } from "@/data/tmdb/images";
 import { airedEpisodeCount } from "@/domain/entities/Airing";
@@ -24,6 +24,8 @@ import { FullScreenSpinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useCredits, useSeriesDetail } from "@/presentation/hooks/useDiscovery";
 import { useOwnReview, useRatingSummary, useSeriesReviews } from "@/presentation/hooks/useReviews";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
+import { useToast } from "@/presentation/providers/ToastProvider";
 import {
   useBumpRewatch,
   useLocalSeriesId,
@@ -56,6 +58,8 @@ function BackButton() {
 }
 
 export function SeriesDetailScreen() {
+  const { t } = useI18n();
+  const toast = useToast();
   const params = useParams<{ tmdbId: string }>();
   const tmdbId = Number(params.tmdbId);
   const { user } = useAuth();
@@ -85,6 +89,20 @@ export function SeriesDetailScreen() {
   const bumpRewatch = useBumpRewatch(seriesId ?? null);
   const setRating = useSetRating(seriesId ?? null);
 
+  const nextAir = useMemo(() => {
+    if (!detail?.nextEpisodeToAir?.airDate) return null;
+    const date = new Date(detail.nextEpisodeToAir.airDate + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffMs = date.getTime() - today.getTime();
+    const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    return {
+      seasonNumber: detail.nextEpisodeToAir.seasonNumber,
+      episodeNumber: detail.nextEpisodeToAir.episodeNumber,
+      days,
+    };
+  }, [detail?.nextEpisodeToAir]);
+
   if (isLoading || !detail) {
     return <FullScreenSpinner />;
   }
@@ -101,6 +119,7 @@ export function SeriesDetailScreen() {
 
     try {
       await setStatus.mutateAsync(status);
+      toast.success(t("statusUpdatedToast", { status: SERIES_STATUS_LABELS[status] }));
       setStatusSheetOpen(false);
     } finally {
       setPendingStatus(null);
@@ -109,7 +128,18 @@ export function SeriesDetailScreen() {
 
   async function handleRemove() {
     await removeFromLibrary.mutateAsync();
+    toast.show(t("removedFromLibraryToast"));
     setStatusSheetOpen(false);
+  }
+
+  async function handleToggleFavorite() {
+    await toggleFavorite.mutateAsync();
+    toast.show(!isFavorite ? t("addedToFavoritesToast") : t("removedFromFavoritesToast"));
+  }
+
+  async function handleBumpRewatch(delta: number) {
+    await bumpRewatch.mutateAsync(delta);
+    toast.show(delta > 0 ? t("rewatchAddedToast") : t("rewatchRemovedToast"));
   }
 
   function handleToggleEpisode(episode: Episode, next: boolean) {
@@ -139,17 +169,31 @@ export function SeriesDetailScreen() {
         <div className="pt-safe absolute inset-x-0 top-0 px-4">
           <div className="flex items-center justify-between pt-3">
             <BackButton />
-            <button
-              type="button"
-              onClick={() => setShareOpen(true)}
-              aria-label="Share a card"
-              className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-950/60 text-mist-100 backdrop-blur-md active:bg-ink-900"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
-                <path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M12 15V3M8 7l4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-2">
+              <a
+                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(detail.name + " official trailer")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t("watchTrailer")}
+                title={t("watchTrailer")}
+                className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-950/60 text-rose-500 backdrop-blur-md transition-colors active:bg-ink-900"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
+                  <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
+                </svg>
+              </a>
+              <button
+                type="button"
+                onClick={() => setShareOpen(true)}
+                aria-label="Share a card"
+                className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-950/60 text-mist-100 backdrop-blur-md active:bg-ink-900"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+                  <path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M12 15V3M8 7l4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -158,10 +202,26 @@ export function SeriesDetailScreen() {
           <div className="min-w-0 flex-1 pb-1">
             <h1 className="text-[22px] leading-tight font-bold text-mist-100">{detail.name}</h1>
             <p className="mt-1 text-[12px] text-mist-400">
-              {[year, detail.tmdbStatus, `${detail.numberOfSeasons} seasons`].filter(Boolean).join(" · ")}
+              {[year, detail.tmdbStatus, `${detail.numberOfSeasons} ${t("seasons")}`].filter(Boolean).join(" · ")}
             </p>
+            {nextAir ? (
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-accent-600/15 px-2 py-1 text-[11px] font-semibold text-accent-300">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>
+                  S{nextAir.seasonNumber}E{nextAir.episodeNumber} ·{" "}
+                  {nextAir.days === 0
+                    ? t("airsToday")
+                    : nextAir.days === 1
+                      ? t("airsTomorrow")
+                      : t("airsInDays", { days: nextAir.days })}
+                </span>
+              </div>
+            ) : null}
             {detail.voteAverage && detail.voteAverage > 0 ? (
-              <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-star-500/12 px-2 py-1">
+              <div className="mt-2 flex items-center gap-1.5 rounded-md bg-star-500/12 px-2 py-1 w-fit">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 text-star-500">
                   <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
                 </svg>
@@ -181,13 +241,13 @@ export function SeriesDetailScreen() {
             loading={setStatus.isPending}
             onClick={() => setStatusSheetOpen(true)}
           >
-            {tracking ? SERIES_STATUS_LABELS[tracking.status] : "Add to Library"}
+            {tracking ? SERIES_STATUS_LABELS[tracking.status] : t("addToLibrary")}
           </Button>
 
           {seriesId ? (
             <button
               type="button"
-              onClick={() => toggleFavorite.mutate()}
+              onClick={handleToggleFavorite}
               disabled={toggleFavorite.isPending}
               aria-pressed={isFavorite}
               aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
@@ -237,7 +297,7 @@ export function SeriesDetailScreen() {
               onClick={() => setReviewSheetOpen(true)}
               className="tap-none text-[13px] font-medium text-accent-400 active:text-accent-300"
             >
-              {ownReview?.body ? "Edit review" : "Write a review"}
+              {ownReview?.body ? t("editReview") : t("writeReview")}
             </button>
           </div>
         ) : null}
@@ -251,16 +311,16 @@ export function SeriesDetailScreen() {
             <span className="min-w-0 flex-1 text-[13px] text-mist-300">
               {(tracking.rewatchCount ?? 0) > 0 ? (
                 <>
-                  Rewatched <span className="font-semibold text-mist-100">{tracking.rewatchCount}×</span>
+                  {t("rewatched")} <span className="font-semibold text-mist-100">{tracking.rewatchCount}×</span>
                 </>
               ) : (
-                "Log a rewatch"
+                t("logRewatch")
               )}
             </span>
             {(tracking.rewatchCount ?? 0) > 0 ? (
               <button
                 type="button"
-                onClick={() => bumpRewatch.mutate(-1)}
+                onClick={() => handleBumpRewatch(-1)}
                 disabled={bumpRewatch.isPending}
                 aria-label="Remove a rewatch"
                 className="tap-none flex size-8 items-center justify-center rounded-full border border-ink-600 text-mist-400 active:bg-ink-700 disabled:opacity-50"
@@ -272,7 +332,7 @@ export function SeriesDetailScreen() {
             ) : null}
             <button
               type="button"
-              onClick={() => bumpRewatch.mutate(1)}
+              onClick={() => handleBumpRewatch(1)}
               disabled={bumpRewatch.isPending}
               aria-label="Add a rewatch"
               className="tap-none flex size-8 items-center justify-center rounded-full bg-accent-600 text-white active:bg-accent-500 disabled:opacity-50"
@@ -349,7 +409,7 @@ export function SeriesDetailScreen() {
 
       <div className="px-5">
         <section className="mt-7">
-          <h2 className="mb-1 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">Seasons</h2>
+          <h2 className="mb-1 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">{t("seasons")}</h2>
           {!seriesId ? (
             <p className="py-3 text-[13px] text-mist-500">
               Add this series to your library to start checking off episodes.
@@ -372,7 +432,7 @@ export function SeriesDetailScreen() {
         </section>
 
         <section className="mt-7">
-          <h2 className="mb-1 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">Reviews</h2>
+          <h2 className="mb-1 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">{t("reviews")}</h2>
           {ratingSummary && ratingSummary.total > 0 ? (
             <div className="mb-4 mt-2">
               <RatingSummaryCard summary={ratingSummary} />
@@ -391,7 +451,7 @@ export function SeriesDetailScreen() {
       <Sheet
         open={statusSheetOpen}
         onClose={() => setStatusSheetOpen(false)}
-        title={tracking ? "Change Status" : "Add to Library"}
+        title={tracking ? t("changeStatus") : t("addToLibrary")}
       >
         <StatusPicker
           value={tracking?.status ?? null}

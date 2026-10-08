@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import type { TranslationKey } from "@/presentation/i18n/translations";
 
 export type NavTab = {
   to: string;
-  label: string;
+  key: TranslationKey;
   icon: ReactNode;
 };
 
@@ -11,7 +12,7 @@ const iconClass = "size-6";
 export const NAV_TABS: NavTab[] = [
   {
     to: "/",
-    label: "Home",
+    key: "home",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={iconClass}>
         <path d="M3 10.5L12 3l9 7.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -21,7 +22,7 @@ export const NAV_TABS: NavTab[] = [
   },
   {
     to: "/search",
-    label: "Search",
+    key: "search",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={iconClass}>
         <circle cx="11" cy="11" r="7" />
@@ -31,7 +32,7 @@ export const NAV_TABS: NavTab[] = [
   },
   {
     to: "/library",
-    label: "Library",
+    key: "library",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={iconClass}>
         <rect x="3" y="4" width="6" height="16" rx="1.5" />
@@ -42,7 +43,7 @@ export const NAV_TABS: NavTab[] = [
   },
   {
     to: "/friends",
-    label: "Friends",
+    key: "friends",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={iconClass}>
         <circle cx="9" cy="8" r="3.5" />
@@ -54,7 +55,7 @@ export const NAV_TABS: NavTab[] = [
   },
   {
     to: "/profile",
-    label: "Profile",
+    key: "profile",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={iconClass}>
         <circle cx="12" cy="8" r="4" />

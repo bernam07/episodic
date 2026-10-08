@@ -16,6 +16,7 @@ import { useFriendsFeed } from "@/presentation/hooks/useActivity";
 import { useRecommendations, useTrending } from "@/presentation/hooks/useDiscovery";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useUnreadCount } from "@/presentation/hooks/useNotifications";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
 import {
   useLibrary,
   useMarkUpNext,
@@ -25,8 +26,14 @@ import {
   useUpNext,
 } from "@/presentation/hooks/useTracking";
 
-function greeting(): string {
+function greeting(lang: "en" | "pt"): string {
   const hour = new Date().getHours();
+  if (lang === "pt") {
+    if (hour < 6) return "Boa madrugada";
+    if (hour < 12) return "Bom dia";
+    if (hour < 19) return "Boa tarde";
+    return "Boa noite";
+  }
   if (hour < 6) return "Late night";
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
@@ -34,6 +41,7 @@ function greeting(): string {
 }
 
 function Hero({ series }: { series: SeriesSummary }) {
+  const { t } = useI18n();
   const backdrop = backdropUrl(series.backdropPath, "w1280");
 
   return (
@@ -45,7 +53,7 @@ function Hero({ series }: { series: SeriesSummary }) {
         <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/50 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-5">
           <p className="text-[11px] font-semibold tracking-wide text-accent-400 uppercase">
-            Trending now
+            {t("trendingNow")}
           </p>
           <h2 className="mt-1 text-[24px] leading-tight font-bold text-mist-100">{series.name}</h2>
           {series.overview ? (
@@ -101,6 +109,7 @@ function UpNextCard({ item, rating }: { item: UpNextItem; rating: number | null 
 }
 
 function UpNextRail() {
+  const { t } = useI18n();
   const { data, isLoading } = useUpNext();
   const ratings = useMyRatings();
 
@@ -108,7 +117,7 @@ function UpNextRail() {
     return (
       <section className="mt-7">
         <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-          Continue Watching
+          {t("continueWatching")}
         </h2>
         <RailSkeleton />
       </section>
@@ -122,7 +131,7 @@ function UpNextRail() {
   return (
     <section className="mt-7">
       <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-        Continue Watching
+        {t("continueWatching")}
       </h2>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
         {data.map((item) => (
@@ -134,6 +143,7 @@ function UpNextRail() {
 }
 
 function FriendsRail() {
+  const { t } = useI18n();
   const { data } = useFriendsFeed();
 
   if (!data || data.length === 0) {
@@ -143,9 +153,9 @@ function FriendsRail() {
   return (
     <section className="mt-7">
       <div className="mb-2 flex items-center justify-between px-5">
-        <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">From Friends</h2>
+        <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">{t("fromFriends")}</h2>
         <Link to="/friends" className="tap-none text-[12px] font-semibold text-accent-400 active:text-accent-300">
-          See all
+          {t("seeAll")}
         </Link>
       </div>
       <ul className="divide-y divide-ink-800 px-5">
@@ -224,6 +234,7 @@ function RecommendationsRail() {
 }
 
 function TrendingRail() {
+  const { t } = useI18n();
   const { data } = useTrending();
   const ratings = useMyRatings();
   const watched = useMyWatched();
@@ -235,7 +246,7 @@ function TrendingRail() {
   return (
     <section className="mt-7">
       <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-        Trending This Week
+        {t("trendingThisWeek")}
       </h2>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
         {items.map((item) => {
@@ -287,6 +298,7 @@ function airLabel(dateStr: string): string {
 }
 
 function ThisWeekRail() {
+  const { t } = useI18n();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
 
@@ -447,9 +459,9 @@ function ThisWeekRail() {
   return (
     <section className="mt-7">
       <div className="mb-3 flex items-center justify-between px-5">
-        <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">This Week on TV</h2>
+        <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">{t("thisWeek")}</h2>
         <Link to="/calendar" className="tap-none text-[12px] font-semibold text-accent-400 active:text-accent-300">
-          Calendar
+          {t("calendar")}
         </Link>
       </div>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
@@ -473,18 +485,20 @@ function ThisWeekRail() {
 }
 
 export function HomeScreen() {
+  const { language, t } = useI18n();
   const { profile } = useAuth();
   const { data: trending } = useTrending();
   const { data: unreadCount } = useUnreadCount();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const featured = trending?.results[0];
+  const greet = greeting(language);
 
   return (
     <>
       <header className="flex items-start justify-between px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-4">
         <div>
           <p className="text-[13px] text-mist-400">
-            {profile ? `${greeting()}, ${profile.displayName || profile.username}` : greeting()}
+            {profile ? `${greet}, ${profile.displayName || profile.username}` : greet}
           </p>
           <h1 className="text-[28px] font-bold tracking-tight text-mist-100">Episodic</h1>
         </div>
@@ -492,7 +506,7 @@ export function HomeScreen() {
         <Link
           to="/calendar"
           className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
-          aria-label="Calendar"
+          aria-label={t("calendar")}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
             <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -503,7 +517,7 @@ export function HomeScreen() {
           type="button"
           onClick={() => setNotificationsOpen(true)}
           className="tap-none relative flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
-          aria-label="Notifications"
+          aria-label={t("notifications")}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />

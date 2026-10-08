@@ -1,35 +1,27 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { posterUrl } from "@/data/tmdb/images";
 import {
-  SERIES_STATUS_LABELS,
   SERIES_STATUSES,
   type SeriesStatus,
 } from "@/domain/entities/SeriesStatus";
 import type { SeriesProgress } from "@/domain/entities/Progress";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
+import { StatusBadge } from "@/presentation/components/series/StatusBadge";
+import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
 import { PosterGridSkeleton } from "@/presentation/components/ui/Skeleton";
 import { useLibrary } from "@/presentation/hooks/useTracking";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
+import { useToast } from "@/presentation/providers/ToastProvider";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 
 type Filter = SeriesStatus | "all";
+type ViewMode = "grid" | "list";
 
 const FILTERS: Filter[] = ["all", ...SERIES_STATUSES];
-
-const FILTER_LABELS: Record<Filter, string> = {
-  all: "All",
-  ...SERIES_STATUS_LABELS,
-};
-
 const VALID_FILTERS = new Set<string>(FILTERS);
 
 type SortKey = "recent" | "alpha" | "rating" | "progress";
-
-const SORT_LABELS: Record<SortKey, string> = {
-  recent: "Recent",
-  alpha: "A–Z",
-  rating: "Rating",
-  progress: "Progress",
-};
 
 const SORT_FNS: Record<SortKey, (a: SeriesProgress, b: SeriesProgress) => number> = {
   recent: (a, b) => b.updatedAt.localeCompare(a.updatedAt),
@@ -38,7 +30,59 @@ const SORT_FNS: Record<SortKey, (a: SeriesProgress, b: SeriesProgress) => number
   progress: (a, b) => b.progressPercent - a.progressPercent || a.name.localeCompare(b.name),
 };
 
+function SeriesListRow({ item }: { item: SeriesProgress }) {
+  const poster = posterUrl(item.posterPath, "w154");
+
+  return (
+    <Link
+      to={`/series/${item.tmdbId}`}
+      className="tap-none flex items-center gap-3.5 rounded-2xl bg-ink-850 p-3 transition-colors active:bg-ink-800"
+    >
+      <div className="relative h-18 w-12 shrink-0 overflow-hidden rounded-lg bg-ink-800 shadow-md">
+        {poster ? (
+          <img src={poster} alt="" loading="lazy" className="size-full object-cover" />
+        ) : (
+          <div className="flex size-full items-center justify-center text-[10px] text-mist-600">N/A</div>
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="truncate text-[15px] font-semibold text-mist-100">{item.name}</h3>
+          <span className="shrink-0 text-[11px] font-medium tabular-nums text-mist-400">
+            {item.watchedEpisodes}/{item.numberOfEpisodes}
+          </span>
+        </div>
+
+        <ProgressBar value={item.progressPercent} className="mt-2" />
+
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <StatusBadge status={item.status} />
+            {item.rewatchCount > 0 ? (
+              <span className="rounded bg-ink-800 px-1.5 py-0.5 text-[10px] font-medium text-mist-400">
+                {item.rewatchCount}×
+              </span>
+            ) : null}
+          </div>
+
+          {item.userRating ? (
+            <div className="flex items-center gap-1 text-[12px] font-bold text-star-500">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3">
+                <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
+              </svg>
+              {item.userRating.toFixed(1)}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export function LibraryScreen() {
+  const { t } = useI18n();
+  const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const paramValue = searchParams.get("status");
   const filter: Filter =
@@ -53,21 +97,46 @@ export function LibraryScreen() {
     view === "rated"
       ? ratingParam
         ? `Rated ${ratingParam} ★`
-        : "Rated"
+        : t("sortRating")
       : view === "favorites"
         ? "Favorites"
-        : "Rewatched";
+        : t("rewatched");
+
+  const [viewMode, setViewModeState] = useState<ViewMode>(() => {
+    return (localStorage.getItem("episodic_library_view_mode") as ViewMode) || "grid";
+  });
+
+  function setViewMode(mode: ViewMode) {
+    setViewModeState(mode);
+    localStorage.setItem("episodic_library_view_mode", mode);
+  }
 
   const { data, isLoading } = useLibrary();
   const navigate = useNavigate();
   const [sort, setSort] = useState<SortKey>("recent");
   const [search, setSearch] = useState("");
 
+  const filterLabels: Record<Filter, string> = {
+    all: t("all"),
+    want_to_watch: t("wantToWatch"),
+    watching: t("watching"),
+    watched: t("watched"),
+    abandoned: t("abandoned"),
+  };
+
+  const sortLabels: Record<SortKey, string> = {
+    recent: t("sortRecent"),
+    alpha: t("sortAlpha"),
+    rating: t("sortRating"),
+    progress: t("sortProgress"),
+  };
+
   function surpriseMe() {
     if (!data || data.length === 0) return;
     const wantToWatch = data.filter((item) => item.status === "want_to_watch");
     const pool = wantToWatch.length > 0 ? wantToWatch : data;
     const pick = pool[Math.floor(Math.random() * pool.length)];
+    toast.show(`${t("surpriseMe")}: ${pick.name}`);
     navigate(`/series/${pick.tmdbId}`);
   }
 
@@ -141,8 +210,8 @@ export function LibraryScreen() {
   return (
     <>
       <ScreenHeader
-        title="Library"
-        subtitle={data && data.length > 0 ? `${data.length} series tracked` : undefined}
+        title={t("library")}
+        subtitle={data && data.length > 0 ? `${data.length} ${t("series")}` : undefined}
       />
 
       <div className="sticky top-0 z-20 bg-ink-950/80 px-5 pb-3 backdrop-blur-xl">
@@ -163,18 +232,40 @@ export function LibraryScreen() {
               inputMode="search"
               autoCapitalize="none"
               autoCorrect="off"
-              placeholder="Search library"
+              placeholder={t("searchLibraryPlaceholder")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="w-full rounded-xl border border-ink-700 bg-ink-850 py-2.5 pr-4 pl-10 text-[14px] text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none"
             />
           </div>
+
+          <button
+            type="button"
+            onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+            aria-label={viewMode === "grid" ? t("listView") : t("gridView")}
+            title={viewMode === "grid" ? t("listView") : t("gridView")}
+            className="tap-none flex size-11 shrink-0 items-center justify-center rounded-xl border border-ink-700 bg-ink-850 text-mist-300 transition-colors active:bg-ink-800"
+          >
+            {viewMode === "grid" ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+                <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+              </svg>
+            )}
+          </button>
+
           <button
             type="button"
             onClick={surpriseMe}
             disabled={!data || data.length === 0}
-            aria-label="Surprise me — open a random series"
-            title="Surprise me"
+            aria-label={t("surpriseMe")}
+            title={t("surpriseMe")}
             className="tap-none flex size-11 shrink-0 items-center justify-center rounded-xl border border-ink-700 bg-ink-850 text-mist-300 transition-colors active:bg-ink-800 disabled:opacity-40"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
@@ -213,7 +304,7 @@ export function LibraryScreen() {
                 filter === value ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
               }`}
             >
-              {FILTER_LABELS[value]}
+              {filterLabels[value]}
               <span
                 className={`text-[11px] tabular-nums ${
                   filter === value ? "text-white/70" : "text-mist-500"
@@ -235,7 +326,7 @@ export function LibraryScreen() {
               !genreParam ? "bg-mist-100 text-ink-950" : "bg-ink-800 text-mist-400 active:bg-ink-700"
             }`}
           >
-            All genres
+            {t("allGenres")}
           </button>
           {allGenres.map((genre) => (
             <button
@@ -254,8 +345,8 @@ export function LibraryScreen() {
 
       {(focused || filter !== "all") && visible.length > 1 ? (
         <div className="flex items-center gap-1.5 px-5 pb-4">
-          <span className="mr-1 text-[11px] text-mist-500">Sort</span>
-          {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+          <span className="mr-1 text-[11px] text-mist-500">{t("sortBy")}</span>
+          {(Object.keys(sortLabels) as SortKey[]).map((key) => (
             <button
               key={key}
               type="button"
@@ -264,7 +355,7 @@ export function LibraryScreen() {
                 sort === key ? "bg-mist-100 text-ink-950" : "bg-ink-800 text-mist-400 active:bg-ink-700"
               }`}
             >
-              {SORT_LABELS[key]}
+              {sortLabels[key]}
             </button>
           ))}
         </div>
@@ -274,20 +365,20 @@ export function LibraryScreen() {
 
       {!isLoading && (data?.length ?? 0) === 0 ? (
         <div className="px-5 pt-10 text-center">
-          <p className="text-[15px] font-semibold text-mist-200">Your library is empty</p>
-          <p className="mt-1 text-[13px] text-mist-500">Find a series and add it to start tracking.</p>
+          <p className="text-[15px] font-semibold text-mist-200">{t("libraryEmpty")}</p>
+          <p className="mt-1 text-[13px] text-mist-500">{t("libraryEmptySub")}</p>
           <Link
             to="/search"
             className="tap-none mt-5 inline-flex min-h-[44px] items-center rounded-xl bg-accent-600 px-5 text-[14px] font-semibold text-white active:bg-accent-500"
           >
-            Search series
+            {t("search")} {t("series")}
           </Link>
         </div>
       ) : null}
 
       {!isLoading && (data?.length ?? 0) > 0 && visible.length === 0 ? (
         <p className="px-5 pt-8 text-center text-[14px] text-mist-500">
-          Nothing in {focused ? focusLabel : FILTER_LABELS[filter]} yet.
+          Nothing in {focused ? focusLabel : filterLabels[filter]} yet.
         </p>
       ) : null}
 
@@ -299,23 +390,31 @@ export function LibraryScreen() {
             return (
               <section key={status}>
                 <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-                  {SERIES_STATUS_LABELS[status]}
+                  {filterLabels[status]}
                   <span className="ml-1.5 text-mist-600">{group.length}</span>
                 </h2>
-                <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                  {group.map((item) => (
-                    <SeriesCard
-                      key={item.seriesId}
-                      tmdbId={item.tmdbId}
-                      name={item.name}
-                      posterPath={item.posterPath}
-                      status={item.status}
-                      caption={`${item.watchedEpisodes}/${item.numberOfEpisodes} episodes`}
-                      progressPercent={item.progressPercent}
-                      rating={item.userRating}
-                    />
-                  ))}
-                </div>
+                {viewMode === "grid" ? (
+                  <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                    {group.map((item) => (
+                      <SeriesCard
+                        key={item.seriesId}
+                        tmdbId={item.tmdbId}
+                        name={item.name}
+                        posterPath={item.posterPath}
+                        status={item.status}
+                        caption={`${item.watchedEpisodes}/${item.numberOfEpisodes} ${t("episodes")}`}
+                        progressPercent={item.progressPercent}
+                        rating={item.userRating}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {group.map((item) => (
+                      <SeriesListRow key={item.seriesId} item={item} />
+                    ))}
+                  </div>
+                )}
               </section>
             );
           })}
@@ -323,19 +422,29 @@ export function LibraryScreen() {
       ) : null}
 
       {visible.length > 0 && (filter !== "all" || focused) ? (
-        <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-          {visible.map((item) => (
-            <SeriesCard
-              key={item.seriesId}
-              tmdbId={item.tmdbId}
-              name={item.name}
-              posterPath={item.posterPath}
-              status={item.status}
-              caption={`${item.watchedEpisodes}/${item.numberOfEpisodes} episodes`}
-              progressPercent={item.progressPercent}
-              rating={item.userRating}
-            />
-          ))}
+        <div className="px-5">
+          {viewMode === "grid" ? (
+            <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+              {visible.map((item) => (
+                <SeriesCard
+                  key={item.seriesId}
+                  tmdbId={item.tmdbId}
+                  name={item.name}
+                  posterPath={item.posterPath}
+                  status={item.status}
+                  caption={`${item.watchedEpisodes}/${item.numberOfEpisodes} ${t("episodes")}`}
+                  progressPercent={item.progressPercent}
+                  rating={item.userRating}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {visible.map((item) => (
+                <SeriesListRow key={item.seriesId} item={item} />
+              ))}
+            </div>
+          )}
         </div>
       ) : null}
     </>

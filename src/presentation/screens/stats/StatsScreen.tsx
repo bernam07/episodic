@@ -13,6 +13,7 @@ import {
 } from "@/presentation/components/stats/StatsPrimitives";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { useLibrary, useWatchStreak } from "@/presentation/hooks/useTracking";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
 import { plural, pluralize } from "@/presentation/utils/plural";
 
 const STATUS_COLORS: Record<SeriesStatus, string> = {
@@ -177,12 +178,15 @@ function Ratings({ ratings }: { ratings: RatingSummary }) {
 }
 
 export function StatsScreen() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { data: library, isLoading } = useLibrary();
   const { data: streak } = useWatchStreak();
   const [shareOpen, setShareOpen] = useState(false);
 
   const insights = useMemo(() => computeLibraryInsights(library ?? []), [library]);
+  const completionRate =
+    insights.seriesTracked > 0 ? Math.round((insights.finished / insights.seriesTracked) * 100) : 0;
 
   return (
     <>
@@ -197,7 +201,7 @@ export function StatsScreen() {
             <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <h1 className="text-[20px] font-bold tracking-tight text-mist-100">Your stats</h1>
+        <h1 className="text-[20px] font-bold tracking-tight text-mist-100">{t("stats")}</h1>
         {!isLoading && insights.seriesTracked > 0 ? (
           <button
             type="button"
@@ -244,10 +248,11 @@ export function StatsScreen() {
                 className="relative mt-2.5 block text-[52px] leading-none font-bold tracking-tight text-mist-100"
               />
 
-              <div className="relative mt-7 flex gap-2 border-t border-white/8 pt-5">
+              <div className="relative mt-7 grid grid-cols-4 gap-2 border-t border-white/8 pt-5">
                 <InlineStat value={insights.episodesWatched} label="episodes" />
                 <InlineStat value={insights.seriesTracked} label="series" />
                 <InlineStat value={insights.finished} label="finished" />
+                <InlineStat value={`${completionRate}%`} label={t("completionRate")} />
               </div>
             </div>
           </section>

@@ -1,9 +1,11 @@
 import { NavLink } from "react-router-dom";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
 import { NAV_TABS } from "./navigation";
 import { useTabReselect } from "./useTabReselect";
 
 export function BottomNavBar() {
   const onTabClick = useTabReselect();
+  const { t } = useI18n();
 
   return (
     <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-ink-700/70 bg-ink-900/85 backdrop-blur-xl md:hidden">
@@ -21,7 +23,7 @@ export function BottomNavBar() {
               }
             >
               {tab.icon}
-              <span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
+              <span className="text-[10px] font-medium tracking-wide">{t(tab.key)}</span>
             </NavLink>
           </li>
         ))}

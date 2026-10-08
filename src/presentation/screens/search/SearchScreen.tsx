@@ -10,10 +10,30 @@ import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useGenres, useInfiniteDiscover, useSearchSeries } from "@/presentation/hooks/useDiscovery";
 import { useInfiniteScroll } from "@/presentation/hooks/useInfiniteScroll";
 import { useSearchProfiles } from "@/presentation/hooks/useSocial";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 import { pluralize } from "@/presentation/utils/plural";
 
 type Tab = "series" | "users";
+
+const RECENT_KEY = "episodic_recent_searches";
+
+function getRecentSearches(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentSearches(list: string[]) {
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 8)));
+  } catch {
+    return;
+  }
+}
 
 function useDebounced(value: string, delay = 350) {
   const [debounced, setDebounced] = useState(value);
@@ -26,7 +46,16 @@ function useDebounced(value: string, delay = 350) {
   return debounced;
 }
 
-function GenreRecommendations() {
+function GenreRecommendations({
+  recentSearches,
+  onSelectRecent,
+  onClearRecent,
+}: {
+  recentSearches: string[];
+  onSelectRecent: (term: string) => void;
+  onClearRecent: () => void;
+}) {
+  const { t } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const genreParam = searchParams.get("genre");
   const genreId = genreParam ? Number(genreParam) : null;
@@ -64,6 +93,35 @@ function GenreRecommendations() {
 
   return (
     <>
+      {recentSearches.length > 0 ? (
+        <div className="mb-5 px-5">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[12px] font-semibold tracking-wide text-mist-400 uppercase">
+              {t("recentSearches")}
+            </span>
+            <button
+              type="button"
+              onClick={onClearRecent}
+              className="tap-none text-[12px] font-medium text-accent-400 active:text-accent-300"
+            >
+              {t("clearHistory")}
+            </button>
+          </div>
+          <div className="no-scrollbar flex flex-wrap gap-2">
+            {recentSearches.map((term) => (
+              <button
+                key={term}
+                type="button"
+                onClick={() => onSelectRecent(term)}
+                className="tap-none rounded-full bg-ink-850 px-3.5 py-1.5 text-[12px] text-mist-300 transition-colors hover:bg-ink-800 hover:text-mist-100"
+              >
+                {term}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto px-5">
         <button
           type="button"
@@ -72,7 +130,7 @@ function GenreRecommendations() {
             genreId === null ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
           }`}
         >
-          Popular
+          {t("popular")}
         </button>
         {(genres ?? []).map((genre) => (
           <button
@@ -91,7 +149,7 @@ function GenreRecommendations() {
       </div>
 
       <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-        {active ? `Recommended in ${active.name}` : "Recommended for you"}
+        {active ? active.name : t("recommendedForYou")}
       </h2>
 
       {isLoading ? (
@@ -179,14 +237,31 @@ function UserResults({ query }: { query: string }) {
   );
 }
 
-function SeriesResults({ query }: { query: string }) {
+function SeriesResults({
+  query,
+  recentSearches,
+  onSelectRecent,
+  onClearRecent,
+}: {
+  query: string;
+  recentSearches: string[];
+  onSelectRecent: (term: string) => void;
+  onClearRecent: () => void;
+}) {
+  const { t } = useI18n();
   const { data, isFetching } = useSearchSeries(query);
   const ratings = useMyRatings();
   const watched = useMyWatched();
   const libraryStatus = useMyLibraryStatus();
 
   if (query.trim().length < 2) {
-    return <GenreRecommendations />;
+    return (
+      <GenreRecommendations
+        recentSearches={recentSearches}
+        onSelectRecent={onSelectRecent}
+        onClearRecent={onClearRecent}
+      />
+    );
   }
 
   if (isFetching && !data) {
@@ -195,7 +270,9 @@ function SeriesResults({ query }: { query: string }) {
 
   if (!data || data.results.length === 0) {
     return (
-      <p className="px-5 pt-8 text-center text-[14px] text-mist-400">Nothing found for “{query}”.</p>
+      <p className="px-5 pt-8 text-center text-[14px] text-mist-400">
+        {t("noResultsFor")} “{query}”.
+      </p>
     );
   }
 
@@ -218,11 +295,29 @@ function SeriesResults({ query }: { query: string }) {
 }
 
 export function SearchScreen() {
+  const { t } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const tab: Tab = tabParam === "users" ? "users" : "series";
   const [query, setQuery] = useState("");
   const debounced = useDebounced(query);
+  const [recentSearches, setRecentSearches] = useState<string[]>(getRecentSearches);
+
+  useEffect(() => {
+    const trimmed = debounced.trim();
+    if (trimmed.length >= 2 && tab === "series") {
+      setRecentSearches((prev) => {
+        const next = [trimmed, ...prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase())];
+        saveRecentSearches(next);
+        return next.slice(0, 8);
+      });
+    }
+  }, [debounced, tab]);
+
+  function handleClearRecent() {
+    saveRecentSearches([]);
+    setRecentSearches([]);
+  }
 
   function setTab(next: Tab) {
     const params: Record<string, string> = {};
@@ -232,7 +327,7 @@ export function SearchScreen() {
 
   return (
     <>
-      <ScreenHeader title="Search" />
+      <ScreenHeader title={t("search")} />
 
       <div className="sticky top-0 z-20 bg-ink-950/80 px-5 pb-3 backdrop-blur-xl">
         <div className="relative">
@@ -251,11 +346,23 @@ export function SearchScreen() {
             inputMode="search"
             autoCapitalize="none"
             autoCorrect="off"
-            placeholder={tab === "series" ? "Search series" : "Search people"}
+            placeholder={tab === "series" ? t("searchSeriesPlaceholder") : t("searchPeoplePlaceholder")}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="w-full rounded-xl border border-ink-700 bg-ink-850 py-3 pr-4 pl-10 text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none"
+            className="w-full rounded-xl border border-ink-700 bg-ink-850 py-3 pr-10 pl-10 text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none"
           />
+          {query.length > 0 ? (
+            <button
+              type="button"
+              aria-label={t("clearHistory")}
+              onClick={() => setQuery("")}
+              className="tap-none absolute top-1/2 right-3 -translate-y-1/2 flex size-6 items-center justify-center rounded-full bg-ink-700 text-mist-400 active:text-mist-200"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              </svg>
+            </button>
+          ) : null}
         </div>
 
         <div className="mt-3 flex gap-2">
@@ -268,13 +375,22 @@ export function SearchScreen() {
                 tab === value ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
               }`}
             >
-              {value === "series" ? "Series" : "People"}
+              {value === "series" ? t("series") : t("people")}
             </button>
           ))}
         </div>
       </div>
 
-      {tab === "series" ? <SeriesResults query={debounced} /> : <UserResults query={debounced} />}
+      {tab === "series" ? (
+        <SeriesResults
+          query={debounced}
+          recentSearches={recentSearches}
+          onSelectRecent={(term) => setQuery(term)}
+          onClearRecent={handleClearRecent}
+        />
+      ) : (
+        <UserResults query={debounced} />
+      )}
     </>
   );
 }
