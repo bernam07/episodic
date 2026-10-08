@@ -40,26 +40,26 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bg-ink-950/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/75 backdrop-blur-md"
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="pb-safe relative flex max-h-[90dvh] w-full max-w-screen-sm flex-col rounded-t-3xl border-t border-ink-700 bg-ink-900 md:max-w-md md:rounded-3xl md:border"
+        className="pb-safe relative flex max-h-[90dvh] w-full max-w-screen-sm flex-col rounded-t-[32px] border-t border-white/10 bg-ink-950/95 shadow-[0_-12px_45px_rgba(0,0,0,0.8)] backdrop-blur-2xl md:max-w-md md:rounded-[28px] md:border md:border-white/10 md:shadow-2xl"
       >
         <div className="flex shrink-0 justify-center pt-3 pb-1 md:hidden">
-          <span className="h-1 w-9 rounded-full bg-ink-600" />
+          <span className="h-1.5 w-11 rounded-full bg-white/20" />
         </div>
-        <div className="flex shrink-0 items-center justify-between px-5 pt-2 pb-4">
-          <h2 className="text-[17px] font-bold text-mist-100">{title}</h2>
+        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-5 pt-2 pb-3.5">
+          <h2 className="text-[17px] font-bold text-white">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="tap-none -mr-2 flex size-11 items-center justify-center text-mist-400 active:text-mist-200"
+            className="tap-none -mr-1 flex size-8 items-center justify-center rounded-full bg-white/[0.08] text-mist-300 transition-all active:scale-95 hover:bg-white/[0.15] hover:text-white"
             aria-label="Close"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
               <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
             </svg>
           </button>

@@ -236,7 +236,7 @@ export function StatsScreen() {
       ) : (
         <>
           <section className="px-5">
-            <div className="relative overflow-hidden rounded-3xl bg-ink-850 px-6 pt-7 pb-6">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-ink-900/90 via-ink-900/60 to-ink-950/80 px-6 pt-7 pb-6 shadow-2xl backdrop-blur-xl">
               <div className="pointer-events-none absolute -top-16 -right-10 size-52 rounded-full bg-accent-500/20 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-20 -left-16 size-44 rounded-full bg-accent-600/10 blur-3xl" />
 
@@ -245,7 +245,7 @@ export function StatsScreen() {
               </p>
               <Duration
                 minutes={insights.watchTimeMinutes}
-                className="relative mt-2.5 block text-[52px] leading-none font-bold tracking-tight text-mist-100"
+                className="relative mt-2.5 block text-[52px] leading-none font-black tracking-tight text-white drop-shadow-sm"
               />
 
               <div className="relative mt-7 grid grid-cols-4 gap-2 border-t border-white/8 pt-5">
@@ -258,10 +258,10 @@ export function StatsScreen() {
           </section>
 
           <section className="mt-4 px-5">
-            <div className="flex items-center gap-4 rounded-2xl bg-ink-850 px-5 py-4">
+            <div className="flex items-center gap-4 rounded-2xl border border-white/[0.08] bg-ink-900/60 px-5 py-4 backdrop-blur-md shadow-md">
               <div
                 className={`flex size-11 shrink-0 items-center justify-center rounded-full ${
-                  streak && streak > 0 ? "bg-amber-500/12 text-amber-400" : "bg-ink-800 text-mist-500"
+                  streak && streak > 0 ? "bg-amber-500/15 text-amber-400 shadow-sm" : "bg-ink-800 text-mist-500"
                 }`}
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="size-6">
@@ -348,19 +348,19 @@ export function StatsScreen() {
             <div className="grid grid-cols-2 gap-3">
               <Link
                 to="/library?view=favorites"
-                className="tap-none flex items-center gap-3 rounded-2xl bg-ink-850 px-4 py-3.5 active:opacity-70"
+                className="tap-none flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-ink-900/60 px-4 py-3.5 backdrop-blur-md shadow-sm transition-all hover:border-white/15 hover:bg-ink-850/60 active:scale-[0.98]"
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="size-[18px] shrink-0 text-rose-400">
                   <path d="M12 21.23l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
                 </svg>
                 <div>
-                  <p className="text-[18px] leading-none font-bold text-mist-100">{insights.favorites}</p>
-                  <p className="mt-1 text-[11px] text-mist-500">favorites</p>
+                  <p className="text-[18px] leading-none font-bold text-white">{insights.favorites}</p>
+                  <p className="mt-1 text-[11px] font-medium text-mist-400">favorites</p>
                 </div>
               </Link>
               <Link
                 to="/library?view=rewatched"
-                className="tap-none flex items-center gap-3 rounded-2xl bg-ink-850 px-4 py-3.5 active:opacity-70"
+                className="tap-none flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-ink-900/60 px-4 py-3.5 backdrop-blur-md shadow-sm transition-all hover:border-white/15 hover:bg-ink-850/60 active:scale-[0.98]"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -373,8 +373,8 @@ export function StatsScreen() {
                   <path d="M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <div>
-                  <p className="text-[18px] leading-none font-bold text-mist-100">{insights.rewatches}</p>
-                  <p className="mt-1 text-[11px] text-mist-500">rewatches</p>
+                  <p className="text-[18px] leading-none font-bold text-white">{insights.rewatches}</p>
+                  <p className="mt-1 text-[11px] font-medium text-mist-400">rewatches</p>
                 </div>
               </Link>
             </div>

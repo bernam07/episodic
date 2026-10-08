@@ -159,11 +159,12 @@ export function SeriesDetailScreen() {
   return (
     <>
       <div className="relative">
-        <div className="relative h-[240px] w-full overflow-hidden bg-ink-800">
+        <div className="relative h-[290px] w-full overflow-hidden bg-ink-900 md:h-[380px]">
           {backdrop ? (
-            <img src={backdrop} alt="" className="size-full object-cover opacity-50" />
+            <img src={backdrop} alt="" className="size-full object-cover opacity-60" />
           ) : null}
-          <div className="absolute inset-0 bg-gradient-to-b from-ink-950/40 via-ink-950/60 to-ink-950" />
+          <div className="absolute inset-0 bg-gradient-to-b from-ink-950/30 via-ink-950/60 to-ink-950" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-transparent to-transparent" />
         </div>
 
         <div className="pt-safe absolute inset-x-0 top-0 px-4">
@@ -176,7 +177,7 @@ export function SeriesDetailScreen() {
                 rel="noopener noreferrer"
                 aria-label={t("watchTrailer")}
                 title={t("watchTrailer")}
-                className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-950/60 text-rose-500 backdrop-blur-md transition-colors active:bg-ink-900"
+                className="tap-none flex size-10 items-center justify-center rounded-full border border-white/10 bg-ink-950/70 text-rose-500 shadow-md backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:bg-ink-900"
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
                   <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
@@ -186,7 +187,7 @@ export function SeriesDetailScreen() {
                 type="button"
                 onClick={() => setShareOpen(true)}
                 aria-label="Share a card"
-                className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-950/60 text-mist-100 backdrop-blur-md active:bg-ink-900"
+                className="tap-none flex size-10 items-center justify-center rounded-full border border-white/10 bg-ink-950/70 text-mist-100 shadow-md backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:bg-ink-900"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
                   <path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -197,15 +198,15 @@ export function SeriesDetailScreen() {
           </div>
         </div>
 
-        <div className="relative -mt-24 flex items-end gap-4 px-5">
-          <SeriesPoster path={detail.posterPath} alt={detail.name} className="w-[104px] shrink-0 shadow-xl" />
+        <div className="relative -mt-28 flex items-end gap-4 px-5">
+          <SeriesPoster path={detail.posterPath} alt={detail.name} className="w-[112px] shrink-0 rounded-2xl ring-2 ring-white/15 shadow-2xl shadow-black/80" />
           <div className="min-w-0 flex-1 pb-1">
-            <h1 className="text-[22px] leading-tight font-bold text-mist-100">{detail.name}</h1>
-            <p className="mt-1 text-[12px] text-mist-400">
+            <h1 className="text-[23px] leading-tight font-extrabold tracking-tight text-white">{detail.name}</h1>
+            <p className="mt-1 text-[12px] font-medium text-mist-400">
               {[year, detail.tmdbStatus, `${detail.numberOfSeasons} ${t("seasons")}`].filter(Boolean).join(" · ")}
             </p>
             {nextAir ? (
-              <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-accent-600/15 px-2 py-1 text-[11px] font-semibold text-accent-300">
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-accent-500/30 bg-accent-600/15 px-2.5 py-1 text-[11px] font-semibold text-accent-300 shadow-sm backdrop-blur-md">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
@@ -221,12 +222,12 @@ export function SeriesDetailScreen() {
               </div>
             ) : null}
             {detail.voteAverage && detail.voteAverage > 0 ? (
-              <div className="mt-2 flex items-center gap-1.5 rounded-md bg-star-500/12 px-2 py-1 w-fit">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 text-star-500">
+              <div className="mt-2 flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/15 px-2.5 py-1 w-fit shadow-sm backdrop-blur-md">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-amber-400">
                   <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
                 </svg>
-                <span className="text-[13px] font-bold text-mist-100">{detail.voteAverage.toFixed(1)}</span>
-                <span className="text-[11px] font-medium tracking-wide text-mist-500">/10 · TMDB</span>
+                <span className="text-[13px] font-bold text-white">{detail.voteAverage.toFixed(1)}</span>
+                <span className="text-[11px] font-medium tracking-wide text-amber-300/80">/10 · TMDB</span>
               </div>
             ) : null}
           </div>
@@ -251,10 +252,10 @@ export function SeriesDetailScreen() {
               disabled={toggleFavorite.isPending}
               aria-pressed={isFavorite}
               aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-              className={`tap-none flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors active:opacity-70 ${
+              className={`tap-none flex size-12 shrink-0 items-center justify-center rounded-2xl border transition-all active:scale-95 ${
                 isFavorite
-                  ? "border-rose-500/40 bg-rose-500/10 text-rose-400"
-                  : "border-ink-700 bg-ink-800 text-mist-400"
+                  ? "border-rose-500/40 bg-rose-500/15 text-rose-400 shadow-md shadow-rose-950/40 backdrop-blur-md"
+                  : "border-white/10 bg-ink-850/80 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
               }`}
             >
               <svg
@@ -277,7 +278,7 @@ export function SeriesDetailScreen() {
             type="button"
             onClick={() => setAddToListOpen(true)}
             aria-label="Add to list"
-            className="tap-none flex size-11 shrink-0 items-center justify-center rounded-xl border border-ink-700 bg-ink-800 text-mist-400 transition-colors active:opacity-70"
+            className="tap-none flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-ink-850/80 text-mist-400 backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-mist-200"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[22px]">
               <path d="M4 6h11M4 12h11M4 18h7M17 15v6M14 18h6" strokeLinecap="round" strokeLinejoin="round" />
@@ -287,7 +288,7 @@ export function SeriesDetailScreen() {
         </div>
 
         {seriesId ? (
-          <div className="mt-4 flex items-center justify-between">
+          <div className="mt-4 flex items-center justify-between rounded-2xl border border-white/[0.08] bg-ink-900/60 p-3.5 backdrop-blur-md shadow-sm">
             <RatingInput
               value={tracking?.rating ?? 0}
               onChange={(rating) => setRating.mutate(rating || null)}
@@ -295,7 +296,7 @@ export function SeriesDetailScreen() {
             <button
               type="button"
               onClick={() => setReviewSheetOpen(true)}
-              className="tap-none text-[13px] font-medium text-accent-400 active:text-accent-300"
+              className="tap-none text-[13px] font-semibold text-accent-300 transition-colors active:text-accent-400 hover:text-accent-200"
             >
               {ownReview?.body ? t("editReview") : t("writeReview")}
             </button>
@@ -303,7 +304,7 @@ export function SeriesDetailScreen() {
         ) : null}
 
         {tracking ? (
-          <div className="mt-3 flex items-center gap-3 rounded-xl bg-ink-850 px-4 py-2.5">
+          <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-ink-900/60 px-4 py-3 backdrop-blur-md shadow-sm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-mist-400">
               <path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" strokeLinecap="round" strokeLinejoin="round" />

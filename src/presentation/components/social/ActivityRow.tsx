@@ -24,7 +24,7 @@ export function ActivityRow({
   );
 
   return (
-    <li className="flex gap-3 py-4">
+    <li className="group mb-2.5 flex gap-3.5 rounded-2xl border border-white/[0.06] bg-ink-900/40 p-3.5 backdrop-blur-md shadow-sm transition-all hover:border-white/12 hover:bg-ink-850/60">
       {showActor ? (
         <Link to={`/user/${event.username}`} className="tap-none shrink-0">
           <Avatar username={event.username} displayName={event.displayName} avatarUrl={event.avatarUrl} />
@@ -35,7 +35,7 @@ export function ActivityRow({
         <p className="text-[13px] leading-snug text-mist-300">
           {showActor ? (
             <>
-              <Link to={`/user/${event.username}`} className="font-semibold text-mist-100">
+              <Link to={`/user/${event.username}`} className="font-semibold text-mist-100 hover:text-white">
                 {event.displayName || event.username}
               </Link>{" "}
               {verb} {seriesLink}
@@ -64,9 +64,16 @@ export function ActivityRow({
         ) : null}
       </div>
 
-      <Link to={`/series/${event.tmdbId}`} className="tap-none shrink-0 active:opacity-70">
-        <div className="h-[72px] w-12 overflow-hidden rounded-lg bg-ink-800">
-          {poster ? <img src={poster} alt="" loading="lazy" className="size-full object-cover" /> : null}
+      <Link to={`/series/${event.tmdbId}`} className="tap-none shrink-0 active:opacity-75">
+        <div className="h-[76px] w-13 overflow-hidden rounded-xl bg-ink-850 ring-1 ring-white/10 shadow-md">
+          {poster ? (
+            <img
+              src={poster}
+              alt=""
+              loading="lazy"
+              className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : null}
         </div>
       </Link>
     </li>

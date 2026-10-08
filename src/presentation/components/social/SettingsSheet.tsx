@@ -23,14 +23,14 @@ export function SettingsSheet({ open, onClose, onDeleteAccount }: SettingsSheetP
           <label className="mb-2 block text-[13px] font-semibold text-mist-300">
             {t("language")}
           </label>
-          <div className="flex gap-2">
+          <div className="flex rounded-xl border border-white/[0.06] bg-ink-900/60 p-1 backdrop-blur-md">
             <button
               type="button"
               onClick={() => setLanguage("en")}
-              className={`tap-none min-h-[36px] flex-1 rounded-xl text-[13px] font-medium transition-colors ${
+              className={`tap-none min-h-[38px] flex-1 rounded-lg text-[13px] font-semibold transition-all duration-150 ${
                 language === "en"
-                  ? "bg-accent-600 text-white"
-                  : "bg-ink-800 text-mist-400 active:bg-ink-700"
+                  ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
+                  : "text-mist-400 hover:text-mist-200"
               }`}
             >
               {t("english")}
@@ -38,10 +38,10 @@ export function SettingsSheet({ open, onClose, onDeleteAccount }: SettingsSheetP
             <button
               type="button"
               onClick={() => setLanguage("pt")}
-              className={`tap-none min-h-[36px] flex-1 rounded-xl text-[13px] font-medium transition-colors ${
+              className={`tap-none min-h-[38px] flex-1 rounded-lg text-[13px] font-semibold transition-all duration-150 ${
                 language === "pt"
-                  ? "bg-accent-600 text-white"
-                  : "bg-ink-800 text-mist-400 active:bg-ink-700"
+                  ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
+                  : "text-mist-400 hover:text-mist-200"
               }`}
             >
               {t("portuguese")}

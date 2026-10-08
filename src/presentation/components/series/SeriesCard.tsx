@@ -8,10 +8,10 @@ import { StatusBadge } from "./StatusBadge";
 export function WatchedBadge() {
   return (
     <span
-      className="absolute right-1.5 bottom-1.5 flex size-5 items-center justify-center rounded-full bg-emerald-500/90 backdrop-blur-sm"
+      className="absolute right-2 bottom-2 flex size-6 items-center justify-center rounded-full bg-emerald-500/90 text-white shadow-md shadow-black/40 ring-1 ring-white/25 backdrop-blur-md"
       aria-label="Watched"
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" className="size-3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" className="size-3.5">
         <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
@@ -19,10 +19,10 @@ export function WatchedBadge() {
 }
 
 const IN_LIBRARY_STYLES: Record<SeriesStatus, string> = {
-  watching: "bg-[#3b82f6]",
-  want_to_watch: "bg-[#d97706]",
-  watched: "bg-[#059669]",
-  abandoned: "bg-[#f43f5e]",
+  watching: "bg-accent-500",
+  want_to_watch: "bg-amber-500",
+  watched: "bg-emerald-500",
+  abandoned: "bg-rose-500",
 };
 
 const IN_LIBRARY_GLYPHS: Record<SeriesStatus, ReactNode> = {
@@ -51,7 +51,7 @@ const IN_LIBRARY_GLYPHS: Record<SeriesStatus, ReactNode> = {
 export function InLibraryBadge({ status }: { status: SeriesStatus }) {
   return (
     <span
-      className={`absolute right-1.5 bottom-1.5 flex size-5 items-center justify-center rounded-full ring-2 ring-ink-950/40 ${IN_LIBRARY_STYLES[status]}`}
+      className={`absolute right-2 bottom-2 flex size-6 items-center justify-center rounded-full shadow-md shadow-black/40 ring-1 ring-white/20 ${IN_LIBRARY_STYLES[status]}`}
       aria-label={`In your library: ${status.replace(/_/g, " ")}`}
     >
       {IN_LIBRARY_GLYPHS[status]}
@@ -62,11 +62,11 @@ export function InLibraryBadge({ status }: { status: SeriesStatus }) {
 export function RatingBadge({ value }: { value: number }) {
   const gradientId = useId();
   return (
-    <span className="absolute right-1.5 bottom-1.5 flex items-center gap-0.5 rounded-full bg-ink-950/80 px-1.5 py-0.5 backdrop-blur-sm">
-      <svg viewBox="0 0 24 24" className="size-2.5" aria-hidden="true">
+    <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full border border-white/15 bg-black/75 px-2 py-0.5 shadow-md shadow-black/50 backdrop-blur-md">
+      <svg viewBox="0 0 24 24" className="size-3" aria-hidden="true">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fcd34d" />
+            <stop offset="0%" stopColor="#fde047" />
             <stop offset="100%" stopColor="#f59e0b" />
           </linearGradient>
         </defs>
@@ -75,7 +75,7 @@ export function RatingBadge({ value }: { value: number }) {
           fill={`url(#${gradientId})`}
         />
       </svg>
-      <span className="text-[10px] font-bold tabular-nums text-mist-100">{value.toFixed(1)}</span>
+      <span className="text-[11px] font-bold tabular-nums text-white">{value.toFixed(1)}</span>
     </span>
   );
 }
@@ -106,11 +106,11 @@ export function SeriesCard({
   libraryStatus,
 }: SeriesCardProps) {
   return (
-    <Link to={`/series/${tmdbId}`} className="tap-none block active:opacity-70">
+    <Link to={`/series/${tmdbId}`} className="group tap-none block transition-transform duration-200 active:scale-[0.97]">
       <div className="relative">
         <SeriesPoster path={posterPath} alt={name} />
         {status ? (
-          <StatusBadge status={status} className="absolute top-1.5 left-1.5 backdrop-blur-sm" />
+          <StatusBadge status={status} className="absolute top-2 left-2 shadow-lg" />
         ) : null}
         {rating ? (
           <RatingBadge value={rating} />
@@ -120,12 +120,12 @@ export function SeriesCard({
           <InLibraryBadge status={libraryStatus} />
         ) : null}
       </div>
-      <div className="mt-2 px-0.5">
-        <p className="truncate text-[13px] font-semibold text-mist-100">{name}</p>
+      <div className="mt-2.5 px-0.5">
+        <p className="truncate text-[13px] font-semibold text-mist-100 transition-colors group-hover:text-white">{name}</p>
         {caption ? (
           <p className="mt-0.5 truncate text-[11px] text-mist-400">{caption}</p>
         ) : year ? (
-          <p className="mt-0.5 text-[11px] text-mist-500">{year}</p>
+          <p className="mt-0.5 text-[11px] font-medium text-mist-500">{year}</p>
         ) : null}
         {progressPercent !== undefined ? <ProgressBar value={progressPercent} className="mt-1.5" /> : null}
       </div>

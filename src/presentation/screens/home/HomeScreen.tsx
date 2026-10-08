@@ -45,19 +45,26 @@ function Hero({ series }: { series: SeriesSummary }) {
   const backdrop = backdropUrl(series.backdropPath, "w1280");
 
   return (
-    <Link to={`/series/${series.tmdbId}`} className="tap-none relative block overflow-hidden active:opacity-90">
-      <div className="relative h-[220px] w-full overflow-hidden bg-ink-800 md:h-[300px] md:rounded-card">
+    <Link to={`/series/${series.tmdbId}`} className="group tap-none relative block overflow-hidden active:opacity-95">
+      <div className="relative h-[260px] w-full overflow-hidden bg-ink-900 md:h-[360px] md:rounded-3xl md:border md:border-white/10 md:shadow-2xl md:shadow-black/60">
         {backdrop ? (
-          <img src={backdrop} alt="" className="size-full object-cover" fetchPriority="high" />
+          <img
+            src={backdrop}
+            alt=""
+            className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            fetchPriority="high"
+          />
         ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/50 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-5">
-          <p className="text-[11px] font-semibold tracking-wide text-accent-400 uppercase">
-            {t("trendingNow")}
-          </p>
-          <h2 className="mt-1 text-[24px] leading-tight font-bold text-mist-100">{series.name}</h2>
+        <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink-950/80 via-transparent to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-5 md:p-7">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-3 py-1 text-[11px] font-semibold text-accent-300 shadow-md backdrop-blur-md">
+            <span className="size-1.5 rounded-full bg-accent-400" />
+            <span className="uppercase tracking-wider">{t("trendingNow")}</span>
+          </div>
+          <h2 className="mt-2.5 text-[26px] leading-tight font-extrabold tracking-tight text-white md:text-[32px]">{series.name}</h2>
           {series.overview ? (
-            <p className="mt-1.5 line-clamp-2 max-w-lg text-[13px] text-mist-300">{series.overview}</p>
+            <p className="mt-1.5 line-clamp-2 max-w-xl text-[13px] leading-relaxed text-mist-300">{series.overview}</p>
           ) : null}
         </div>
       </div>
@@ -495,40 +502,42 @@ export function HomeScreen() {
 
   return (
     <>
-      <header className="flex items-start justify-between px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-4">
+      <header className="sticky top-0 z-30 flex items-start justify-between border-b border-white/[0.06] bg-ink-950/75 px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-4 backdrop-blur-2xl">
         <div>
-          <p className="text-[13px] text-mist-400">
+          <p className="text-[12px] font-medium tracking-wide text-mist-400">
             {profile ? `${greet}, ${profile.displayName || profile.username}` : greet}
           </p>
-          <h1 className="text-[28px] font-bold tracking-tight text-mist-100">Episodic</h1>
+          <h1 className="bg-gradient-to-r from-white via-mist-100 to-mist-300 bg-clip-text text-[28px] font-black tracking-tight text-transparent">
+            Episodic
+          </h1>
         </div>
         <div className="mt-2 flex gap-2">
-        <Link
-          to="/calendar"
-          className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
-          aria-label={t("calendar")}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
-            <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Link>
-        <button
-          type="button"
-          onClick={() => setNotificationsOpen(true)}
-          className="tap-none relative flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
-          aria-label={t("notifications")}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          {(unreadCount ?? 0) > 0 ? (
-            <span className="absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-accent-600 text-[10px] font-bold text-white">
-              {unreadCount! > 9 ? "9+" : unreadCount}
-            </span>
-          ) : null}
-        </button>
+          <Link
+            to="/calendar"
+            className="tap-none flex size-10 items-center justify-center rounded-full border border-white/10 bg-ink-850/80 text-mist-300 shadow-sm backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-white"
+            aria-label={t("calendar")}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+              <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+          <button
+            type="button"
+            onClick={() => setNotificationsOpen(true)}
+            className="tap-none relative flex size-10 items-center justify-center rounded-full border border-white/10 bg-ink-850/80 text-mist-300 shadow-sm backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-white"
+            aria-label={t("notifications")}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {(unreadCount ?? 0) > 0 ? (
+              <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-gradient-to-tr from-accent-600 to-indigo-500 text-[10px] font-bold text-white shadow-md shadow-accent-600/40 ring-2 ring-ink-950">
+                {unreadCount! > 9 ? "9+" : unreadCount}
+              </span>
+            ) : null}
+          </button>
         </div>
       </header>
 

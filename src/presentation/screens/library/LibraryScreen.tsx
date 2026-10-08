@@ -36,11 +36,16 @@ function SeriesListRow({ item }: { item: SeriesProgress }) {
   return (
     <Link
       to={`/series/${item.tmdbId}`}
-      className="tap-none flex items-center gap-3.5 rounded-2xl bg-ink-850 p-3 transition-colors active:bg-ink-800"
+      className="group tap-none flex items-center gap-3.5 rounded-2xl border border-white/[0.06] bg-ink-900/50 p-3.5 backdrop-blur-md shadow-sm transition-all hover:bg-ink-850/60 hover:border-white/12 active:scale-[0.99]"
     >
-      <div className="relative h-18 w-12 shrink-0 overflow-hidden rounded-lg bg-ink-800 shadow-md">
+      <div className="relative h-18 w-12 shrink-0 overflow-hidden rounded-xl bg-ink-850 shadow-md ring-1 ring-white/10">
         {poster ? (
-          <img src={poster} alt="" loading="lazy" className="size-full object-cover" />
+          <img
+            src={poster}
+            alt=""
+            loading="lazy"
+            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
         ) : (
           <div className="flex size-full items-center justify-center text-[10px] text-mist-600">N/A</div>
         )}
@@ -48,19 +53,19 @@ function SeriesListRow({ item }: { item: SeriesProgress }) {
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="truncate text-[15px] font-semibold text-mist-100">{item.name}</h3>
+          <h3 className="truncate text-[15px] font-semibold text-mist-100 transition-colors group-hover:text-white">{item.name}</h3>
           <span className="shrink-0 text-[11px] font-medium tabular-nums text-mist-400">
             {item.watchedEpisodes}/{item.numberOfEpisodes}
           </span>
         </div>
 
-        <ProgressBar value={item.progressPercent} className="mt-2" />
+        <ProgressBar value={item.progressPercent} className="mt-2.5" />
 
-        <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="mt-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <StatusBadge status={item.status} />
             {item.rewatchCount > 0 ? (
-              <span className="rounded bg-ink-800 px-1.5 py-0.5 text-[10px] font-medium text-mist-400">
+              <span className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-mist-300">
                 {item.rewatchCount}×
               </span>
             ) : null}
@@ -235,7 +240,7 @@ export function LibraryScreen() {
               placeholder={t("searchLibraryPlaceholder")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="w-full rounded-xl border border-ink-700 bg-ink-850 py-2.5 pr-4 pl-10 text-[14px] text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none"
+              className="w-full rounded-2xl border border-white/10 bg-ink-900/70 py-2.5 pr-4 pl-10 text-[14px] text-white placeholder:text-mist-500 shadow-inner backdrop-blur-xl transition-all focus:border-accent-400 focus:bg-ink-850/90 focus:ring-4 focus:ring-accent-500/15 focus:outline-none"
             />
           </div>
 
@@ -244,7 +249,7 @@ export function LibraryScreen() {
             onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
             aria-label={viewMode === "grid" ? t("listView") : t("gridView")}
             title={viewMode === "grid" ? t("listView") : t("gridView")}
-            className="tap-none flex size-11 shrink-0 items-center justify-center rounded-xl border border-ink-700 bg-ink-850 text-mist-300 transition-colors active:bg-ink-800"
+            className="tap-none flex size-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-ink-850/80 text-mist-300 shadow-sm backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-white"
           >
             {viewMode === "grid" ? (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
@@ -266,7 +271,7 @@ export function LibraryScreen() {
             disabled={!data || data.length === 0}
             aria-label={t("surpriseMe")}
             title={t("surpriseMe")}
-            className="tap-none flex size-11 shrink-0 items-center justify-center rounded-xl border border-ink-700 bg-ink-850 text-mist-300 transition-colors active:bg-ink-800 disabled:opacity-40"
+            className="tap-none flex size-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-ink-850/80 text-mist-300 shadow-sm backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-white disabled:opacity-40"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
               <rect x="3" y="3" width="18" height="18" rx="4" />
@@ -285,7 +290,7 @@ export function LibraryScreen() {
           <button
             type="button"
             onClick={clearView}
-            className="tap-none inline-flex items-center gap-1.5 rounded-full bg-accent-600/15 px-3.5 py-2 text-[13px] font-semibold text-accent-300 active:bg-accent-600/25"
+            className="tap-none inline-flex items-center gap-1.5 rounded-full border border-accent-500/30 bg-accent-600/15 px-3.5 py-2 text-[13px] font-semibold text-accent-300 backdrop-blur-md transition-colors active:bg-accent-600/25"
           >
             {focusLabel}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
@@ -300,8 +305,10 @@ export function LibraryScreen() {
               key={value}
               type="button"
               onClick={() => setFilter(value)}
-              className={`tap-none flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors ${
-                filter === value ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
+              className={`tap-none flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-all ${
+                filter === value
+                  ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
+                  : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
               }`}
             >
               {filterLabels[value]}
@@ -322,8 +329,10 @@ export function LibraryScreen() {
           <button
             type="button"
             onClick={() => setGenre(null)}
-            className={`tap-none shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
-              !genreParam ? "bg-mist-100 text-ink-950" : "bg-ink-800 text-mist-400 active:bg-ink-700"
+            className={`tap-none shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all ${
+              !genreParam
+                ? "bg-white text-ink-950 shadow-sm"
+                : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
             }`}
           >
             {t("allGenres")}
@@ -333,8 +342,10 @@ export function LibraryScreen() {
               key={genre}
               type="button"
               onClick={() => setGenre(genreParam === genre ? null : genre)}
-              className={`tap-none shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                genreParam === genre ? "bg-mist-100 text-ink-950" : "bg-ink-800 text-mist-400 active:bg-ink-700"
+              className={`tap-none shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all ${
+                genreParam === genre
+                  ? "bg-white text-ink-950 shadow-sm"
+                  : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
               }`}
             >
               {genre}

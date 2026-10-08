@@ -39,7 +39,7 @@ export function FriendsScreen() {
         action={
           <Link
             to="/search?tab=users"
-            className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
+            className="tap-none flex size-10 items-center justify-center rounded-full border border-white/10 bg-ink-850/80 text-mist-300 shadow-sm backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-white"
             aria-label={t("findPeople")}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
@@ -52,16 +52,16 @@ export function FriendsScreen() {
       />
 
       {data && data.length > 0 ? (
-        <div className="no-scrollbar sticky top-0 z-20 flex gap-2 overflow-x-auto bg-ink-950/80 px-5 pb-3 backdrop-blur-xl">
+        <div className="no-scrollbar sticky top-0 z-20 flex gap-2 overflow-x-auto bg-ink-950/80 px-5 pt-1 pb-3 backdrop-blur-xl">
           {filterTabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setFilter(tab.id)}
-              className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${
+              className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-all ${
                 filter === tab.id
-                  ? "bg-accent-600 text-white"
-                  : "bg-ink-800 text-mist-400 active:bg-ink-700"
+                  ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
+                  : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
               }`}
             >
               {tab.label}

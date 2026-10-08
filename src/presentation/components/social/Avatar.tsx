@@ -19,7 +19,7 @@ export function Avatar({ username, displayName = null, avatarUrl = null, size = 
       <img
         src={avatarUrl}
         alt=""
-        className={`${SIZES[size]} shrink-0 rounded-full object-cover`}
+        className={`${SIZES[size]} shrink-0 rounded-full object-cover ring-1 ring-white/20 shadow-sm`}
         loading="lazy"
       />
     );
@@ -28,7 +28,7 @@ export function Avatar({ username, displayName = null, avatarUrl = null, size = 
   return (
     <span
       aria-hidden="true"
-      className={`${SIZES[size]} flex shrink-0 items-center justify-center rounded-full bg-ink-700 font-semibold text-mist-300`}
+      className={`${SIZES[size]} flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-600/30 to-ink-800 font-bold text-mist-100 ring-1 ring-white/15 shadow-sm`}
     >
       {initials({ username, displayName })}
     </span>

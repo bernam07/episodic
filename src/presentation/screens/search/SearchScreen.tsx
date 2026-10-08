@@ -113,7 +113,7 @@ function GenreRecommendations({
                 key={term}
                 type="button"
                 onClick={() => onSelectRecent(term)}
-                className="tap-none rounded-full bg-ink-850 px-3.5 py-1.5 text-[12px] text-mist-300 transition-colors hover:bg-ink-800 hover:text-mist-100"
+                className="tap-none rounded-full border border-white/10 bg-ink-900/60 px-3.5 py-1.5 text-[12px] font-medium text-mist-300 backdrop-blur-md transition-all hover:border-white/20 hover:bg-ink-850 hover:text-white"
               >
                 {term}
               </button>
@@ -126,8 +126,10 @@ function GenreRecommendations({
         <button
           type="button"
           onClick={() => setSearchParams({}, { replace: true })}
-          className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${
-            genreId === null ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
+          className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-all ${
+            genreId === null
+              ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
+              : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
           }`}
         >
           {t("popular")}
@@ -137,10 +139,10 @@ function GenreRecommendations({
             key={genre.id}
             type="button"
             onClick={() => setSearchParams({ genre: String(genre.id) }, { replace: true })}
-            className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${
+            className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-all ${
               genreId === genre.id
-                ? "bg-accent-600 text-white"
-                : "bg-ink-800 text-mist-400 active:bg-ink-700"
+                ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
+                : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
             }`}
           >
             {genre.name}
@@ -349,14 +351,14 @@ export function SearchScreen() {
             placeholder={tab === "series" ? t("searchSeriesPlaceholder") : t("searchPeoplePlaceholder")}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="w-full rounded-xl border border-ink-700 bg-ink-850 py-3 pr-10 pl-10 text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none"
+            className="w-full rounded-2xl border border-white/10 bg-ink-900/70 py-3.5 pr-10 pl-11 text-mist-100 placeholder:text-mist-500 shadow-inner backdrop-blur-xl transition-all focus:border-accent-400 focus:bg-ink-850/90 focus:ring-4 focus:ring-accent-500/15 focus:outline-none"
           />
           {query.length > 0 ? (
             <button
               type="button"
               aria-label={t("clearHistory")}
               onClick={() => setQuery("")}
-              className="tap-none absolute top-1/2 right-3 -translate-y-1/2 flex size-6 items-center justify-center rounded-full bg-ink-700 text-mist-400 active:text-mist-200"
+              className="tap-none absolute top-1/2 right-3 -translate-y-1/2 flex size-6 items-center justify-center rounded-full bg-white/10 text-mist-300 transition-colors hover:bg-white/20 hover:text-white"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
                 <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
@@ -365,14 +367,16 @@ export function SearchScreen() {
           ) : null}
         </div>
 
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex rounded-xl border border-white/[0.06] bg-ink-900/60 p-1 backdrop-blur-md">
           {(["series", "users"] as Tab[]).map((value) => (
             <button
               key={value}
               type="button"
               onClick={() => setTab(value)}
-              className={`tap-none min-h-[34px] flex-1 rounded-full text-[13px] font-semibold transition-colors ${
-                tab === value ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
+              className={`tap-none min-h-[34px] flex-1 rounded-lg text-[13px] font-semibold transition-all duration-150 ${
+                tab === value
+                  ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
+                  : "text-mist-400 hover:text-mist-200"
               }`}
             >
               {value === "series" ? t("series") : t("people")}

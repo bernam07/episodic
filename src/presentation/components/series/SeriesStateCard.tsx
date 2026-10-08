@@ -92,15 +92,15 @@ function toCopy(state: WatchState, detail: SeriesDetail): Copy {
 }
 
 const TONES: Record<Copy["tone"], string> = {
-  neutral: "border-ink-700 bg-ink-850",
-  positive: "border-accent-600/30 bg-accent-600/10",
-  action: "border-ink-700 bg-ink-850",
+  neutral: "border-white/[0.08] bg-ink-900/60 shadow-lg shadow-black/20",
+  positive: "border-emerald-500/30 bg-emerald-950/20 shadow-lg shadow-emerald-950/30",
+  action: "border-accent-500/30 bg-accent-950/20 shadow-lg shadow-accent-950/30",
 };
 
 const DOTS: Record<Copy["tone"], string> = {
-  neutral: "bg-mist-500",
-  positive: "bg-accent-400",
-  action: "bg-star-500",
+  neutral: "bg-mist-400",
+  positive: "bg-emerald-400",
+  action: "bg-accent-400",
 };
 
 type SeriesStateCardProps = {
@@ -116,14 +116,14 @@ export function SeriesStateCard({ detail, watchedEpisodes, status }: SeriesState
   const percent = detail.numberOfEpisodes > 0 ? (watchedEpisodes / detail.numberOfEpisodes) * 100 : 0;
 
   return (
-    <div className={`rounded-card border p-4 ${TONES[copy.tone]}`}>
+    <div className={`rounded-2xl border p-4.5 backdrop-blur-xl ${TONES[copy.tone]}`}>
       <div className="flex items-start gap-2.5">
         <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${DOTS[copy.tone]}`} />
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-semibold text-mist-100">{copy.headline}</p>
-          {copy.detail ? <p className="mt-0.5 text-[13px] text-mist-400">{copy.detail}</p> : null}
+          <p className="text-[15px] font-semibold text-white">{copy.headline}</p>
+          {copy.detail ? <p className="mt-0.5 text-[13px] text-mist-300">{copy.detail}</p> : null}
         </div>
-        <span className="shrink-0 rounded-full bg-ink-800 px-2.5 py-1 text-[10px] font-medium tracking-wide text-mist-400 uppercase">
+        <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold tracking-wide text-mist-300 uppercase backdrop-blur-md">
           {AIRING_LABELS[airingStatus(detail)]}
         </span>
       </div>

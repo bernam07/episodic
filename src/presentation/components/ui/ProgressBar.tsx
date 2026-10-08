@@ -10,14 +10,14 @@ export function ProgressBar({ value, className = "", showLabel = false }: Progre
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <div
-        className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-700"
+        className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-800 ring-1 ring-white/[0.05]"
         role="progressbar"
         aria-valuenow={Math.round(clamped)}
         aria-valuemin={0}
         aria-valuemax={100}
       >
         <div
-          className="h-full rounded-full bg-accent-500 transition-[width] duration-300 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-accent-600 via-accent-500 to-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.4)] transition-[width] duration-300 ease-out"
           style={{ width: `${clamped}%` }}
         />
       </div>
