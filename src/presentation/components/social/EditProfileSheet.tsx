@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent } from "react";
+import { useId, useRef, useState, type ChangeEvent } from "react";
 import { toUserMessage } from "@/core/errors/AppError";
 import { MAX_BIO_LENGTH } from "@/domain/usecases/auth/AuthUseCases";
 import { Avatar } from "@/presentation/components/social/Avatar";
@@ -15,7 +15,7 @@ type EditProfileSheetProps = {
 const inputClass =
   "w-full rounded-xl border border-ink-700 bg-ink-850 px-4 py-3 text-[15px] text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none";
 
-export function EditProfileSheet({ open, onClose }: EditProfileSheetProps) {
+function EditProfileForm({ onClose }: { onClose: () => void }) {
   const { profile } = useAuth();
   const [displayName, setDisplayName] = useState(profile?.displayName ?? "");
   const [bio, setBio] = useState(profile?.bio ?? "");
@@ -26,14 +26,6 @@ export function EditProfileSheet({ open, onClose }: EditProfileSheetProps) {
 
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
-
-  useEffect(() => {
-    if (open) {
-      setDisplayName(profile?.displayName ?? "");
-      setBio(profile?.bio ?? "");
-      setError(null);
-    }
-  }, [open, profile]);
 
   async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -64,7 +56,7 @@ export function EditProfileSheet({ open, onClose }: EditProfileSheetProps) {
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="Edit Profile">
+    <>
       <div className="flex flex-col items-center">
         <button
           type="button"
@@ -143,6 +135,14 @@ export function EditProfileSheet({ open, onClose }: EditProfileSheetProps) {
       <Button fullWidth className="mt-5" loading={updateProfile.isPending} onClick={handleSubmit}>
         Save Changes
       </Button>
+    </>
+  );
+}
+
+export function EditProfileSheet({ open, onClose }: EditProfileSheetProps) {
+  return (
+    <Sheet open={open} onClose={onClose} title="Edit Profile">
+      {open ? <EditProfileForm onClose={onClose} /> : null}
     </Sheet>
   );
 }

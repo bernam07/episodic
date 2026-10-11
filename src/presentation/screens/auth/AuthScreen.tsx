@@ -139,33 +139,25 @@ function FeatureRow() {
 type UsernameState = "idle" | "checking" | "available" | "taken" | "invalid";
 
 function useUsernameCheck(username: string, active: boolean): UsernameState {
-  const [state, setState] = useState<UsernameState>("idle");
+  const [asyncStatus, setAsyncStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const trimmed = username.trim();
 
   useEffect(() => {
-    const trimmed = username.trim();
-
-    if (!active || trimmed.length === 0) {
-      setState("idle");
+    if (!active || !isValidUsername(trimmed)) {
       return;
     }
 
-    if (!isValidUsername(trimmed)) {
-      setState("invalid");
-      return;
-    }
-
-    setState("checking");
     let cancelled = false;
-
     const timer = setTimeout(async () => {
+      setAsyncStatus("checking");
       try {
         const available = await container.usecases.checkUsernameAvailable.execute(trimmed);
         if (!cancelled) {
-          setState(available ? "available" : "taken");
+          setAsyncStatus(available ? "available" : "taken");
         }
       } catch {
         if (!cancelled) {
-          setState("idle");
+          setAsyncStatus("idle");
         }
       }
     }, 400);
@@ -174,9 +166,17 @@ function useUsernameCheck(username: string, active: boolean): UsernameState {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [username, active]);
+  }, [trimmed, active]);
 
-  return state;
+  if (!active || trimmed.length === 0) {
+    return "idle";
+  }
+
+  if (!isValidUsername(trimmed)) {
+    return "invalid";
+  }
+
+  return asyncStatus;
 }
 
 const USERNAME_HINTS: Record<UsernameState, { text: string; className: string } | null> = {

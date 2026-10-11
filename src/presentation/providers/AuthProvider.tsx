@@ -30,7 +30,8 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [rawProfile, setRawProfile] = useState<Profile | null>(null);
+  const profile = user ? rawProfile : null;
   const [initialising, setInitialising] = useState(true);
   const queryClient = useQueryClient();
   const cachedUserId = useRef<string | null | undefined>(undefined);
@@ -77,23 +78,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    let active = true;
-
     if (!user) {
-      setProfile(null);
       return;
     }
+
+    let active = true;
 
     container.repositories.auth
       .getProfile(user.id)
       .then((next) => {
         if (active) {
-          setProfile(next);
+          setRawProfile(next);
         }
       })
       .catch(() => {
         if (active) {
-          setProfile(null);
+          setRawProfile(null);
         }
       });
 
@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const next = await container.repositories.auth.getProfile(user.id);
-    setProfile(next);
+    setRawProfile(next);
   }, [user]);
 
   const completeOnboarding = useCallback(async () => {
@@ -138,13 +138,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     await container.repositories.auth.completeOnboarding(user.id);
-    setProfile((current) => (current ? { ...current, onboarded: true } : current));
+    setRawProfile((current) => (current ? { ...current, onboarded: true } : current));
   }, [user]);
 
   const deleteAccount = useCallback(async () => {
     await container.usecases.deleteAccount.execute();
     setUser(null);
-    setProfile(null);
+    setRawProfile(null);
   }, []);
 
   const value = useMemo(

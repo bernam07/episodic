@@ -8,17 +8,15 @@ interface BeforeInstallPromptEvent extends Event {
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
 
 export function usePwaInstall() {
-  const [canInstall, setCanInstall] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [canInstall, setCanInstall] = useState(() => Boolean(deferredPrompt));
+  const [isInstalled, setIsInstalled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(display-mode: standalone)").matches;
+  });
 
   useEffect(() => {
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsInstalled(true);
+    if (typeof window === "undefined" || window.matchMedia("(display-mode: standalone)").matches) {
       return;
-    }
-
-    if (deferredPrompt) {
-      setCanInstall(true);
     }
 
     const handler = (e: Event) => {

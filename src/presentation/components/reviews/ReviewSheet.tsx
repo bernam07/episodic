@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toUserMessage } from "@/core/errors/AppError";
 import type { Review } from "@/domain/entities/Review";
 import { Button } from "@/presentation/components/ui/Button";
@@ -15,20 +15,22 @@ type ReviewSheetProps = {
 
 const MAX_BODY = 2000;
 
-export function ReviewSheet({ open, onClose, seriesId, seriesName, existing }: ReviewSheetProps) {
+function ReviewForm({
+  onClose,
+  seriesId,
+  seriesName,
+  existing,
+}: {
+  onClose: () => void;
+  seriesId: string | null;
+  seriesName: string;
+  existing: Review | null;
+}) {
   const [body, setBody] = useState(existing?.body ?? "");
   const [spoilers, setSpoilers] = useState(existing?.containsSpoilers ?? false);
   const [error, setError] = useState<string | null>(null);
 
   const submit = useSubmitReview(seriesId);
-
-  useEffect(() => {
-    if (open) {
-      setBody(existing?.body ?? "");
-      setSpoilers(existing?.containsSpoilers ?? false);
-      setError(null);
-    }
-  }, [open, existing]);
 
   async function handleSubmit() {
     setError(null);
@@ -42,7 +44,7 @@ export function ReviewSheet({ open, onClose, seriesId, seriesName, existing }: R
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={existing?.body ? "Edit Review" : "Write a Review"}>
+    <>
       <p className="mb-5 truncate text-[13px] text-mist-400">{seriesName}</p>
 
       <textarea
@@ -90,6 +92,21 @@ export function ReviewSheet({ open, onClose, seriesId, seriesName, existing }: R
       >
         {existing?.body ? "Update Review" : "Post Review"}
       </Button>
+    </>
+  );
+}
+
+export function ReviewSheet({ open, onClose, seriesId, seriesName, existing }: ReviewSheetProps) {
+  return (
+    <Sheet open={open} onClose={onClose} title={existing?.body ? "Edit Review" : "Write a Review"}>
+      {open ? (
+        <ReviewForm
+          onClose={onClose}
+          seriesId={seriesId}
+          seriesName={seriesName}
+          existing={existing}
+        />
+      ) : null}
     </Sheet>
   );
 }

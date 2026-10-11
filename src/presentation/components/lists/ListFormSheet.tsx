@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { toUserMessage } from "@/core/errors/AppError";
 import {
   MAX_LIST_DESCRIPTION,
@@ -20,10 +20,18 @@ type ListFormSheetProps = {
   onCreated?: (listId: string) => void;
 };
 
-export function ListFormSheet({ open, onClose, existing, onCreated }: ListFormSheetProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [isPrivate, setIsPrivate] = useState(false);
+function ListFormContent({
+  onClose,
+  existing,
+  onCreated,
+}: {
+  onClose: () => void;
+  existing?: ListDetail | null;
+  onCreated?: (listId: string) => void;
+}) {
+  const [title, setTitle] = useState(existing?.title ?? "");
+  const [description, setDescription] = useState(existing?.description ?? "");
+  const [isPrivate, setIsPrivate] = useState(existing?.isPrivate ?? false);
   const [error, setError] = useState<string | null>(null);
   const titleId = useId();
   const descriptionId = useId();
@@ -31,15 +39,6 @@ export function ListFormSheet({ open, onClose, existing, onCreated }: ListFormSh
   const createList = useCreateList();
   const updateList = useUpdateList(existing?.id ?? "");
   const pending = createList.isPending || updateList.isPending;
-
-  useEffect(() => {
-    if (open) {
-      setTitle(existing?.title ?? "");
-      setDescription(existing?.description ?? "");
-      setIsPrivate(existing?.isPrivate ?? false);
-      setError(null);
-    }
-  }, [open, existing]);
 
   async function handleSubmit() {
     setError(null);
@@ -59,7 +58,7 @@ export function ListFormSheet({ open, onClose, existing, onCreated }: ListFormSh
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={existing ? "Edit List" : "New List"}>
+    <>
       <div className="flex flex-col gap-4">
         <div>
           <label htmlFor={titleId} className="mb-1.5 block text-[12px] font-medium text-mist-400">
@@ -126,6 +125,20 @@ export function ListFormSheet({ open, onClose, existing, onCreated }: ListFormSh
       <Button fullWidth className="mt-5" loading={pending} onClick={handleSubmit}>
         {existing ? "Save Changes" : "Create List"}
       </Button>
+    </>
+  );
+}
+
+export function ListFormSheet({ open, onClose, existing, onCreated }: ListFormSheetProps) {
+  return (
+    <Sheet open={open} onClose={onClose} title={existing ? "Edit List" : "New List"}>
+      {open ? (
+        <ListFormContent
+          onClose={onClose}
+          existing={existing}
+          onCreated={onCreated}
+        />
+      ) : null}
     </Sheet>
   );
 }

@@ -308,11 +308,9 @@ export function SearchScreen() {
   useEffect(() => {
     const trimmed = debounced.trim();
     if (trimmed.length >= 2 && tab === "series") {
-      setRecentSearches((prev) => {
-        const next = [trimmed, ...prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase())];
-        saveRecentSearches(next);
-        return next.slice(0, 8);
-      });
+      const prev = getRecentSearches();
+      const next = [trimmed, ...prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase())].slice(0, 8);
+      saveRecentSearches(next);
     }
   }, [debounced, tab]);
 
@@ -350,14 +348,23 @@ export function SearchScreen() {
             autoCorrect="off"
             placeholder={tab === "series" ? t("searchSeriesPlaceholder") : t("searchPeoplePlaceholder")}
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              const nextVal = event.target.value;
+              setQuery(nextVal);
+              if (!nextVal.trim()) {
+                setRecentSearches(getRecentSearches());
+              }
+            }}
             className="w-full rounded-2xl border border-white/10 bg-ink-900/70 py-3.5 pr-10 pl-11 text-mist-100 placeholder:text-mist-500 shadow-inner backdrop-blur-xl transition-all focus:border-accent-400 focus:bg-ink-850/90 focus:ring-4 focus:ring-accent-500/15 focus:outline-none"
           />
           {query.length > 0 ? (
             <button
               type="button"
               aria-label={t("clearHistory")}
-              onClick={() => setQuery("")}
+              onClick={() => {
+                setQuery("");
+                setRecentSearches(getRecentSearches());
+              }}
               className="tap-none absolute top-1/2 right-3 -translate-y-1/2 flex size-6 items-center justify-center rounded-full bg-white/10 text-mist-300 transition-colors hover:bg-white/20 hover:text-white"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">

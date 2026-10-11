@@ -30,29 +30,18 @@ function slugify(value: string): string {
 
 const canShareFiles = typeof navigator !== "undefined" && typeof navigator.canShare === "function";
 
-export function ShareCardSheet({
-  open,
-  onClose,
+function ShareCardContent({
   posterPath,
   backdropPath,
   backdrops,
   name,
   year,
   rating,
-}: ShareCardSheetProps) {
+}: Omit<ShareCardSheetProps, "open" | "onClose">) {
   const { profile } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cache = useRef<Map<string, HTMLImageElement>>(new Map());
 
-  const [mode, setMode] = useState<Mode>("image");
-  const [selectedImage, setSelectedImage] = useState("poster");
-  const [posterImage, setPosterImage] = useState<HTMLImageElement | null>(null);
-  const [posterFailed, setPosterFailed] = useState(false);
-  const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handle = profile?.username ? `@${profile.username}` : "Episodic";
   const posterSource = posterUrl(posterPath, "w500");
 
   const imageCandidates = useMemo<ImageCandidate[]>(() => {
@@ -75,22 +64,21 @@ export function ShareCardSheet({
     return list;
   }, [posterPath, backdropPath, backdrops]);
 
+  const [mode, setMode] = useState<Mode>(() => (imageCandidates.length > 0 ? "image" : "gradient"));
+  const [selectedImage, setSelectedImage] = useState(() => imageCandidates[0]?.id ?? "poster");
+  const [posterImage, setPosterImage] = useState<HTMLImageElement | null>(null);
+  const [posterLoadFailed, setPosterLoadFailed] = useState(false);
+  const [remoteBgImage, setRemoteBgImage] = useState<HTMLImageElement | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handle = profile?.username ? `@${profile.username}` : "Episodic";
   const selectedCandidate = imageCandidates.find((item) => item.id === selectedImage) ?? imageCandidates[0];
+  const bgImage = selectedCandidate?.id === "poster" ? posterImage : remoteBgImage;
+  const posterFailed = !posterSource || posterLoadFailed;
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    setMode(imageCandidates.length > 0 ? "image" : "gradient");
-    setSelectedImage(imageCandidates[0]?.id ?? "poster");
-    setBgImage(null);
-    setError(null);
-    setPosterImage(null);
-    setPosterFailed(false);
-
     if (!posterSource) {
-      setPosterFailed(true);
       return;
     }
 
@@ -104,38 +92,32 @@ export function ShareCardSheet({
       })
       .catch(() => {
         if (active) {
-          setPosterFailed(true);
+          setPosterLoadFailed(true);
         }
       });
 
     return () => {
       active = false;
     };
-  }, [open, posterSource, imageCandidates]);
+  }, [posterSource]);
 
   useEffect(() => {
-    if (!open || mode !== "image" || !selectedCandidate) {
-      return;
-    }
-
-    if (selectedCandidate.id === "poster") {
-      setBgImage(posterImage);
+    if (mode !== "image" || !selectedCandidate || selectedCandidate.id === "poster") {
       return;
     }
 
     const cached = cache.current.get(selectedCandidate.url);
     if (cached) {
-      setBgImage(cached);
+      setRemoteBgImage(cached);
       return;
     }
 
     let active = true;
-    setBgImage(null);
     loadImage(selectedCandidate.url)
       .then((image) => {
         if (active) {
           cache.current.set(selectedCandidate.url, image);
-          setBgImage(image);
+          setRemoteBgImage(image);
         }
       })
       .catch(() => {
@@ -147,10 +129,10 @@ export function ShareCardSheet({
     return () => {
       active = false;
     };
-  }, [open, mode, selectedCandidate, posterImage]);
+  }, [mode, selectedCandidate]);
 
   useEffect(() => {
-    if (!open || !canvasRef.current) {
+    if (!canvasRef.current) {
       return;
     }
 
@@ -166,7 +148,7 @@ export function ShareCardSheet({
     }
 
     drawShareCard(canvasRef.current, { poster: posterImage, name, year, rating, handle, background });
-  }, [open, mode, bgImage, posterImage, name, year, rating, handle]);
+  }, [mode, bgImage, posterImage, name, year, rating, handle]);
 
   async function exportCard(action: (file: File, blob: Blob) => Promise<void>) {
     if (!canvasRef.current) {
@@ -200,73 +182,85 @@ export function ShareCardSheet({
     URL.revokeObjectURL(url);
   }
 
-  function handleShare() {
-    return exportCard(async (file, blob) => {
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: name, text: `${name} on Episodic` });
-      } else {
-        download(blob);
+  async function handleShare() {
+    await exportCard(async (file, blob) => {
+      if (canShareFiles && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `${name} on Episodic`,
+          });
+          return;
+        } catch (caught) {
+          if ((caught as Error)?.name === "AbortError") {
+            return;
+          }
+        }
       }
+      download(blob);
     });
   }
 
-  function handleSave() {
-    return exportCard(async (_file, blob) => download(blob));
+  async function handleSave() {
+    await exportCard(async (_file, blob) => {
+      download(blob);
+    });
   }
 
-  const modes: { id: Mode; label: string; disabled?: boolean }[] = [
-    { id: "image", label: "Poster", disabled: imageCandidates.length === 0 },
-    { id: "gradient", label: "Gradient" },
-    { id: "dark", label: "Midnight" },
-  ];
-
   return (
-    <Sheet open={open} onClose={onClose} title="Share card">
-      <div className="mx-auto w-full max-w-[240px] overflow-hidden rounded-2xl border border-ink-700 bg-ink-950 shadow-xl">
-        <canvas ref={canvasRef} className="block h-auto w-full" />
+    <>
+      <div className="flex justify-center py-2">
+        <canvas
+          ref={canvasRef}
+          className="aspect-9/16 max-h-[380px] w-auto rounded-2xl border border-white/10 shadow-2xl"
+        />
       </div>
 
       {posterFailed ? (
-        <p className="mt-3 text-center text-[12px] text-mist-500">
-          Poster couldn't be loaded — pick another background.
+        <p className="mt-2 text-center text-[12px] text-mist-500">
+          Poster couldn't be loaded into the share card.
         </p>
       ) : null}
 
-      <div className="mt-5">
-        <p className="mb-2 text-[12px] font-medium text-mist-400">Background</p>
-        <div className="flex gap-2">
-          {modes.map((option) => (
+      <div className="mt-4 flex rounded-xl border border-ink-700 bg-ink-850 p-1">
+        {(
+          [
+            { id: "image", label: "Photo" },
+            { id: "gradient", label: "Gradient" },
+            { id: "dark", label: "Dark" },
+          ] as const
+        ).map((tab) => {
+          const active = mode === tab.id;
+          const disabled = tab.id === "image" && imageCandidates.length === 0;
+          return (
             <button
-              key={option.id}
+              key={tab.id}
               type="button"
-              disabled={option.disabled}
-              aria-pressed={mode === option.id}
-              onClick={() => setMode(option.id)}
-              className={`tap-none min-h-[40px] flex-1 rounded-xl border text-[13px] font-semibold transition-colors disabled:opacity-40 ${
-                mode === option.id
-                  ? "border-accent-500 bg-accent-600/15 text-accent-300"
-                  : "border-ink-700 bg-ink-850 text-mist-300 active:bg-ink-800"
+              disabled={disabled}
+              onClick={() => setMode(tab.id)}
+              className={`tap-none min-h-[34px] flex-1 rounded-lg text-[13px] font-semibold transition-colors disabled:opacity-40 ${
+                active ? "bg-accent-600 text-white" : "text-mist-400 active:text-mist-200"
               }`}
             >
-              {option.label}
+              {tab.label}
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {mode === "image" && imageCandidates.length > 1 ? (
-        <div className="mt-3">
-          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div className="mt-4">
+          <p className="mb-2 text-[12px] font-medium text-mist-400">Background photo</p>
+          <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
             {imageCandidates.map((candidate) => {
-              const active = selectedCandidate?.id === candidate.id;
+              const active = candidate.id === selectedImage;
               return (
                 <button
                   key={candidate.id}
                   type="button"
-                  aria-pressed={active}
-                  aria-label={candidate.id === "poster" ? "Poster image" : "Backdrop image"}
+                  aria-label={candidate.id === "poster" ? "Use poster as background" : `Use photo ${candidate.id} as background`}
                   onClick={() => setSelectedImage(candidate.id)}
-                  className={`tap-none h-14 w-20 shrink-0 overflow-hidden rounded-lg border transition-colors ${
+                  className={`tap-none relative aspect-16/10 h-14 shrink-0 overflow-hidden rounded-lg border transition-all ${
                     active ? "border-accent-500 ring-2 ring-accent-500/40" : "border-ink-700"
                   }`}
                 >
@@ -295,6 +289,32 @@ export function ShareCardSheet({
           </Button>
         )}
       </div>
+    </>
+  );
+}
+
+export function ShareCardSheet({
+  open,
+  onClose,
+  posterPath,
+  backdropPath,
+  backdrops,
+  name,
+  year,
+  rating,
+}: ShareCardSheetProps) {
+  return (
+    <Sheet open={open} onClose={onClose} title="Share card">
+      {open ? (
+        <ShareCardContent
+          posterPath={posterPath}
+          backdropPath={backdropPath}
+          backdrops={backdrops}
+          name={name}
+          year={year}
+          rating={rating}
+        />
+      ) : null}
     </Sheet>
   );
 }
