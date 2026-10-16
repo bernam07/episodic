@@ -35,9 +35,9 @@ const ICONS: Record<ActivityEventType, ReactNode> = {
 
 const NODE_STYLES: Record<ActivityEventType, string> = {
   started: "bg-accent-500/15 text-accent-400",
-  finished: "bg-emerald-500/15 text-emerald-400",
+  finished: "bg-[#30d158]/15 text-[#30d158]",
   progress: "bg-mist-500/15 text-mist-300",
-  reviewed: "bg-violet-500/15 text-violet-400",
+  reviewed: "bg-[#bf5af2]/15 text-[#bf5af2]",
 };
 
 function EventCard({ event, last }: { event: ActivityEvent; last: boolean }) {
@@ -45,31 +45,31 @@ function EventCard({ event, last }: { event: ActivityEvent; last: boolean }) {
 
   return (
     <li className="relative pl-9">
-      {!last ? <span className="absolute top-7 bottom-0 left-[13px] w-px bg-ink-800" /> : null}
+      {!last ? <span className="absolute top-7 bottom-0 left-[13px] w-px bg-white/[0.08]" /> : null}
       <span
         className={`absolute top-1 left-0 flex size-7 items-center justify-center rounded-full ring-4 ring-ink-950 ${NODE_STYLES[event.eventType]}`}
       >
         {ICONS[event.eventType]}
       </span>
 
-      <div className="mb-3 flex gap-3 rounded-2xl bg-ink-850 p-3 ring-1 ring-white/5 ring-inset">
+      <div className="mb-3 flex gap-3 rounded-[14px] border border-white/[0.07] bg-ink-850 p-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] leading-snug text-mist-300">
+          <p className="text-[0.875rem] leading-snug text-mist-300">
             {capitalize(activityVerb(event))}{" "}
-            <Link to={`/series/${event.tmdbId}`} className="font-semibold text-mist-100">
+            <Link to={`/series/${event.tmdbId}`} className="font-semibold text-white">
               {event.seriesName}
             </Link>
           </p>
           <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-[11px] text-mist-500">{relativeTime(event.occurredAt)}</span>
+            <span className="text-[0.75rem] text-mist-500">{relativeTime(event.occurredAt)}</span>
           </div>
           {event.eventType === "reviewed" && event.reviewBody ? (
-            <p className="mt-1.5 line-clamp-2 text-[12px] text-mist-400">{event.reviewBody}</p>
+            <p className="mt-1.5 line-clamp-2 text-[0.8125rem] text-mist-400">{event.reviewBody}</p>
           ) : null}
         </div>
 
-        <Link to={`/series/${event.tmdbId}`} className="tap-none shrink-0 active:opacity-70">
-          <div className="h-[68px] w-[46px] overflow-hidden rounded-lg bg-ink-800">
+        <Link to={`/series/${event.tmdbId}`} className="tap-none shrink-0 active:opacity-75">
+          <div className="h-[68px] w-[46px] overflow-hidden rounded-[8px] bg-ink-800 ring-1 ring-white/10 ring-inset">
             {poster ? <img src={poster} alt="" loading="lazy" className="size-full object-cover" /> : null}
           </div>
         </Link>
@@ -97,7 +97,7 @@ export function DiarySection({ userId }: { userId: string | null }) {
 
   return (
     <section className="mt-8 px-5">
-      <h2 className="mb-4 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+      <h2 className="mb-4 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
         Recent Activity
       </h2>
       <ul>

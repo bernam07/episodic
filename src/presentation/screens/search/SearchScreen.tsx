@@ -94,15 +94,15 @@ function GenreRecommendations({
   return (
     <>
       {recentSearches.length > 0 ? (
-        <div className="mb-5 px-5">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-[12px] font-semibold tracking-wide text-mist-400 uppercase">
+        <div className="mb-5 px-5 pt-2">
+          <div className="mb-2 flex items-baseline justify-between">
+            <span className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
               {t("recentSearches")}
             </span>
             <button
               type="button"
               onClick={onClearRecent}
-              className="tap-none text-[12px] font-medium text-accent-400 active:text-accent-300"
+              className="tap-none text-[0.9375rem] font-normal text-accent-500 active:opacity-70"
             >
               {t("clearHistory")}
             </button>
@@ -113,7 +113,7 @@ function GenreRecommendations({
                 key={term}
                 type="button"
                 onClick={() => onSelectRecent(term)}
-                className="tap-none rounded-full border border-white/10 bg-ink-900/60 px-3.5 py-1.5 text-[12px] font-medium text-mist-300 backdrop-blur-md transition-all hover:border-white/20 hover:bg-ink-850 hover:text-white"
+                className="tap-none rounded-full border border-white/[0.07] bg-ink-850 px-3.5 py-1.5 text-[0.8125rem] font-medium text-mist-300 transition-colors hover:bg-ink-800 hover:text-white"
               >
                 {term}
               </button>
@@ -122,14 +122,14 @@ function GenreRecommendations({
         </div>
       ) : null}
 
-      <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto px-5">
+      <div className="no-scrollbar mb-5 flex gap-2 overflow-x-auto px-5 pt-2">
         <button
           type="button"
           onClick={() => setSearchParams({}, { replace: true })}
-          className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-all ${
+          className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[0.8125rem] font-semibold transition-colors ${
             genreId === null
-              ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
-              : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
+              ? "bg-white text-black"
+              : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:bg-ink-800 hover:text-white"
           }`}
         >
           {t("popular")}
@@ -139,10 +139,10 @@ function GenreRecommendations({
             key={genre.id}
             type="button"
             onClick={() => setSearchParams({ genre: String(genre.id) }, { replace: true })}
-            className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-all ${
+            className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[0.8125rem] font-semibold transition-colors ${
               genreId === genre.id
-                ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
-                : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
+                ? "bg-white text-black"
+                : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:bg-ink-800 hover:text-white"
             }`}
           >
             {genre.name}
@@ -150,7 +150,7 @@ function GenreRecommendations({
         ))}
       </div>
 
-      <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+      <h2 className="mb-3 px-5 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
         {active ? active.name : t("recommendedForYou")}
       </h2>
 
@@ -189,7 +189,7 @@ function UserResults({ query }: { query: string }) {
 
   if (query.trim().length < 2) {
     return (
-      <p className="px-5 pt-8 text-center text-[14px] text-mist-500">
+      <p className="px-5 pt-8 text-center text-[0.9375rem] text-mist-500">
         Search for people by username to follow them.
       </p>
     );
@@ -205,37 +205,39 @@ function UserResults({ query }: { query: string }) {
 
   if (!data || data.length === 0) {
     return (
-      <p className="px-5 pt-8 text-center text-[14px] text-mist-400">No one found for “{query}”.</p>
+      <p className="px-5 pt-8 text-center text-[0.9375rem] text-mist-500">No one found for “{query}”.</p>
     );
   }
 
   return (
-    <ul className="divide-y divide-ink-800 px-5">
-      {data.map((profile) => (
-        <li key={profile.id}>
-          <Link
-            to={`/user/${profile.username}`}
-            className="tap-none flex items-center gap-3 py-3 active:opacity-70"
-          >
-            <Avatar
-              username={profile.username}
-              displayName={profile.displayName}
-              avatarUrl={profile.avatarUrl}
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[14px] font-semibold text-mist-100">
-                {profile.displayName || profile.username}
-              </p>
-              <p className="truncate text-[12px] text-mist-500">
-                @{profile.username} · {profile.seriesCount} series · {profile.followersCount}{" "}
-                {pluralize(profile.followersCount, "follower")}
-              </p>
-            </div>
-            <FollowButton userId={profile.id} isFollowing={profile.isFollowing} />
-          </Link>
-        </li>
-      ))}
-    </ul>
+    <div className="mx-5 mt-2 overflow-hidden rounded-[14px] border border-white/[0.07] bg-ink-850 px-4">
+      <ul className="divide-y divide-white/[0.08]">
+        {data.map((profile) => (
+          <li key={profile.id}>
+            <Link
+              to={`/user/${profile.username}`}
+              className="tap-none flex items-center gap-3 py-3 active:opacity-70"
+            >
+              <Avatar
+                username={profile.username}
+                displayName={profile.displayName}
+                avatarUrl={profile.avatarUrl}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[0.9375rem] font-semibold text-white">
+                  {profile.displayName || profile.username}
+                </p>
+                <p className="truncate text-[0.8125rem] text-mist-500">
+                  @{profile.username} · {profile.seriesCount} series · {profile.followersCount}{" "}
+                  {pluralize(profile.followersCount, "follower")}
+                </p>
+              </div>
+              <FollowButton userId={profile.id} isFollowing={profile.isFollowing} />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -272,14 +274,14 @@ function SeriesResults({
 
   if (!data || data.results.length === 0) {
     return (
-      <p className="px-5 pt-8 text-center text-[14px] text-mist-400">
+      <p className="px-5 pt-8 text-center text-[0.9375rem] text-mist-500">
         {t("noResultsFor")} “{query}”.
       </p>
     );
   }
 
   return (
-    <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+    <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 pt-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
       {data.results.map((series) => (
         <SeriesCard
           key={series.tmdbId}
@@ -329,14 +331,14 @@ export function SearchScreen() {
     <>
       <ScreenHeader title={t("search")} />
 
-      <div className="sticky top-0 z-20 bg-ink-950/80 px-5 pb-3 backdrop-blur-xl">
+      <div className="ios-material sticky top-0 z-20 border-b border-white/[0.08] px-5 pt-2 pb-3">
         <div className="relative">
           <svg
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
-            className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-mist-500"
+            strokeWidth="2.2"
+            className="pointer-events-none absolute top-1/2 left-3 size-[17px] -translate-y-1/2 text-mist-500"
           >
             <circle cx="11" cy="11" r="7" />
             <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
@@ -355,7 +357,7 @@ export function SearchScreen() {
                 setRecentSearches(getRecentSearches());
               }
             }}
-            className="w-full rounded-2xl border border-white/10 bg-ink-900/70 py-3.5 pr-10 pl-11 text-mist-100 placeholder:text-mist-500 shadow-inner backdrop-blur-xl transition-all focus:border-accent-400 focus:bg-ink-850/90 focus:ring-4 focus:ring-accent-500/15 focus:outline-none"
+            className="w-full rounded-[10px] bg-ink-850 py-2 pr-9 pl-9 text-[1.0625rem] text-white placeholder:text-mist-500 transition-colors focus:bg-ink-800 focus:outline-none"
           />
           {query.length > 0 ? (
             <button
@@ -365,24 +367,24 @@ export function SearchScreen() {
                 setQuery("");
                 setRecentSearches(getRecentSearches());
               }}
-              className="tap-none absolute top-1/2 right-3 -translate-y-1/2 flex size-6 items-center justify-center rounded-full bg-white/10 text-mist-300 transition-colors hover:bg-white/20 hover:text-white"
+              className="tap-none absolute top-1/2 right-2.5 -translate-y-1/2 flex size-[18px] items-center justify-center rounded-full bg-mist-500 text-ink-950 transition-opacity active:opacity-70"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="size-3">
                 <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
               </svg>
             </button>
           ) : null}
         </div>
 
-        <div className="mt-3 flex rounded-xl border border-white/[0.06] bg-ink-900/60 p-1 backdrop-blur-md">
+        <div className="mt-2.5 flex rounded-[9px] bg-ink-850 p-[2px]">
           {(["series", "users"] as Tab[]).map((value) => (
             <button
               key={value}
               type="button"
               onClick={() => setTab(value)}
-              className={`tap-none min-h-[34px] flex-1 rounded-lg text-[13px] font-semibold transition-all duration-150 ${
+              className={`tap-none min-h-[30px] flex-1 rounded-[7px] text-[0.8125rem] font-semibold transition-all duration-150 ${
                 tab === value
-                  ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
+                  ? "bg-ink-700 text-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
                   : "text-mist-400 hover:text-mist-200"
               }`}
             >

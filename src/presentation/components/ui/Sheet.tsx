@@ -40,26 +40,26 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bg-black/75 backdrop-blur-md"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="pb-safe relative flex max-h-[90dvh] w-full max-w-screen-sm flex-col rounded-t-[32px] border-t border-white/10 bg-ink-950/95 shadow-[0_-12px_45px_rgba(0,0,0,0.8)] backdrop-blur-2xl md:max-w-md md:rounded-[28px] md:border md:border-white/10 md:shadow-2xl"
+        className="ios-material-thick pb-safe relative flex max-h-[90dvh] w-full max-w-screen-sm flex-col rounded-t-[20px] border-t border-white/[0.12] shadow-[0_-10px_40px_rgba(0,0,0,0.65)] md:max-w-md md:rounded-[20px] md:border md:border-white/[0.12] md:shadow-2xl"
       >
-        <div className="flex shrink-0 justify-center pt-3 pb-1 md:hidden">
-          <span className="h-1.5 w-11 rounded-full bg-white/20" />
+        <div className="flex shrink-0 justify-center pt-2.5 pb-1 md:hidden">
+          <span className="h-[5px] w-9 rounded-full bg-white/25" />
         </div>
-        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-5 pt-2 pb-3.5">
-          <h2 className="text-[17px] font-bold text-white">{title}</h2>
+        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-5 pt-2.5 pb-3.5">
+          <h2 className="text-[1.0625rem] font-semibold tracking-[-0.015em] text-white">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="tap-none -mr-1 flex size-8 items-center justify-center rounded-full bg-white/[0.08] text-mist-300 transition-all active:scale-95 hover:bg-white/[0.15] hover:text-white"
+            className="tap-none -mr-1 flex size-[30px] items-center justify-center rounded-full bg-ink-700/80 text-mist-300 transition-opacity active:opacity-70 hover:bg-ink-600 hover:text-white"
             aria-label="Close"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
               <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
             </svg>
           </button>

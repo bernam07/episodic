@@ -91,16 +91,10 @@ function toCopy(state: WatchState, detail: SeriesDetail): Copy {
   }
 }
 
-const TONES: Record<Copy["tone"], string> = {
-  neutral: "border-white/[0.08] bg-ink-900/60 shadow-lg shadow-black/20",
-  positive: "border-emerald-500/30 bg-emerald-950/20 shadow-lg shadow-emerald-950/30",
-  action: "border-accent-500/30 bg-accent-950/20 shadow-lg shadow-accent-950/30",
-};
-
 const DOTS: Record<Copy["tone"], string> = {
   neutral: "bg-mist-400",
-  positive: "bg-emerald-400",
-  action: "bg-accent-400",
+  positive: "bg-[#30d158]",
+  action: "bg-accent-500",
 };
 
 type SeriesStateCardProps = {
@@ -116,14 +110,14 @@ export function SeriesStateCard({ detail, watchedEpisodes, status }: SeriesState
   const percent = detail.numberOfEpisodes > 0 ? (watchedEpisodes / detail.numberOfEpisodes) * 100 : 0;
 
   return (
-    <div className={`rounded-2xl border p-4.5 backdrop-blur-xl ${TONES[copy.tone]}`}>
+    <div className="rounded-[14px] border border-white/[0.07] bg-ink-850 p-4">
       <div className="flex items-start gap-2.5">
-        <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${DOTS[copy.tone]}`} />
+        <span className={`mt-1.5 size-2 shrink-0 rounded-full ${DOTS[copy.tone]}`} />
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-semibold text-white">{copy.headline}</p>
-          {copy.detail ? <p className="mt-0.5 text-[13px] text-mist-300">{copy.detail}</p> : null}
+          <p className="text-[0.9375rem] font-semibold text-white">{copy.headline}</p>
+          {copy.detail ? <p className="mt-0.5 text-[0.8125rem] text-mist-400">{copy.detail}</p> : null}
         </div>
-        <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold tracking-wide text-mist-300 uppercase backdrop-blur-md">
+        <span className="shrink-0 rounded-full border border-white/[0.07] bg-ink-800 px-2.5 py-1 text-[0.6875rem] font-semibold text-mist-300">
           {AIRING_LABELS[airingStatus(detail)]}
         </span>
       </div>
@@ -131,8 +125,8 @@ export function SeriesStateCard({ detail, watchedEpisodes, status }: SeriesState
       {tracked && detail.numberOfEpisodes > 0 ? (
         <div className="mt-3.5">
           <div className="mb-1.5 flex items-baseline justify-between">
-            <span className="text-[11px] font-medium text-mist-500">Progress</span>
-            <span className="text-[11px] tabular-nums text-mist-500">
+            <span className="text-[0.75rem] font-medium text-mist-500">Progress</span>
+            <span className="text-[0.75rem] tabular-nums text-mist-500">
               {watchedEpisodes}/{detail.numberOfEpisodes} episodes
             </span>
           </div>

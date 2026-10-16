@@ -30,9 +30,9 @@ function ItemCard({
 
   return (
     <div className="relative">
-      <Link to={`/series/${item.tmdbId}`} className="tap-none block active:opacity-70">
+      <Link to={`/series/${item.tmdbId}`} className="tap-none block active:opacity-75">
         <SeriesPoster path={item.posterPath} alt={item.seriesName} />
-        <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.seriesName}</p>
+        <p className="mt-2 truncate text-[0.8125rem] font-semibold tracking-[-0.01em] text-white">{item.seriesName}</p>
       </Link>
       {editing ? (
         <button
@@ -40,7 +40,7 @@ function ItemCard({
           onClick={() => remove.mutate(item.seriesId)}
           disabled={remove.isPending}
           aria-label={`Remove ${item.seriesName}`}
-          className="tap-none absolute -top-2 -right-2 flex size-7 items-center justify-center rounded-full border-2 border-ink-900 bg-danger-600 text-white active:bg-danger-500 disabled:opacity-50"
+          className="tap-none absolute -top-2 -right-2 flex size-7 items-center justify-center rounded-full border-2 border-ink-950 bg-danger-500 text-white active:opacity-80 disabled:opacity-50"
         >
           {remove.isPending ? (
             <span className="size-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -75,12 +75,12 @@ export function ListDetailScreen() {
   if (!list) {
     return (
       <div className="px-5 pt-[calc(env(safe-area-inset-top)+3rem)] text-center">
-        <p className="text-[15px] font-semibold text-mist-200">List not found</p>
-        <p className="mt-1 text-[13px] text-mist-500">It may be private or no longer exist.</p>
+        <p className="text-[1.0625rem] font-semibold text-white">List not found</p>
+        <p className="mt-1 text-[0.875rem] text-mist-500">It may be private or no longer exist.</p>
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="tap-none mt-5 inline-flex min-h-[44px] items-center rounded-xl bg-ink-800 px-5 text-[14px] font-semibold text-mist-200 active:bg-ink-700"
+          className="tap-none mt-5 inline-flex min-h-[44px] items-center rounded-[12px] bg-ink-800 px-5 text-[1.0625rem] font-semibold text-white active:bg-ink-700"
         >
           Go back
         </button>
@@ -100,15 +100,15 @@ export function ListDetailScreen() {
           type="button"
           onClick={() => navigate(-1)}
           aria-label="Go back"
-          className="tap-none -ml-2 flex size-10 items-center justify-center rounded-full text-mist-300 active:bg-ink-800"
+          className="tap-none -ml-2 flex size-9 items-center justify-center rounded-full bg-ink-850 text-accent-500 active:opacity-70"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
             <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
       </div>
 
-      <header className="px-5 pt-2 pb-4">
+      <header className="px-5 pt-3 pb-4">
         <div className="flex items-center gap-1.5">
           {list.isPrivate ? (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-mist-500">
@@ -116,7 +116,7 @@ export function ListDetailScreen() {
               <path d="M8 11V8a4 4 0 0 1 8 0v3" strokeLinecap="round" />
             </svg>
           ) : null}
-          <h1 className="text-[24px] leading-tight font-bold text-mist-100">{list.title}</h1>
+          <h1 className="text-[1.5rem] leading-[1.15] font-bold tracking-[-0.022em] text-white">{list.title}</h1>
         </div>
 
         <Link
@@ -124,16 +124,16 @@ export function ListDetailScreen() {
           className="tap-none mt-3 inline-flex items-center gap-2 active:opacity-70"
         >
           <Avatar username={list.ownerUsername} displayName={list.ownerDisplayName} avatarUrl={list.ownerAvatarUrl} size="sm" />
-          <span className="text-[13px] text-mist-400">
+          <span className="text-[0.8125rem] text-mist-400">
             {list.isOwn ? "You" : list.ownerDisplayName || list.ownerUsername}
           </span>
         </Link>
 
         {list.description ? (
-          <p className="mt-3 text-[14px] whitespace-pre-wrap text-mist-300">{list.description}</p>
+          <p className="mt-3 text-[0.9375rem] whitespace-pre-wrap text-mist-300">{list.description}</p>
         ) : null}
 
-        <p className="mt-3 text-[12px] text-mist-500">
+        <p className="mt-3 text-[0.75rem] text-mist-500">
           {plural(list.itemCount, "series", "series")}
           {saveInfo && saveInfo.saveCount > 0
             ? ` · Saved by ${plural(saveInfo.saveCount, "person", "people")}`
@@ -147,10 +147,10 @@ export function ListDetailScreen() {
               onClick={() => toggleSave.mutate()}
               disabled={toggleSave.isPending}
               aria-pressed={saveInfo?.saved ?? false}
-              className={`tap-none inline-flex min-h-[38px] items-center gap-1.5 rounded-xl px-4 text-[13px] font-semibold transition-colors disabled:opacity-50 ${
+              className={`tap-none inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] px-4 text-[0.8125rem] font-semibold transition-colors disabled:opacity-50 ${
                 saveInfo?.saved
-                  ? "bg-ink-800 text-mist-200 active:bg-ink-700"
-                  : "bg-accent-600 text-white active:bg-accent-500"
+                  ? "bg-ink-850 text-white active:bg-ink-800"
+                  : "bg-accent-500 text-white active:opacity-80"
               }`}
             >
               <svg
@@ -172,8 +172,8 @@ export function ListDetailScreen() {
             <button
               type="button"
               onClick={() => setEditing((value) => !value)}
-              className={`tap-none min-h-[38px] flex-1 rounded-xl text-[13px] font-semibold transition-colors ${
-                editing ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-200 active:bg-ink-700"
+              className={`tap-none min-h-[38px] flex-1 rounded-[10px] text-[0.8125rem] font-semibold transition-colors ${
+                editing ? "bg-accent-500 text-white" : "bg-ink-850 text-white active:bg-ink-800"
               }`}
             >
               {editing ? "Done" : "Manage series"}
@@ -181,7 +181,7 @@ export function ListDetailScreen() {
             <button
               type="button"
               onClick={() => setEditOpen(true)}
-              className="tap-none min-h-[38px] flex-1 rounded-xl bg-ink-800 text-[13px] font-semibold text-mist-200 active:bg-ink-700"
+              className="tap-none min-h-[38px] flex-1 rounded-[10px] bg-ink-850 text-[0.8125rem] font-semibold text-white active:bg-ink-800"
             >
               Edit details
             </button>
@@ -189,7 +189,7 @@ export function ListDetailScreen() {
               type="button"
               onClick={() => setDeleteOpen(true)}
               aria-label="Delete list"
-              className="tap-none flex size-[38px] shrink-0 items-center justify-center rounded-xl bg-ink-800 text-mist-400 active:bg-ink-700"
+              className="tap-none flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-ink-850 text-danger-500 active:bg-ink-800"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
                 <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7" strokeLinecap="round" strokeLinejoin="round" />
@@ -205,7 +205,7 @@ export function ListDetailScreen() {
             <Spinner />
           </div>
         ) : items.length === 0 ? (
-          <p className="pt-6 text-center text-[14px] text-mist-500">
+          <p className="pt-6 text-center text-[0.9375rem] text-mist-500">
             {list.isOwn ? "Add series from any series page." : "This list is empty."}
           </p>
         ) : (
@@ -220,7 +220,7 @@ export function ListDetailScreen() {
       <ListFormSheet open={editOpen} onClose={() => setEditOpen(false)} existing={list} />
 
       <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete list">
-        <p className="text-[14px] text-mist-300">
+        <p className="text-[0.9375rem] text-mist-300">
           Delete “{list.title}”? This can’t be undone. The series stay in your library.
         </p>
         <Button
@@ -235,7 +235,7 @@ export function ListDetailScreen() {
         <button
           type="button"
           onClick={() => setDeleteOpen(false)}
-          className="tap-none mt-2 min-h-[44px] w-full text-[13px] font-medium text-mist-500 active:text-mist-300"
+          className="tap-none mt-2 min-h-[44px] w-full text-[0.9375rem] font-normal text-accent-500 active:opacity-70"
         >
           Cancel
         </button>

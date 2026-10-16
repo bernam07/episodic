@@ -11,13 +11,13 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-gradient-to-r from-accent-600 via-indigo-600 to-violet-600 text-white shadow-lg shadow-accent-600/30 border border-white/20 hover:shadow-accent-600/40 hover:brightness-110 active:scale-[0.98] disabled:bg-none disabled:bg-ink-700 disabled:text-mist-500 disabled:shadow-none disabled:border-transparent",
+    "bg-accent-500 text-white hover:bg-accent-400 active:opacity-80 disabled:bg-ink-800 disabled:text-mist-500",
   secondary:
-    "bg-ink-850/90 text-mist-100 border border-white/10 backdrop-blur-md hover:bg-ink-800 hover:border-white/20 active:scale-[0.98] disabled:text-mist-500",
+    "bg-ink-800 text-white hover:bg-ink-700 active:opacity-80 disabled:text-mist-500",
   ghost:
-    "bg-transparent text-mist-300 hover:bg-white/[0.06] hover:text-white active:scale-[0.98] disabled:text-mist-600",
+    "bg-transparent text-accent-500 hover:bg-white/[0.06] active:opacity-70 disabled:text-mist-600",
   danger:
-    "bg-danger-500/15 text-danger-500 border border-danger-500/30 hover:bg-danger-500/25 active:scale-[0.98] disabled:text-mist-500",
+    "bg-danger-500/15 text-danger-500 hover:bg-danger-500/25 active:opacity-80 disabled:text-mist-500",
 };
 
 export function Button({
@@ -33,7 +33,7 @@ export function Button({
     <button
       {...props}
       disabled={disabled || loading}
-      className={`tap-none flex min-h-[48px] items-center justify-center gap-2 rounded-2xl px-5 text-[15px] font-semibold transition-all duration-200 ${
+      className={`tap-none flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] px-5 text-[1.0625rem] font-semibold tracking-[-0.01em] transition-all duration-150 ${
         VARIANTS[variant]
       } ${fullWidth ? "w-full" : ""} ${className}`}
     >

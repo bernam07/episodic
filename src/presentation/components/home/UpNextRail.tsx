@@ -11,15 +11,15 @@ function UpNextCard({ item, rating }: { item: UpNextItem; rating: number | null 
 
   return (
     <div className="w-[132px] shrink-0">
-      <Link to={`/series/${item.tmdbId}`} className="tap-none block active:opacity-70">
+      <Link to={`/series/${item.tmdbId}`} className="tap-none block active:opacity-75">
         <div className="relative">
           <SeriesPoster path={item.posterPath} alt={item.name} />
           {rating ? <RatingBadge value={rating} /> : null}
         </div>
-        <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
+        <p className="mt-2 truncate text-[0.8125rem] font-semibold tracking-[-0.01em] text-white">{item.name}</p>
       </Link>
       <div className="mt-1 flex items-center justify-between gap-2">
-        <span className="text-[11px] font-medium tabular-nums text-accent-400">
+        <span className="text-[0.75rem] font-medium tabular-nums text-mist-400">
           S{item.nextSeason} · E{item.nextEpisode}
         </span>
         <button
@@ -34,7 +34,7 @@ function UpNextCard({ item, rating }: { item: UpNextItem; rating: number | null 
               nextEpisode: item.nextEpisode,
             })
           }
-          className="tap-none flex size-7 shrink-0 items-center justify-center rounded-full border border-ink-600 text-mist-400 transition-colors active:border-accent-500 active:bg-accent-500 active:text-white disabled:opacity-50"
+          className="tap-none flex size-7 shrink-0 items-center justify-center rounded-full bg-ink-800 text-accent-500 transition-colors hover:bg-ink-700 active:bg-accent-500 active:text-white disabled:opacity-50"
         >
           {mark.isPending ? (
             <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -57,7 +57,7 @@ export function UpNextRail() {
   if (isLoading) {
     return (
       <section className="mt-7">
-        <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+        <h2 className="mb-3 px-5 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
           {t("continueWatching")}
         </h2>
         <RailSkeleton />
@@ -71,10 +71,10 @@ export function UpNextRail() {
 
   return (
     <section className="mt-7">
-      <h2 className="mb-3 px-5 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+      <h2 className="mb-3 px-5 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
         {t("continueWatching")}
       </h2>
-      <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
+      <div className="no-scrollbar flex gap-3.5 overflow-x-auto px-5 pb-1">
         {data.map((item) => (
           <UpNextCard key={item.seriesId} item={item} rating={ratings.get(item.tmdbId) ?? null} />
         ))}

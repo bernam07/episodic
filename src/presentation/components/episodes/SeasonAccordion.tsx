@@ -66,7 +66,7 @@ export function SeasonAccordion({
   );
 
   return (
-    <div className="border-b border-ink-800 last:border-b-0">
+    <div className="border-b border-white/[0.08] last:border-b-0">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -75,8 +75,8 @@ export function SeasonAccordion({
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-[15px] font-semibold text-mist-100">{season.name}</span>
-            <span className="shrink-0 text-[11px] tabular-nums text-mist-500">
+            <span className="text-[1rem] font-semibold tracking-[-0.01em] text-white">{season.name}</span>
+            <span className="shrink-0 text-[0.75rem] tabular-nums text-mist-500">
               {watchedCount}/{total}
             </span>
           </div>
@@ -86,7 +86,7 @@ export function SeasonAccordion({
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
+          strokeWidth="2.2"
           className={`size-4 shrink-0 text-mist-500 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
         >
           <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -107,7 +107,7 @@ export function SeasonAccordion({
                 <button
                   type="button"
                   onClick={() => onToggleSeason(season.seasonNumber, data.episodes, !allWatched)}
-                  className="tap-none mb-1 min-h-[36px] rounded-lg px-2 text-[13px] font-semibold text-accent-400 active:bg-ink-800"
+                  className="tap-none mb-1 min-h-[36px] rounded-[8px] px-2 text-[0.875rem] font-normal text-accent-500 active:opacity-70"
                 >
                   {allWatched ? "Mark season unwatched" : "Mark season watched"}
                 </button>
@@ -117,13 +117,13 @@ export function SeasonAccordion({
                 <button
                   type="button"
                   onClick={() => nextRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
-                  className="tap-none mb-1 ml-2 min-h-[36px] rounded-lg px-2 text-[13px] font-semibold text-mist-300 active:bg-ink-800"
+                  className="tap-none mb-1 ml-2 min-h-[36px] rounded-[8px] px-2 text-[0.875rem] font-normal text-mist-300 active:opacity-70"
                 >
                   Jump to E{nextUnwatched.episodeNumber}
                 </button>
               ) : null}
 
-              <div className="divide-y divide-ink-800/60">
+              <div className="divide-y divide-white/[0.08]">
                 {data.episodes.map((episode) => (
                   <div
                     key={episode.tmdbEpisodeId}

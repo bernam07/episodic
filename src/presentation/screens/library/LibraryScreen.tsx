@@ -27,7 +27,7 @@ const SORT_FNS: Record<SortKey, (a: SeriesProgress, b: SeriesProgress) => number
   recent: (a, b) => b.updatedAt.localeCompare(a.updatedAt),
   alpha: (a, b) => a.name.localeCompare(b.name),
   rating: (a, b) => (b.userRating ?? 0) - (a.userRating ?? 0) || b.updatedAt.localeCompare(a.updatedAt),
-  progress: (a, b) => b.progressPercent - a.progressPercent || a.name.localeCompare(b.name),
+  progress: (a, b) => b.progressPercent - a.progressPercent || a.name.localeCompare(a.name),
 };
 
 function SeriesListRow({ item }: { item: SeriesProgress }) {
@@ -36,25 +36,25 @@ function SeriesListRow({ item }: { item: SeriesProgress }) {
   return (
     <Link
       to={`/series/${item.tmdbId}`}
-      className="group tap-none flex items-center gap-3.5 rounded-2xl border border-white/[0.06] bg-ink-900/50 p-3.5 backdrop-blur-md shadow-sm transition-all hover:bg-ink-850/60 hover:border-white/12 active:scale-[0.99]"
+      className="group tap-none flex items-center gap-3.5 rounded-[14px] border border-white/[0.07] bg-ink-850 p-3.5 transition-colors hover:bg-ink-800 active:opacity-75"
     >
-      <div className="relative h-18 w-12 shrink-0 overflow-hidden rounded-xl bg-ink-850 shadow-md ring-1 ring-white/10">
+      <div className="relative h-18 w-12 shrink-0 overflow-hidden rounded-[8px] bg-ink-800 ring-1 ring-white/10 ring-inset">
         {poster ? (
           <img
             src={poster}
             alt=""
             loading="lazy"
-            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="size-full object-cover"
           />
         ) : (
-          <div className="flex size-full items-center justify-center text-[10px] text-mist-600">N/A</div>
+          <div className="flex size-full items-center justify-center text-[0.625rem] text-mist-500">N/A</div>
         )}
       </div>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="truncate text-[15px] font-semibold text-mist-100 transition-colors group-hover:text-white">{item.name}</h3>
-          <span className="shrink-0 text-[11px] font-medium tabular-nums text-mist-400">
+          <h3 className="truncate text-[0.9375rem] font-semibold tracking-[-0.01em] text-white">{item.name}</h3>
+          <span className="shrink-0 text-[0.75rem] font-medium tabular-nums text-mist-500">
             {item.watchedEpisodes}/{item.numberOfEpisodes}
           </span>
         </div>
@@ -65,14 +65,14 @@ function SeriesListRow({ item }: { item: SeriesProgress }) {
           <div className="flex items-center gap-2">
             <StatusBadge status={item.status} />
             {item.rewatchCount > 0 ? (
-              <span className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-mist-300">
+              <span className="rounded-full border border-white/10 bg-ink-800 px-2 py-0.5 text-[0.6875rem] font-semibold text-mist-300">
                 {item.rewatchCount}×
               </span>
             ) : null}
           </div>
 
           {item.userRating ? (
-            <div className="flex items-center gap-1 text-[12px] font-bold text-star-500">
+            <div className="flex items-center gap-1 text-[0.75rem] font-semibold tabular-nums text-star-500">
               <svg viewBox="0 0 24 24" fill="currentColor" className="size-3">
                 <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
               </svg>
@@ -219,15 +219,15 @@ export function LibraryScreen() {
         subtitle={data && data.length > 0 ? `${data.length} ${t("series")}` : undefined}
       />
 
-      <div className="sticky top-0 z-20 bg-ink-950/80 px-5 pb-3 backdrop-blur-xl">
+      <div className="ios-material sticky top-0 z-20 px-5 pt-2 pb-2.5">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <svg
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
-              className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-mist-500"
+              strokeWidth="2.2"
+              className="pointer-events-none absolute top-1/2 left-3 size-[17px] -translate-y-1/2 text-mist-500"
             >
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
@@ -240,7 +240,7 @@ export function LibraryScreen() {
               placeholder={t("searchLibraryPlaceholder")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-ink-900/70 py-2.5 pr-4 pl-10 text-[14px] text-white placeholder:text-mist-500 shadow-inner backdrop-blur-xl transition-all focus:border-accent-400 focus:bg-ink-850/90 focus:ring-4 focus:ring-accent-500/15 focus:outline-none"
+              className="w-full rounded-[10px] bg-ink-850 py-2 pr-4 pl-9 text-[1.0625rem] text-white placeholder:text-mist-500 transition-colors focus:bg-ink-800 focus:outline-none"
             />
           </div>
 
@@ -249,14 +249,14 @@ export function LibraryScreen() {
             onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
             aria-label={viewMode === "grid" ? t("listView") : t("gridView")}
             title={viewMode === "grid" ? t("listView") : t("gridView")}
-            className="tap-none flex size-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-ink-850/80 text-mist-300 shadow-sm backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-white"
+            className="tap-none flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-ink-850 text-accent-500 transition-opacity active:opacity-70 hover:bg-ink-800"
           >
             {viewMode === "grid" ? (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
                 <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
                 <rect x="3" y="3" width="7" height="7" rx="1.5" />
                 <rect x="14" y="3" width="7" height="7" rx="1.5" />
                 <rect x="3" y="14" width="7" height="7" rx="1.5" />
@@ -271,9 +271,9 @@ export function LibraryScreen() {
             disabled={!data || data.length === 0}
             aria-label={t("surpriseMe")}
             title={t("surpriseMe")}
-            className="tap-none flex size-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-ink-850/80 text-mist-300 shadow-sm backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-white disabled:opacity-40"
+            className="tap-none flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-ink-850 text-accent-500 transition-opacity active:opacity-70 hover:bg-ink-800 disabled:opacity-40"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
               <rect x="3" y="3" width="18" height="18" rx="4" />
               <circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
               <circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
@@ -286,11 +286,11 @@ export function LibraryScreen() {
       </div>
 
       {focused ? (
-        <div className="sticky top-[52px] z-20 bg-ink-950/80 px-5 pb-4 backdrop-blur-xl">
+        <div className="ios-material sticky top-[52px] z-20 border-b border-white/[0.08] px-5 pb-3.5">
           <button
             type="button"
             onClick={clearView}
-            className="tap-none inline-flex items-center gap-1.5 rounded-full border border-accent-500/30 bg-accent-600/15 px-3.5 py-2 text-[13px] font-semibold text-accent-300 backdrop-blur-md transition-colors active:bg-accent-600/25"
+            className="tap-none inline-flex items-center gap-1.5 rounded-full bg-accent-500/15 px-3.5 py-1.5 text-[0.8125rem] font-semibold text-accent-400 transition-opacity active:opacity-70"
           >
             {focusLabel}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
@@ -299,22 +299,22 @@ export function LibraryScreen() {
           </button>
         </div>
       ) : (
-        <div className="no-scrollbar sticky top-[52px] z-20 flex gap-2 overflow-x-auto bg-ink-950/80 px-5 pb-4 backdrop-blur-xl">
+        <div className="ios-material no-scrollbar sticky top-[52px] z-20 flex gap-2 overflow-x-auto border-b border-white/[0.08] px-5 pb-3.5">
           {FILTERS.map((value) => (
             <button
               key={value}
               type="button"
               onClick={() => setFilter(value)}
-              className={`tap-none flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-all ${
+              className={`tap-none flex min-h-[34px] shrink-0 items-center gap-1.5 rounded-full px-4 text-[0.8125rem] font-semibold transition-colors ${
                 filter === value
-                  ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
-                  : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
+                  ? "bg-white text-black"
+                  : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:bg-ink-800 hover:text-white"
               }`}
             >
               {filterLabels[value]}
               <span
-                className={`text-[11px] tabular-nums ${
-                  filter === value ? "text-white/70" : "text-mist-500"
+                className={`text-[0.75rem] tabular-nums ${
+                  filter === value ? "text-black/60" : "text-mist-500"
                 }`}
               >
                 {counts[value]}
@@ -325,14 +325,14 @@ export function LibraryScreen() {
       )}
 
       {!focused && allGenres.length > 0 ? (
-        <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 pb-4">
+        <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 pt-3 pb-4">
           <button
             type="button"
             onClick={() => setGenre(null)}
-            className={`tap-none shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all ${
+            className={`tap-none shrink-0 rounded-full px-3.5 py-1.5 text-[0.75rem] font-semibold transition-colors ${
               !genreParam
-                ? "bg-white text-ink-950 shadow-sm"
-                : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
+                ? "bg-accent-500 text-white"
+                : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:bg-ink-800 hover:text-white"
             }`}
           >
             {t("allGenres")}
@@ -342,10 +342,10 @@ export function LibraryScreen() {
               key={genre}
               type="button"
               onClick={() => setGenre(genreParam === genre ? null : genre)}
-              className={`tap-none shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all ${
+              className={`tap-none shrink-0 rounded-full px-3.5 py-1.5 text-[0.75rem] font-semibold transition-colors ${
                 genreParam === genre
-                  ? "bg-white text-ink-950 shadow-sm"
-                  : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
+                  ? "bg-accent-500 text-white"
+                  : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:bg-ink-800 hover:text-white"
               }`}
             >
               {genre}
@@ -355,15 +355,15 @@ export function LibraryScreen() {
       ) : null}
 
       {(focused || filter !== "all") && visible.length > 1 ? (
-        <div className="flex items-center gap-1.5 px-5 pb-4">
-          <span className="mr-1 text-[11px] text-mist-500">{t("sortBy")}</span>
+        <div className="flex items-center gap-1.5 px-5 pt-2 pb-4">
+          <span className="mr-1 text-[0.75rem] text-mist-500">{t("sortBy")}</span>
           {(Object.keys(sortLabels) as SortKey[]).map((key) => (
             <button
               key={key}
               type="button"
               onClick={() => setSort(key)}
-              className={`tap-none rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                sort === key ? "bg-mist-100 text-ink-950" : "bg-ink-800 text-mist-400 active:bg-ink-700"
+              className={`tap-none rounded-full px-2.5 py-1 text-[0.75rem] font-medium transition-colors ${
+                sort === key ? "bg-white text-black" : "bg-ink-850 text-mist-400 active:bg-ink-700"
               }`}
             >
               {sortLabels[key]}
@@ -376,11 +376,11 @@ export function LibraryScreen() {
 
       {!isLoading && (data?.length ?? 0) === 0 ? (
         <div className="px-5 pt-10 text-center">
-          <p className="text-[15px] font-semibold text-mist-200">{t("libraryEmpty")}</p>
-          <p className="mt-1 text-[13px] text-mist-500">{t("libraryEmptySub")}</p>
+          <p className="text-[1.0625rem] font-semibold text-white">{t("libraryEmpty")}</p>
+          <p className="mt-1 text-[0.875rem] text-mist-500">{t("libraryEmptySub")}</p>
           <Link
             to="/search"
-            className="tap-none mt-5 inline-flex min-h-[44px] items-center rounded-xl bg-accent-600 px-5 text-[14px] font-semibold text-white active:bg-accent-500"
+            className="tap-none mt-5 inline-flex min-h-[44px] items-center rounded-[12px] bg-accent-500 px-5 text-[1.0625rem] font-semibold text-white active:opacity-80"
           >
             {t("search")} {t("series")}
           </Link>
@@ -388,21 +388,21 @@ export function LibraryScreen() {
       ) : null}
 
       {!isLoading && (data?.length ?? 0) > 0 && visible.length === 0 ? (
-        <p className="px-5 pt-8 text-center text-[14px] text-mist-500">
+        <p className="px-5 pt-8 text-center text-[0.9375rem] text-mist-500">
           Nothing in {focused ? focusLabel : filterLabels[filter]} yet.
         </p>
       ) : null}
 
       {visible.length > 0 && filter === "all" && !focused ? (
-        <div className="space-y-7 px-5">
+        <div className="space-y-7 px-5 pt-3">
           {SERIES_STATUSES.map((status) => {
             const group = visible.filter((item) => item.status === status);
             if (group.length === 0) return null;
             return (
               <section key={status}>
-                <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-                  {filterLabels[status]}
-                  <span className="ml-1.5 text-mist-600">{group.length}</span>
+                <h2 className="mb-3 flex items-baseline gap-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
+                  <span>{filterLabels[status]}</span>
+                  <span className="text-[0.875rem] font-normal text-mist-500">{group.length}</span>
                 </h2>
                 {viewMode === "grid" ? (
                   <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
@@ -433,7 +433,7 @@ export function LibraryScreen() {
       ) : null}
 
       {visible.length > 0 && (filter !== "all" || focused) ? (
-        <div className="px-5">
+        <div className="px-5 pt-3">
           {viewMode === "grid" ? (
             <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
               {visible.map((item) => (

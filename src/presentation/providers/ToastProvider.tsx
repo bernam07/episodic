@@ -46,26 +46,26 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className="pointer-events-auto flex items-center gap-2.5 rounded-full border border-ink-700 bg-ink-900/95 px-4 py-2 shadow-xl backdrop-blur-md transition-all duration-200"
+            className="ios-material-thick pointer-events-auto flex items-center gap-2.5 rounded-full border border-white/[0.12] px-4 py-2.5 shadow-2xl transition-all duration-200"
           >
             {toast.type === "success" ? (
-              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="size-3">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#30d158] text-white">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" className="size-3">
                   <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </span>
             ) : toast.type === "error" ? (
-              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-rose-500/20 text-rose-400">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="size-3">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-danger-500 text-white">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" className="size-3">
                   <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </span>
             ) : (
-              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-accent-500/20 text-accent-400">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-accent-500 text-white">
                 <span className="size-1.5 rounded-full bg-current" />
               </span>
             )}
-            <span className="text-[13px] font-medium text-mist-100">{toast.text}</span>
+            <span className="text-[0.875rem] font-semibold tracking-[-0.01em] text-white">{toast.text}</span>
           </div>
         ))}
       </div>

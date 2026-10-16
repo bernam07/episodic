@@ -49,9 +49,9 @@ function BackButton() {
       type="button"
       onClick={() => navigate(-1)}
       aria-label="Go back"
-      className="tap-none flex size-10 items-center justify-center rounded-full bg-ink-950/60 text-mist-100 backdrop-blur-md active:bg-ink-900"
+      className="ios-material tap-none flex size-9 items-center justify-center rounded-full border border-white/10 text-white active:opacity-70"
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
         <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </button>
@@ -165,12 +165,11 @@ export function SeriesDetailScreen() {
   return (
     <>
       <div className="relative">
-        <div className="relative h-[290px] w-full overflow-hidden bg-ink-900 md:h-[380px]">
+        <div className="relative h-[300px] w-full overflow-hidden bg-ink-900 md:h-[380px]">
           {backdrop ? (
-            <img src={backdrop} alt="" className="size-full object-cover opacity-60" />
+            <img src={backdrop} alt="" className="size-full object-cover opacity-70" />
           ) : null}
-          <div className="absolute inset-0 bg-gradient-to-b from-ink-950/30 via-ink-950/60 to-ink-950" />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-transparent to-transparent" />
+          <div className="hero-scrim absolute inset-0" />
         </div>
 
         <div className="pt-safe absolute inset-x-0 top-0 px-4">
@@ -183,7 +182,7 @@ export function SeriesDetailScreen() {
                 rel="noopener noreferrer"
                 aria-label={t("watchTrailer")}
                 title={t("watchTrailer")}
-                className="tap-none flex size-10 items-center justify-center rounded-full border border-white/10 bg-ink-950/70 text-rose-500 shadow-md backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:bg-ink-900"
+                className="ios-material tap-none flex size-9 items-center justify-center rounded-full border border-white/10 text-danger-500 transition-opacity active:opacity-70"
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
                   <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
@@ -193,9 +192,9 @@ export function SeriesDetailScreen() {
                 type="button"
                 onClick={() => setShareOpen(true)}
                 aria-label="Share a card"
-                className="tap-none flex size-10 items-center justify-center rounded-full border border-white/10 bg-ink-950/70 text-mist-100 shadow-md backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:bg-ink-900"
+                className="ios-material tap-none flex size-9 items-center justify-center rounded-full border border-white/10 text-white transition-opacity active:opacity-70"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
                   <path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M12 15V3M8 7l4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -205,14 +204,14 @@ export function SeriesDetailScreen() {
         </div>
 
         <div className="relative -mt-28 flex items-end gap-4 px-5">
-          <SeriesPoster path={detail.posterPath} alt={detail.name} className="w-[112px] shrink-0 rounded-2xl ring-2 ring-white/15 shadow-2xl shadow-black/80" />
+          <SeriesPoster path={detail.posterPath} alt={detail.name} className="w-[112px] shrink-0 shadow-2xl shadow-black/80" />
           <div className="min-w-0 flex-1 pb-1">
-            <h1 className="text-[23px] leading-tight font-extrabold tracking-tight text-white">{detail.name}</h1>
-            <p className="mt-1 text-[12px] font-medium text-mist-400">
+            <h1 className="text-[1.5rem] leading-[1.15] font-bold tracking-[-0.022em] text-white">{detail.name}</h1>
+            <p className="mt-1 text-[0.8125rem] font-medium text-mist-400">
               {[year, detail.tmdbStatus, `${detail.numberOfSeasons} ${t("seasons")}`].filter(Boolean).join(" · ")}
             </p>
             {nextAir ? (
-              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-accent-500/30 bg-accent-600/15 px-2.5 py-1 text-[11px] font-semibold text-accent-300 shadow-sm backdrop-blur-md">
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent-500/15 px-2.5 py-1 text-[0.6875rem] font-semibold text-accent-400">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
@@ -228,12 +227,12 @@ export function SeriesDetailScreen() {
               </div>
             ) : null}
             {detail.voteAverage && detail.voteAverage > 0 ? (
-              <div className="mt-2 flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/15 px-2.5 py-1 w-fit shadow-sm backdrop-blur-md">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-amber-400">
+              <div className="mt-2 flex w-fit items-center gap-1.5 rounded-full border border-white/10 bg-ink-850 px-2.5 py-1">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-star-500">
                   <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
                 </svg>
-                <span className="text-[13px] font-bold text-white">{detail.voteAverage.toFixed(1)}</span>
-                <span className="text-[11px] font-medium tracking-wide text-amber-300/80">/10 · TMDB</span>
+                <span className="text-[0.8125rem] font-semibold tabular-nums text-white">{detail.voteAverage.toFixed(1)}</span>
+                <span className="text-[0.6875rem] font-medium text-mist-500">/10 · TMDB</span>
               </div>
             ) : null}
           </div>
@@ -258,15 +257,15 @@ export function SeriesDetailScreen() {
               disabled={toggleFavorite.isPending}
               aria-pressed={isFavorite}
               aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-              className={`tap-none flex size-12 shrink-0 items-center justify-center rounded-2xl border transition-all active:scale-95 ${
+              className={`tap-none flex size-[44px] shrink-0 items-center justify-center rounded-[12px] transition-colors active:opacity-80 ${
                 isFavorite
-                  ? "border-rose-500/40 bg-rose-500/15 text-rose-400 shadow-md shadow-rose-950/40 backdrop-blur-md"
-                  : "border-white/10 bg-ink-850/80 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
+                  ? "bg-danger-500/15 text-danger-500"
+                  : "bg-ink-800 text-mist-300 hover:bg-ink-700 hover:text-white"
               }`}
             >
               <svg
                 viewBox="0 0 24 24"
-                className="size-[22px]"
+                className="size-5"
                 fill={isFavorite ? "currentColor" : "none"}
                 stroke="currentColor"
                 strokeWidth="2"
@@ -284,17 +283,16 @@ export function SeriesDetailScreen() {
             type="button"
             onClick={() => setAddToListOpen(true)}
             aria-label="Add to list"
-            className="tap-none flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-ink-850/80 text-mist-400 backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-mist-200"
+            className="tap-none flex size-[44px] shrink-0 items-center justify-center rounded-[12px] bg-ink-800 text-mist-300 transition-colors active:opacity-80 hover:bg-ink-700 hover:text-white"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[22px]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
               <path d="M4 6h11M4 12h11M4 18h7M17 15v6M14 18h6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-
         </div>
 
         {seriesId ? (
-          <div className="mt-4 flex items-center justify-between rounded-2xl border border-white/[0.08] bg-ink-900/60 p-3.5 backdrop-blur-md shadow-sm">
+          <div className="mt-4 flex items-center justify-between rounded-[14px] border border-white/[0.07] bg-ink-850 p-3.5">
             <RatingInput
               value={tracking?.rating ?? 0}
               onChange={(rating) => setRating.mutate(rating || null)}
@@ -302,7 +300,7 @@ export function SeriesDetailScreen() {
             <button
               type="button"
               onClick={() => setReviewSheetOpen(true)}
-              className="tap-none text-[13px] font-semibold text-accent-300 transition-colors active:text-accent-400 hover:text-accent-200"
+              className="tap-none text-[0.9375rem] font-normal text-accent-500 transition-opacity active:opacity-70"
             >
               {ownReview?.body ? t("editReview") : t("writeReview")}
             </button>
@@ -310,15 +308,15 @@ export function SeriesDetailScreen() {
         ) : null}
 
         {tracking ? (
-          <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-ink-900/60 px-4 py-3 backdrop-blur-md shadow-sm">
+          <div className="mt-3 flex items-center gap-3 rounded-[14px] border border-white/[0.07] bg-ink-850 px-4 py-3">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-mist-400">
               <path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="min-w-0 flex-1 text-[13px] text-mist-300">
+            <span className="min-w-0 flex-1 text-[0.875rem] text-mist-300">
               {(tracking.rewatchCount ?? 0) > 0 ? (
                 <>
-                  {t("rewatched")} <span className="font-semibold text-mist-100">{tracking.rewatchCount}×</span>
+                  {t("rewatched")} <span className="font-semibold text-white">{tracking.rewatchCount}×</span>
                 </>
               ) : (
                 t("logRewatch")
@@ -330,7 +328,7 @@ export function SeriesDetailScreen() {
                 onClick={() => handleBumpRewatch(-1)}
                 disabled={bumpRewatch.isPending}
                 aria-label="Remove a rewatch"
-                className="tap-none flex size-8 items-center justify-center rounded-full border border-ink-600 text-mist-400 active:bg-ink-700 disabled:opacity-50"
+                className="tap-none flex size-8 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700 disabled:opacity-50"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
                   <path d="M5 12h14" strokeLinecap="round" />
@@ -342,7 +340,7 @@ export function SeriesDetailScreen() {
               onClick={() => handleBumpRewatch(1)}
               disabled={bumpRewatch.isPending}
               aria-label="Add a rewatch"
-              className="tap-none flex size-8 items-center justify-center rounded-full bg-accent-600 text-white active:bg-accent-500 disabled:opacity-50"
+              className="tap-none flex size-8 items-center justify-center rounded-full bg-accent-500 text-white active:opacity-80 disabled:opacity-50"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
                 <path d="M12 5v14M5 12h14" strokeLinecap="round" />
@@ -360,13 +358,13 @@ export function SeriesDetailScreen() {
         </div>
 
         {detail.overview ? (
-          <p className="mt-5 text-[14px] leading-relaxed text-mist-300">{detail.overview}</p>
+          <p className="mt-5 text-[0.9375rem] text-mist-300">{detail.overview}</p>
         ) : null}
 
         {detail.genres.length > 0 ? (
           <div className="mt-4 flex flex-wrap gap-2">
             {detail.genres.map((genre) => (
-              <span key={genre} className="rounded-full bg-ink-800 px-3 py-1 text-[11px] text-mist-400">
+              <span key={genre} className="rounded-full border border-white/[0.07] bg-ink-850 px-3 py-1 text-[0.75rem] font-medium text-mist-300">
                 {genre}
               </span>
             ))}
@@ -380,9 +378,9 @@ export function SeriesDetailScreen() {
 
       <div className="px-5">
         <section className="mt-7">
-          <h2 className="mb-1 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">{t("seasons")}</h2>
+          <h2 className="mb-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">{t("seasons")}</h2>
           {!seriesId ? (
-            <p className="py-3 text-[13px] text-mist-500">
+            <p className="py-3 text-[0.875rem] text-mist-500">
               Add this series to your library to start checking off episodes.
             </p>
           ) : null}
@@ -403,7 +401,7 @@ export function SeriesDetailScreen() {
         </section>
 
         <section className="mt-7">
-          <h2 className="mb-1 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">{t("reviews")}</h2>
+          <h2 className="mb-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">{t("reviews")}</h2>
           {ratingSummary && ratingSummary.total > 0 ? (
             <div className="mb-4 mt-2">
               <RatingSummaryCard summary={ratingSummary} />

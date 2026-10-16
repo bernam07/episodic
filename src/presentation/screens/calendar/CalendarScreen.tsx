@@ -75,22 +75,22 @@ function CalendarEntry({ item, watched }: { item: AiringEntry; watched: boolean 
   const poster = posterUrl(item.posterPath, "w154");
 
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-ink-850 p-3">
-      <Link to={`/series/${item.tmdbId}`} className="tap-none flex min-w-0 flex-1 items-center gap-3 active:opacity-70">
+    <div className="flex items-center gap-3 rounded-[14px] border border-white/[0.07] bg-ink-850 p-3">
+      <Link to={`/series/${item.tmdbId}`} className="tap-none flex min-w-0 flex-1 items-center gap-3 active:opacity-75">
         {poster ? (
-          <img src={poster} alt="" loading="lazy" className="h-16 w-11 shrink-0 rounded-lg object-cover" />
+          <img src={poster} alt="" loading="lazy" className="h-16 w-11 shrink-0 rounded-[8px] object-cover ring-1 ring-white/10 ring-inset" />
         ) : (
-          <div className="flex h-16 w-11 shrink-0 items-center justify-center rounded-lg bg-ink-700">
-            <span className="text-[10px] text-mist-600">N/A</span>
+          <div className="flex h-16 w-11 shrink-0 items-center justify-center rounded-[8px] bg-ink-800">
+            <span className="text-[0.625rem] text-mist-500">N/A</span>
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold text-mist-100">{item.seriesName}</p>
-          <p className="mt-0.5 text-[12px] font-medium text-accent-400">
+          <p className="truncate text-[0.9375rem] font-semibold tracking-[-0.01em] text-white">{item.seriesName}</p>
+          <p className="mt-0.5 text-[0.75rem] font-medium text-accent-400">
             S{item.episode.seasonNumber} · E{item.episode.episodeNumber}
           </p>
           {item.episode.name ? (
-            <p className="mt-0.5 truncate text-[12px] text-mist-500">{item.episode.name}</p>
+            <p className="mt-0.5 truncate text-[0.75rem] text-mist-500">{item.episode.name}</p>
           ) : null}
         </div>
       </Link>
@@ -101,10 +101,10 @@ function CalendarEntry({ item, watched }: { item: AiringEntry; watched: boolean 
           aria-pressed={watched}
           aria-label={`Mark S${item.episode.seasonNumber} E${item.episode.episodeNumber} ${watched ? "unwatched" : "watched"}`}
           onClick={() => toggle.mutate({ episode: item.episode, watched: !watched })}
-          className={`tap-none flex size-8 shrink-0 items-center justify-center rounded-full border transition-colors disabled:opacity-50 ${
+          className={`tap-none flex size-8 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-50 ${
             watched
-              ? "border-accent-500 bg-accent-500 text-white"
-              : "border-ink-600 text-mist-400 active:border-accent-500 active:bg-accent-500 active:text-white"
+              ? "bg-accent-500 text-white"
+              : "bg-ink-800 text-mist-400 hover:bg-ink-700 active:bg-accent-500 active:text-white"
           }`}
         >
           {toggle.isPending ? (
@@ -116,7 +116,7 @@ function CalendarEntry({ item, watched }: { item: AiringEntry; watched: boolean 
           )}
         </button>
       ) : (
-        <span className="shrink-0 rounded-full bg-ink-800 px-2.5 py-1 text-[10px] font-medium text-mist-500">
+        <span className="shrink-0 rounded-full bg-ink-800 px-2.5 py-1 text-[0.6875rem] font-medium text-mist-500">
           Upcoming
         </span>
       )}
@@ -243,16 +243,18 @@ export function CalendarScreen() {
         }
       />
 
-      <div className="sticky top-0 z-20 bg-ink-950/80 px-5 pb-3 backdrop-blur-xl">
+      <div className="ios-material sticky top-0 z-20 border-b border-white/[0.08] px-5 pt-2.5 pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex rounded-full bg-ink-800 p-0.5">
+          <div className="flex rounded-[9px] bg-ink-850 p-[2px]">
             {(["week", "month"] as View[]).map((value) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => switchView(value)}
-                className={`tap-none min-h-[32px] rounded-full px-4 text-[13px] font-semibold transition-colors ${
-                  view === value ? "bg-accent-600 text-white" : "text-mist-400 active:text-mist-200"
+                className={`tap-none min-h-[30px] rounded-[7px] px-4 text-[0.8125rem] font-semibold transition-all duration-150 ${
+                  view === value
+                    ? "bg-ink-700 text-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
+                    : "text-mist-400 active:text-mist-200"
                 }`}
               >
                 {value === "week" ? "Week" : "Month"}
@@ -265,7 +267,7 @@ export function CalendarScreen() {
               <button
                 type="button"
                 onClick={() => setOffset(0)}
-                className="tap-none mr-1 rounded-full bg-ink-800 px-3 py-1.5 text-[12px] font-semibold text-mist-300 active:bg-ink-700"
+                className="tap-none mr-1 rounded-full bg-ink-850 px-3 py-1.5 text-[0.75rem] font-semibold text-accent-500 active:bg-ink-800"
               >
                 Today
               </button>
@@ -274,9 +276,9 @@ export function CalendarScreen() {
               type="button"
               onClick={() => setOffset((o) => o - 1)}
               aria-label="Previous"
-              className="tap-none flex size-8 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
+              className="tap-none flex size-8 items-center justify-center rounded-full bg-ink-850 text-accent-500 active:bg-ink-800"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                 <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
@@ -284,16 +286,16 @@ export function CalendarScreen() {
               type="button"
               onClick={() => setOffset((o) => o + 1)}
               aria-label="Next"
-              className="tap-none flex size-8 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700"
+              className="tap-none flex size-8 items-center justify-center rounded-full bg-ink-850 text-accent-500 active:bg-ink-800"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                 <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
           </div>
         </div>
 
-        <p className="mt-2.5 text-[15px] font-bold text-mist-100">{label}</p>
+        <p className="mt-2.5 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">{label}</p>
       </div>
 
       {isLoading ? (
@@ -302,23 +304,23 @@ export function CalendarScreen() {
         </div>
       ) : hasError && grouped.total === 0 ? (
         <div className="px-5 pt-10 text-center">
-          <p className="text-[15px] font-semibold text-mist-200">Could not load schedule</p>
-          <p className="mt-1 text-[13px] text-mist-500">
+          <p className="text-[1.0625rem] font-semibold text-white">Could not load schedule</p>
+          <p className="mt-1 text-[0.875rem] text-mist-500">
             Something went wrong fetching episode data. Try again later.
           </p>
         </div>
       ) : grouped.total === 0 ? (
         <div className="px-5 pt-10 text-center">
-          <p className="text-[15px] font-semibold text-mist-200">Nothing airing in {view === "week" ? "this week" : "this period"}</p>
-          <p className="mt-1 text-[13px] text-mist-500">
+          <p className="text-[1.0625rem] font-semibold text-white">Nothing airing in {view === "week" ? "this week" : "this period"}</p>
+          <p className="mt-1 text-[0.875rem] text-mist-500">
             Episodes from your Watching and Want to Watch series show up here.
           </p>
         </div>
       ) : (
-        <div className="space-y-6 px-5 pt-1">
+        <div className="space-y-6 px-5 pt-3">
           {grouped.days.map(([date, items]) => (
             <section key={date}>
-              <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
+              <h2 className="mb-2.5 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
                 {formatDay(date)}
               </h2>
               <div className="space-y-2">

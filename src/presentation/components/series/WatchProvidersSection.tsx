@@ -12,7 +12,7 @@ function ProviderGroup({ label, providers }: { label: string; providers: WatchPr
 
   return (
     <div className="flex items-center gap-3">
-      <span className="w-14 shrink-0 text-[11px] font-medium tracking-wide text-mist-500 uppercase">
+      <span className="w-14 shrink-0 text-[0.75rem] font-semibold text-mist-500">
         {label}
       </span>
       <div className="no-scrollbar flex gap-2 overflow-x-auto">
@@ -22,12 +22,12 @@ function ProviderGroup({ label, providers }: { label: string; providers: WatchPr
             <div
               key={provider.providerId}
               title={provider.providerName}
-              className="size-10 shrink-0 overflow-hidden rounded-xl bg-ink-800 ring-1 ring-white/10"
+              className="size-10 shrink-0 overflow-hidden rounded-[10px] bg-ink-800 ring-1 ring-white/10 ring-inset"
             >
               {logo ? (
                 <img src={logo} alt={provider.providerName} loading="lazy" className="size-full object-cover" />
               ) : (
-                <span className="flex size-full items-center justify-center text-[9px] text-mist-500">
+                <span className="flex size-full items-center justify-center text-[0.5625rem] text-mist-500">
                   {provider.providerName.slice(0, 3)}
                 </span>
               )}
@@ -46,7 +46,7 @@ export function WatchProvidersSection({ tmdbId }: { tmdbId: number }) {
     return (
       <section className="mt-7">
         <Skeleton className="mb-3 h-4 w-32" />
-        <Skeleton className="h-16 w-full rounded-card" />
+        <Skeleton className="h-16 w-full rounded-[14px]" />
       </section>
     );
   }
@@ -58,13 +58,13 @@ export function WatchProvidersSection({ tmdbId }: { tmdbId: number }) {
   return (
     <section className="mt-7">
       <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-          Where to Watch
-          <span className="ml-1.5 text-mist-600">{data.region}</span>
+        <h2 className="flex items-baseline gap-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
+          <span>Where to Watch</span>
+          <span className="text-[0.875rem] font-normal text-mist-500">{data.region}</span>
         </h2>
-        <span className="text-[10px] text-mist-600">via JustWatch</span>
+        <span className="text-[0.6875rem] text-mist-500">via JustWatch</span>
       </div>
-      <div className="flex flex-col gap-3 rounded-card bg-ink-850 p-4">
+      <div className="flex flex-col gap-3 rounded-[14px] border border-white/[0.07] bg-ink-850 p-4">
         <ProviderGroup label="Stream" providers={data.flatrate} />
         <ProviderGroup label="Rent" providers={data.rent} />
         <ProviderGroup label="Buy" providers={data.buy} />

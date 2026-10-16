@@ -33,29 +33,29 @@ export function SideNav() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col justify-between border-r border-white/[0.08] bg-ink-950/80 px-4 py-6 backdrop-blur-2xl md:flex">
+      <aside className="ios-material fixed inset-y-0 left-0 z-40 hidden w-60 flex-col justify-between border-r border-white/[0.1] px-3.5 py-6 md:flex">
         <div>
-          <div className="px-2 pb-6">
+          <div className="px-2.5 pb-6">
             <div className="flex items-center gap-2.5">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-tr from-accent-600 to-indigo-500 shadow-md shadow-accent-600/30">
+              <span className="flex size-7 items-center justify-center rounded-[8px] bg-accent-500 shadow-sm">
                 <svg viewBox="0 0 24 24" fill="white" className="size-4">
                   <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z" />
                   <path d="M10 20h4" stroke="white" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </span>
-              <p className="bg-gradient-to-r from-white via-mist-100 to-mist-300 bg-clip-text text-[20px] font-black tracking-tight text-transparent">
+              <p className="text-[1.25rem] font-bold tracking-[-0.02em] text-white">
                 Episodic
               </p>
             </div>
             {profile ? (
-              <p className="mt-1 truncate text-[12px] text-mist-500">
+              <p className="mt-1 truncate text-[0.75rem] text-mist-500">
                 {profile.displayName || profile.username}
               </p>
             ) : null}
           </div>
 
           <nav>
-            <ul className="flex flex-col gap-1.5">
+            <ul className="flex flex-col gap-1">
               {NAV_TABS.map((tab) => (
                 <li key={tab.to}>
                   <NavLink
@@ -63,22 +63,28 @@ export function SideNav() {
                     end={tab.to === "/"}
                     onClick={onTabClick(tab.to)}
                     className={({ isActive }) =>
-                      `tap-none flex min-h-[44px] items-center justify-between rounded-xl px-3 text-[14px] font-medium transition-all duration-150 ${
+                      `tap-none flex min-h-[2.625rem] items-center justify-between rounded-[10px] px-3 text-[0.9375rem] transition-colors duration-150 ${
                         isActive
-                          ? "border border-accent-500/25 bg-accent-600/15 text-accent-300 shadow-[inset_0_0_12px_rgba(99,102,241,0.12)] font-semibold"
-                          : "border border-transparent text-mist-400 hover:bg-white/[0.05] hover:text-mist-100"
+                          ? "bg-white/[0.12] font-semibold text-white"
+                          : "font-medium text-mist-400 hover:bg-white/[0.06] hover:text-white"
                       }`
                     }
                   >
-                    <span className="flex items-center gap-3">
-                      {tab.icon}
-                      {t(tab.key)}
-                    </span>
-                    {tab.key === "search" ? (
-                      <kbd className="rounded border border-white/10 bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold text-mist-400">
-                        /
-                      </kbd>
-                    ) : null}
+                    {({ isActive }) => (
+                      <>
+                        <span className="flex items-center gap-3">
+                          <span className={isActive ? "text-accent-500" : "text-mist-400"}>
+                            {tab.icon}
+                          </span>
+                          {t(tab.key)}
+                        </span>
+                        {tab.key === "search" ? (
+                          <kbd className="rounded-[5px] border border-white/10 bg-white/[0.06] px-1.5 py-0.5 text-[0.6875rem] font-medium text-mist-400">
+                            /
+                          </kbd>
+                        ) : null}
+                      </>
+                    )}
                   </NavLink>
                 </li>
               ))}
@@ -87,18 +93,28 @@ export function SideNav() {
                 <NavLink
                   to="/calendar"
                   className={({ isActive }) =>
-                    `tap-none flex min-h-[44px] items-center gap-3 rounded-xl px-3 text-[14px] font-medium transition-all duration-150 ${
+                    `tap-none flex min-h-[2.625rem] items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] transition-colors duration-150 ${
                       isActive
-                        ? "border border-accent-500/25 bg-accent-600/15 text-accent-300 shadow-[inset_0_0_12px_rgba(99,102,241,0.12)] font-semibold"
-                        : "border border-transparent text-mist-400 hover:bg-white/[0.05] hover:text-mist-100"
+                        ? "bg-white/[0.12] font-semibold text-white"
+                        : "font-medium text-mist-400 hover:bg-white/[0.06] hover:text-white"
                     }`
                   }
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-6">
-                    <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {t("calendar")}
+                  {({ isActive }) => (
+                    <>
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className={`size-6 ${isActive ? "text-accent-500" : "text-mist-400"}`}
+                      >
+                        <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {t("calendar")}
+                    </>
+                  )}
                 </NavLink>
               </li>
 
@@ -106,17 +122,27 @@ export function SideNav() {
                 <NavLink
                   to="/stats"
                   className={({ isActive }) =>
-                    `tap-none flex min-h-[44px] items-center gap-3 rounded-xl px-3 text-[14px] font-medium transition-all duration-150 ${
+                    `tap-none flex min-h-[2.625rem] items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] transition-colors duration-150 ${
                       isActive
-                        ? "border border-accent-500/25 bg-accent-600/15 text-accent-300 shadow-[inset_0_0_12px_rgba(99,102,241,0.12)] font-semibold"
-                        : "border border-transparent text-mist-400 hover:bg-white/[0.05] hover:text-mist-100"
+                        ? "bg-white/[0.12] font-semibold text-white"
+                        : "font-medium text-mist-400 hover:bg-white/[0.06] hover:text-white"
                     }`
                   }
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-6">
-                    <path d="M18 20V10M12 20V4M6 20v-6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {t("stats")}
+                  {({ isActive }) => (
+                    <>
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className={`size-6 ${isActive ? "text-accent-500" : "text-mist-400"}`}
+                      >
+                        <path d="M18 20V10M12 20V4M6 20v-6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {t("stats")}
+                    </>
+                  )}
                 </NavLink>
               </li>
             </ul>
@@ -124,7 +150,7 @@ export function SideNav() {
         </div>
 
         {profile ? (
-          <div className="rounded-2xl border border-white/[0.08] bg-ink-900/60 p-3.5 backdrop-blur-md shadow-lg">
+          <div className="rounded-card border border-white/[0.08] bg-ink-850 p-3">
             <div className="flex items-center gap-3">
               <Avatar
                 username={profile.username}
@@ -133,17 +159,17 @@ export function SideNav() {
                 size="sm"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-semibold text-mist-100">
+                <p className="truncate text-[0.8125rem] font-semibold text-white">
                   {profile.displayName || profile.username}
                 </p>
-                <p className="truncate text-[11px] text-mist-500">@{profile.username}</p>
+                <p className="truncate text-[0.6875rem] text-mist-500">@{profile.username}</p>
               </div>
             </div>
-            <div className="mt-3 flex gap-2 border-t border-white/[0.08] pt-2.5">
+            <div className="mt-2.5 flex gap-1.5 border-t border-white/[0.08] pt-2.5">
               <button
                 type="button"
                 onClick={() => setSettingsOpen(true)}
-                className="tap-none flex flex-1 items-center justify-center gap-1.5 rounded-xl py-1.5 text-[12px] font-medium text-mist-400 transition-colors hover:bg-white/[0.06] hover:text-mist-200"
+                className="tap-none flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-1.5 text-[0.75rem] font-medium text-mist-400 transition-colors hover:bg-white/[0.08] hover:text-white"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
                   <circle cx="12" cy="12" r="3" />
@@ -154,7 +180,7 @@ export function SideNav() {
               <button
                 type="button"
                 onClick={() => void signOut()}
-                className="tap-none flex flex-1 items-center justify-center gap-1.5 rounded-xl py-1.5 text-[12px] font-medium text-mist-400 transition-colors hover:bg-white/[0.06] hover:text-danger-500"
+                className="tap-none flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-1.5 text-[0.75rem] font-medium text-mist-400 transition-colors hover:bg-white/[0.08] hover:text-danger-500"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />

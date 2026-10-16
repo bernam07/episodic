@@ -191,25 +191,25 @@ export function ThisWeekRail() {
 
   return (
     <section className="mt-7">
-      <div className="mb-3 flex items-center justify-between px-5">
-        <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">{t("thisWeek")}</h2>
-        <Link to="/calendar" className="tap-none text-[12px] font-semibold text-accent-400 active:text-accent-300">
+      <div className="mb-3 flex items-baseline justify-between px-5">
+        <h2 className="text-[1.1875rem] font-bold tracking-[-0.015em] text-white">{t("thisWeek")}</h2>
+        <Link to="/calendar" className="tap-none text-[0.9375rem] font-normal text-accent-500 active:opacity-70">
           {t("calendar")}
         </Link>
       </div>
-      <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pb-1">
+      <div className="no-scrollbar flex gap-3.5 overflow-x-auto px-5 pb-1">
         {items.map((item) => (
           <Link
             key={`${item.tmdbId}-${item.key}`}
             to={`/series/${item.tmdbId}`}
-            className="tap-none w-[124px] shrink-0 active:opacity-70"
+            className="tap-none w-[124px] shrink-0 active:opacity-75"
           >
             <SeriesPoster path={item.posterPath} alt={item.name} />
-            <p className="mt-2 truncate text-[13px] font-semibold text-mist-100">{item.name}</p>
-            <p className="mt-0.5 text-[11px] font-medium text-accent-400">
+            <p className="mt-2 truncate text-[0.8125rem] font-semibold tracking-[-0.01em] text-white">{item.name}</p>
+            <p className="mt-0.5 text-[0.75rem] font-medium text-accent-400">
               S{item.season} · E{item.episode}
             </p>
-            <p className="text-[11px] text-mist-500">{airLabel(item.airDate)}</p>
+            <p className="text-[0.75rem] text-mist-500">{airLabel(item.airDate)}</p>
           </Link>
         ))}
       </div>

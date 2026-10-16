@@ -38,9 +38,9 @@ export function Duration({ minutes, className = "" }: { minutes: number; classNa
 
 export function SectionHeading({ children, hint }: { children: ReactNode; hint?: ReactNode }) {
   return (
-    <div className="mb-4 flex items-baseline justify-between gap-3 px-5">
-      <h2 className="text-[12px] font-semibold tracking-[0.08em] text-mist-500 uppercase">{children}</h2>
-      {hint ? <span className="shrink-0 text-[11px] text-mist-500">{hint}</span> : null}
+    <div className="mb-3 flex items-baseline justify-between gap-3 px-5">
+      <h2 className="text-[1.1875rem] font-bold tracking-[-0.015em] text-white">{children}</h2>
+      {hint ? <span className="shrink-0 text-[0.8125rem] text-mist-500">{hint}</span> : null}
     </div>
   );
 }
@@ -48,8 +48,8 @@ export function SectionHeading({ children, hint }: { children: ReactNode; hint?:
 export function InlineStat({ value, label }: { value: ReactNode; label: string }) {
   return (
     <div className="flex-1">
-      <p className="text-[20px] leading-none font-bold text-mist-100">{value}</p>
-      <p className="mt-1.5 text-[11px] text-mist-500">{label}</p>
+      <p className="text-[1.25rem] leading-none font-bold tabular-nums text-white">{value}</p>
+      <p className="mt-1.5 text-[0.75rem] text-mist-500">{label}</p>
     </div>
   );
 }

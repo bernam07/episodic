@@ -37,22 +37,22 @@ export function HomeScreen() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex items-start justify-between border-b border-white/[0.06] bg-ink-950/75 px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-4 backdrop-blur-2xl">
+      <header className="ios-material sticky top-0 z-30 flex items-end justify-between border-b border-white/[0.08] px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3">
         <div>
-          <p className="text-[12px] font-medium tracking-wide text-mist-400">
+          <p className="text-[0.8125rem] font-medium text-mist-500">
             {profile ? `${greet}, ${profile.displayName || profile.username}` : greet}
           </p>
-          <h1 className="bg-gradient-to-r from-white via-mist-100 to-mist-300 bg-clip-text text-[28px] font-black tracking-tight text-transparent">
+          <h1 className="mt-0.5 text-[2.125rem] leading-[1.12] font-bold tracking-[-0.022em] text-white">
             Episodic
           </h1>
         </div>
-        <div className="mt-2 flex gap-2">
+        <div className="mb-0.5 flex gap-2">
           <Link
             to="/calendar"
-            className="tap-none flex size-10 items-center justify-center rounded-full border border-white/10 bg-ink-850/80 text-mist-300 shadow-sm backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-white"
+            className="tap-none flex size-9 items-center justify-center rounded-full bg-ink-850 text-accent-500 transition-opacity active:opacity-70 hover:bg-ink-800"
             aria-label={t("calendar")}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
               <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -60,15 +60,15 @@ export function HomeScreen() {
           <button
             type="button"
             onClick={() => setNotificationsOpen(true)}
-            className="tap-none relative flex size-10 items-center justify-center rounded-full border border-white/10 bg-ink-850/80 text-mist-300 shadow-sm backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-white"
+            className="tap-none relative flex size-9 items-center justify-center rounded-full bg-ink-850 text-accent-500 transition-opacity active:opacity-70 hover:bg-ink-800"
             aria-label={t("notifications")}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             {(unreadCount ?? 0) > 0 ? (
-              <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-gradient-to-tr from-accent-600 to-indigo-500 text-[10px] font-bold text-white shadow-md shadow-accent-600/40 ring-2 ring-ink-950">
+              <span className="absolute -top-1 -right-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger-500 px-1 text-[0.6875rem] font-bold text-white ring-2 ring-ink-950">
                 {unreadCount! > 9 ? "9+" : unreadCount}
               </span>
             ) : null}
@@ -77,7 +77,7 @@ export function HomeScreen() {
       </header>
 
       {featured ? (
-        <div className="md:px-5">
+        <div className="md:px-5 md:pt-4">
           <HomeHero series={featured} />
         </div>
       ) : null}

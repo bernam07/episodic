@@ -18,18 +18,18 @@ export function SettingsSheet({ open, onClose, onDeleteAccount }: SettingsSheetP
 
   return (
     <Sheet open={open} onClose={onClose} title={t("settings")}>
-      <div className="space-y-4">
+      <div className="space-y-4 pt-2">
         <div>
-          <label className="mb-2 block text-[13px] font-semibold text-mist-300">
+          <label className="mb-2 block text-[0.8125rem] font-medium text-mist-400">
             {t("language")}
           </label>
-          <div className="flex rounded-xl border border-white/[0.06] bg-ink-900/60 p-1 backdrop-blur-md">
+          <div className="flex rounded-[9px] bg-ink-850 p-[2px]">
             <button
               type="button"
               onClick={() => setLanguage("en")}
-              className={`tap-none min-h-[38px] flex-1 rounded-lg text-[13px] font-semibold transition-all duration-150 ${
+              className={`tap-none min-h-[34px] flex-1 rounded-[7px] text-[0.8125rem] font-semibold transition-all duration-150 ${
                 language === "en"
-                  ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
+                  ? "bg-ink-700 text-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
                   : "text-mist-400 hover:text-mist-200"
               }`}
             >
@@ -38,9 +38,9 @@ export function SettingsSheet({ open, onClose, onDeleteAccount }: SettingsSheetP
             <button
               type="button"
               onClick={() => setLanguage("pt")}
-              className={`tap-none min-h-[38px] flex-1 rounded-lg text-[13px] font-semibold transition-all duration-150 ${
+              className={`tap-none min-h-[34px] flex-1 rounded-[7px] text-[0.8125rem] font-semibold transition-all duration-150 ${
                 language === "pt"
-                  ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
+                  ? "bg-ink-700 text-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
                   : "text-mist-400 hover:text-mist-200"
               }`}
             >
@@ -70,7 +70,7 @@ export function SettingsSheet({ open, onClose, onDeleteAccount }: SettingsSheetP
           <button
             type="button"
             onClick={onDeleteAccount}
-            className="tap-none mt-3 min-h-[44px] w-full text-[13px] font-medium text-mist-500 active:text-danger-500"
+            className="tap-none mt-3 min-h-[44px] w-full text-[0.9375rem] font-normal text-danger-500 active:opacity-70"
           >
             {t("deleteAccount")}
           </button>

@@ -10,7 +10,7 @@ function PosterStrip({ posters }: { posters: string[] }) {
   const slots = Array.from({ length: 4 }, (_, index) => posters[index] ?? null);
 
   return (
-    <div className="flex h-20 gap-0.5 overflow-hidden rounded-card bg-ink-800">
+    <div className="flex h-20 gap-0.5 overflow-hidden rounded-[12px] bg-ink-850 ring-1 ring-white/10 ring-inset">
       {slots.map((path, index) => {
         const url = posterUrl(path, "w154");
         return (
@@ -25,7 +25,7 @@ function PosterStrip({ posters }: { posters: string[] }) {
 
 function ListCard({ list }: { list: ListSummary }) {
   return (
-    <Link to={`/list/${list.id}`} className="tap-none block active:opacity-70">
+    <Link to={`/list/${list.id}`} className="tap-none block active:opacity-75">
       <PosterStrip posters={list.posterPaths} />
       <div className="mt-2 flex items-center gap-1.5">
         {list.isPrivate ? (
@@ -34,9 +34,9 @@ function ListCard({ list }: { list: ListSummary }) {
             <path d="M8 11V8a4 4 0 0 1 8 0v3" strokeLinecap="round" />
           </svg>
         ) : null}
-        <p className="truncate text-[14px] font-semibold text-mist-100">{list.title}</p>
+        <p className="truncate text-[0.875rem] font-semibold tracking-[-0.01em] text-white">{list.title}</p>
       </div>
-      <p className="mt-0.5 text-[12px] text-mist-500">{plural(list.itemCount, "series", "series")}</p>
+      <p className="mt-0.5 text-[0.75rem] text-mist-500">{plural(list.itemCount, "series", "series")}</p>
     </Link>
   );
 }
@@ -54,16 +54,16 @@ export function ListsSection({ userId, isOwn }: { userId: string | null; isOwn: 
 
   return (
     <section className="mt-8 px-5">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">
-          Lists
-          {lists.length > 0 ? <span className="ml-1.5 text-mist-600">{lists.length}</span> : null}
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 className="flex items-baseline gap-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
+          <span>Lists</span>
+          {lists.length > 0 ? <span className="text-[0.875rem] font-normal text-mist-500">{lists.length}</span> : null}
         </h2>
         {isOwn ? (
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="tap-none text-[13px] font-semibold text-accent-400 active:text-accent-300"
+            className="tap-none text-[0.9375rem] font-normal text-accent-500 active:opacity-70"
           >
             New list
           </button>
@@ -71,7 +71,7 @@ export function ListsSection({ userId, isOwn }: { userId: string | null; isOwn: 
       </div>
 
       {lists.length === 0 ? (
-        <p className="rounded-card border border-dashed border-ink-700 py-6 text-center text-[13px] text-mist-500">
+        <p className="rounded-[14px] border border-white/[0.07] bg-ink-850 py-6 text-center text-[0.875rem] text-mist-500">
           No lists yet. Group series into a collection.
         </p>
       ) : (

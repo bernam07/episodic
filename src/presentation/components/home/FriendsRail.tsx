@@ -13,17 +13,19 @@ export function FriendsRail() {
 
   return (
     <section className="mt-7">
-      <div className="mb-2 flex items-center justify-between px-5">
-        <h2 className="text-[13px] font-semibold tracking-wide text-mist-400 uppercase">{t("fromFriends")}</h2>
-        <Link to="/friends" className="tap-none text-[12px] font-semibold text-accent-400 active:text-accent-300">
+      <div className="mb-2.5 flex items-baseline justify-between px-5">
+        <h2 className="text-[1.1875rem] font-bold tracking-[-0.015em] text-white">{t("fromFriends")}</h2>
+        <Link to="/friends" className="tap-none text-[0.9375rem] font-normal text-accent-500 active:opacity-70">
           {t("seeAll")}
         </Link>
       </div>
-      <ul className="divide-y divide-ink-800 px-5">
-        {data.slice(0, 4).map((event) => (
-          <ActivityRow key={`${event.actorId}-${event.eventType}-${event.seriesId}-${event.occurredAt}`} event={event} />
-        ))}
-      </ul>
+      <div className="mx-5 overflow-hidden rounded-[14px] border border-white/[0.07] bg-ink-850 px-4">
+        <ul className="divide-y divide-white/[0.08]">
+          {data.slice(0, 4).map((event) => (
+            <ActivityRow key={`${event.actorId}-${event.eventType}-${event.seriesId}-${event.occurredAt}`} event={event} />
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }

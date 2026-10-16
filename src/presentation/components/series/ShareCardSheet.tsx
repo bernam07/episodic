@@ -209,20 +209,20 @@ function ShareCardContent({
 
   return (
     <>
-      <div className="flex justify-center py-2">
+      <div className="flex justify-center pt-3 pb-2">
         <canvas
           ref={canvasRef}
-          className="aspect-9/16 max-h-[380px] w-auto rounded-2xl border border-white/10 shadow-2xl"
+          className="aspect-9/16 max-h-[380px] w-auto rounded-[16px] ring-1 ring-white/15 shadow-2xl"
         />
       </div>
 
       {posterFailed ? (
-        <p className="mt-2 text-center text-[12px] text-mist-500">
+        <p className="mt-2 text-center text-[0.75rem] text-mist-500">
           Poster couldn't be loaded into the share card.
         </p>
       ) : null}
 
-      <div className="mt-4 flex rounded-xl border border-ink-700 bg-ink-850 p-1">
+      <div className="mt-4 flex rounded-[9px] bg-ink-850 p-[2px]">
         {(
           [
             { id: "image", label: "Photo" },
@@ -238,8 +238,10 @@ function ShareCardContent({
               type="button"
               disabled={disabled}
               onClick={() => setMode(tab.id)}
-              className={`tap-none min-h-[34px] flex-1 rounded-lg text-[13px] font-semibold transition-colors disabled:opacity-40 ${
-                active ? "bg-accent-600 text-white" : "text-mist-400 active:text-mist-200"
+              className={`tap-none min-h-[32px] flex-1 rounded-[7px] text-[0.8125rem] font-semibold transition-all duration-150 disabled:opacity-40 ${
+                active
+                  ? "bg-ink-700 text-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
+                  : "text-mist-400 active:text-mist-200"
               }`}
             >
               {tab.label}
@@ -250,7 +252,7 @@ function ShareCardContent({
 
       {mode === "image" && imageCandidates.length > 1 ? (
         <div className="mt-4">
-          <p className="mb-2 text-[12px] font-medium text-mist-400">Background photo</p>
+          <p className="mb-2 text-[0.8125rem] font-medium text-mist-400">Background photo</p>
           <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
             {imageCandidates.map((candidate) => {
               const active = candidate.id === selectedImage;
@@ -260,8 +262,8 @@ function ShareCardContent({
                   type="button"
                   aria-label={candidate.id === "poster" ? "Use poster as background" : `Use photo ${candidate.id} as background`}
                   onClick={() => setSelectedImage(candidate.id)}
-                  className={`tap-none relative aspect-16/10 h-14 shrink-0 overflow-hidden rounded-lg border transition-all ${
-                    active ? "border-accent-500 ring-2 ring-accent-500/40" : "border-ink-700"
+                  className={`tap-none relative aspect-16/10 h-14 shrink-0 overflow-hidden rounded-[8px] border transition-all ${
+                    active ? "border-accent-500 ring-2 ring-accent-500/40" : "border-white/10"
                   }`}
                 >
                   <img src={candidate.thumb} alt="" className="size-full object-cover" />
@@ -273,7 +275,7 @@ function ShareCardContent({
       ) : null}
 
       {error ? (
-        <p role="alert" className="mt-3 text-[13px] text-danger-500">
+        <p role="alert" className="mt-3 text-[0.8125rem] text-danger-500">
           {error}
         </p>
       ) : null}

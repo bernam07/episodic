@@ -24,7 +24,7 @@ export function ActivityRow({
   );
 
   return (
-    <li className="group mb-2.5 flex gap-3.5 rounded-2xl border border-white/[0.06] bg-ink-900/40 p-3.5 backdrop-blur-md shadow-sm transition-all hover:border-white/12 hover:bg-ink-850/60">
+    <li className="group flex gap-3.5 py-3.5">
       {showActor ? (
         <Link to={`/user/${event.username}`} className="tap-none shrink-0">
           <Avatar username={event.username} displayName={event.displayName} avatarUrl={event.avatarUrl} />
@@ -32,10 +32,10 @@ export function ActivityRow({
       ) : null}
 
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] leading-snug text-mist-300">
+        <p className="text-[0.875rem] leading-snug text-mist-300">
           {showActor ? (
             <>
-              <Link to={`/user/${event.username}`} className="font-semibold text-mist-100 hover:text-white">
+              <Link to={`/user/${event.username}`} className="font-semibold text-white hover:underline">
                 {event.displayName || event.username}
               </Link>{" "}
               {verb} {seriesLink}
@@ -48,9 +48,9 @@ export function ActivityRow({
         </p>
 
         <div className="mt-1.5 flex items-center gap-2">
-          <span className="text-[11px] text-mist-500">{relativeTime(event.occurredAt)}</span>
+          <span className="text-[0.75rem] text-mist-500">{relativeTime(event.occurredAt)}</span>
           {event.rating ? (
-            <span className="flex items-center gap-0.5 text-[11px] font-semibold text-amber-400">
+            <span className="flex items-center gap-0.5 text-[0.75rem] font-semibold tabular-nums text-star-500">
               <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5">
                 <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
               </svg>
@@ -60,18 +60,18 @@ export function ActivityRow({
         </div>
 
         {event.eventType === "reviewed" && event.reviewBody ? (
-          <p className="mt-1.5 line-clamp-2 text-[13px] text-mist-400">{event.reviewBody}</p>
+          <p className="mt-1.5 line-clamp-2 text-[0.8125rem] text-mist-400">{event.reviewBody}</p>
         ) : null}
       </div>
 
       <Link to={`/series/${event.tmdbId}`} className="tap-none shrink-0 active:opacity-75">
-        <div className="h-[76px] w-13 overflow-hidden rounded-xl bg-ink-850 ring-1 ring-white/10 shadow-md">
+        <div className="h-[72px] w-12 overflow-hidden rounded-[8px] bg-ink-800 ring-1 ring-white/10 ring-inset">
           {poster ? (
             <img
               src={poster}
               alt=""
               loading="lazy"
-              className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="size-full object-cover"
             />
           ) : null}
         </div>

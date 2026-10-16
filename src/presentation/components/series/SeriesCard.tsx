@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
@@ -8,7 +8,7 @@ import { StatusBadge } from "./StatusBadge";
 export function WatchedBadge() {
   return (
     <span
-      className="absolute right-2 bottom-2 flex size-6 items-center justify-center rounded-full bg-emerald-500/90 text-white shadow-md shadow-black/40 ring-1 ring-white/25 backdrop-blur-md"
+      className="absolute right-2 bottom-2 flex size-6 items-center justify-center rounded-full bg-[#30d158] text-white shadow-sm shadow-black/50 ring-1 ring-white/20"
       aria-label="Watched"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" className="size-3.5">
@@ -20,9 +20,9 @@ export function WatchedBadge() {
 
 const IN_LIBRARY_STYLES: Record<SeriesStatus, string> = {
   watching: "bg-accent-500",
-  want_to_watch: "bg-amber-500",
-  watched: "bg-emerald-500",
-  abandoned: "bg-rose-500",
+  want_to_watch: "bg-[#ff9f0a]",
+  watched: "bg-[#30d158]",
+  abandoned: "bg-danger-500",
 };
 
 const IN_LIBRARY_GLYPHS: Record<SeriesStatus, ReactNode> = {
@@ -51,7 +51,7 @@ const IN_LIBRARY_GLYPHS: Record<SeriesStatus, ReactNode> = {
 export function InLibraryBadge({ status }: { status: SeriesStatus }) {
   return (
     <span
-      className={`absolute right-2 bottom-2 flex size-6 items-center justify-center rounded-full shadow-md shadow-black/40 ring-1 ring-white/20 ${IN_LIBRARY_STYLES[status]}`}
+      className={`absolute right-2 bottom-2 flex size-6 items-center justify-center rounded-full shadow-sm shadow-black/50 ring-1 ring-white/20 ${IN_LIBRARY_STYLES[status]}`}
       aria-label={`In your library: ${status.replace(/_/g, " ")}`}
     >
       {IN_LIBRARY_GLYPHS[status]}
@@ -60,22 +60,12 @@ export function InLibraryBadge({ status }: { status: SeriesStatus }) {
 }
 
 export function RatingBadge({ value }: { value: number }) {
-  const gradientId = useId();
   return (
-    <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full border border-white/15 bg-black/75 px-2 py-0.5 shadow-md shadow-black/50 backdrop-blur-md">
-      <svg viewBox="0 0 24 24" className="size-3" aria-hidden="true">
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fde047" />
-            <stop offset="100%" stopColor="#f59e0b" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z"
-          fill={`url(#${gradientId})`}
-        />
+    <span className="ios-material absolute right-2 bottom-2 flex items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 shadow-sm shadow-black/50">
+      <svg viewBox="0 0 24 24" className="size-3 text-star-500" fill="currentColor" aria-hidden="true">
+        <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
       </svg>
-      <span className="text-[11px] font-bold tabular-nums text-white">{value.toFixed(1)}</span>
+      <span className="text-[0.6875rem] font-semibold tabular-nums text-white">{value.toFixed(1)}</span>
     </span>
   );
 }
@@ -106,11 +96,11 @@ export function SeriesCard({
   libraryStatus,
 }: SeriesCardProps) {
   return (
-    <Link to={`/series/${tmdbId}`} className="group tap-none block transition-transform duration-200 active:scale-[0.97]">
+    <Link to={`/series/${tmdbId}`} className="group tap-none block transition-opacity duration-150 active:opacity-75">
       <div className="relative">
         <SeriesPoster path={posterPath} alt={name} />
         {status ? (
-          <StatusBadge status={status} className="absolute top-2 left-2 shadow-lg" />
+          <StatusBadge status={status} className="absolute top-2 left-2 shadow-sm" />
         ) : null}
         {rating ? (
           <RatingBadge value={rating} />
@@ -120,12 +110,12 @@ export function SeriesCard({
           <InLibraryBadge status={libraryStatus} />
         ) : null}
       </div>
-      <div className="mt-2.5 px-0.5">
-        <p className="truncate text-[13px] font-semibold text-mist-100 transition-colors group-hover:text-white">{name}</p>
+      <div className="mt-2 px-0.5">
+        <p className="truncate text-[0.8125rem] font-semibold tracking-[-0.01em] text-white">{name}</p>
         {caption ? (
-          <p className="mt-0.5 truncate text-[11px] text-mist-400">{caption}</p>
+          <p className="mt-0.5 truncate text-[0.75rem] text-mist-500">{caption}</p>
         ) : year ? (
-          <p className="mt-0.5 text-[11px] font-medium text-mist-500">{year}</p>
+          <p className="mt-0.5 text-[0.75rem] text-mist-500">{year}</p>
         ) : null}
         {progressPercent !== undefined ? <ProgressBar value={progressPercent} className="mt-1.5" /> : null}
       </div>

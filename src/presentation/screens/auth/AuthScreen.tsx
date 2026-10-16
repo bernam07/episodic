@@ -12,7 +12,7 @@ import { useTrending } from "@/presentation/hooks/useDiscovery";
 type Mode = "signin" | "signup" | "forgot";
 
 const fieldClass =
-  "w-full rounded-xl border border-ink-700 bg-ink-850 py-3.5 pr-4 pl-11 text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none";
+  "w-full rounded-[12px] border border-white/[0.08] bg-ink-850 py-3.5 pr-4 pl-11 text-[1.0625rem] text-white placeholder:text-mist-500 transition-colors focus:border-accent-500 focus:bg-ink-800 focus:outline-none";
 
 const fieldIconClass =
   "pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-mist-500";
@@ -104,11 +104,11 @@ function PosterWall({ posterPaths }: { posterPaths: string[] }) {
   );
 
   if (tiles.length === 0) {
-    return <div className="size-full bg-gradient-to-br from-ink-900 via-ink-950 to-ink-900" />;
+    return <div className="size-full bg-ink-900" />;
   }
 
   return (
-    <div className="absolute inset-0 overflow-hidden brightness-[0.4]">
+    <div className="absolute inset-0 overflow-hidden brightness-[0.38]">
       <div className="poster-drift flex flex-col">
         <div className="mb-1">
           <PosterGrid tiles={tiles} eager />
@@ -123,13 +123,13 @@ function PosterWall({ posterPaths }: { posterPaths: string[] }) {
 
 function FeatureRow() {
   return (
-    <div className="mb-7 flex items-start justify-between gap-3 border-b border-ink-800 pb-6">
+    <div className="mb-7 flex items-start justify-between gap-3 border-b border-white/[0.08] pb-6">
       {FEATURES.map((feature) => (
         <div key={feature.label} className="flex flex-1 flex-col items-center gap-2 text-center">
-          <span className="flex size-9 items-center justify-center rounded-full bg-ink-800 text-accent-400">
+          <span className="flex size-9 items-center justify-center rounded-full bg-ink-850 text-accent-500">
             {feature.icon}
           </span>
-          <span className="text-[11px] font-medium leading-tight text-mist-400">{feature.label}</span>
+          <span className="text-[0.75rem] font-medium text-mist-400">{feature.label}</span>
         </div>
       ))}
     </div>
@@ -182,7 +182,7 @@ function useUsernameCheck(username: string, active: boolean): UsernameState {
 const USERNAME_HINTS: Record<UsernameState, { text: string; className: string } | null> = {
   idle: null,
   checking: { text: "Checking availability…", className: "text-mist-500" },
-  available: { text: "Available", className: "text-accent-400" },
+  available: { text: "Available", className: "text-[#30d158]" },
   taken: { text: "Already taken", className: "text-danger-500" },
   invalid: { text: "3-24 characters: letters, numbers or underscore", className: "text-mist-500" },
 };
@@ -260,16 +260,15 @@ export function AuthScreen() {
     <div className="relative flex min-h-dvh flex-col md:flex-row">
       <div className="relative h-[42vh] min-h-[260px] w-full shrink-0 overflow-hidden md:h-auto md:min-h-dvh md:w-1/2">
         <PosterWall posterPaths={posterPaths} />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/60 to-ink-950/15" />
-        <div className="absolute inset-0 hidden md:block md:bg-gradient-to-r md:from-ink-950/20 md:via-transparent md:to-ink-950" />
+        <div className="hero-scrim absolute inset-0" />
         <div className="pt-safe absolute inset-x-0 bottom-0 px-6 pb-7 md:inset-0 md:flex md:flex-col md:justify-end md:px-14 md:pb-16">
-          <p className="text-[12px] font-bold tracking-[0.2em] text-accent-400 uppercase drop-shadow-md">
+          <p className="text-[0.8125rem] font-semibold text-accent-400">
             Episodic
           </p>
-          <h1 className="mt-2 max-w-md text-[26px] leading-tight font-bold text-mist-100 drop-shadow-md md:max-w-lg md:text-[34px]">
+          <h1 className="mt-1.5 max-w-md text-[1.75rem] leading-[1.12] font-bold tracking-[-0.022em] text-white md:max-w-lg md:text-[2.125rem]">
             Track every episode. Rate what you finish.
           </h1>
-          <p className="mt-2 max-w-sm text-[14px] text-mist-300 drop-shadow-md md:mt-3 md:text-[16px]">
+          <p className="mt-2 max-w-sm text-[0.9375rem] text-mist-300 md:mt-3 md:text-[1.0625rem]">
             A Letterboxd for television. See progress across your whole watchlist, and follow what
             friends are watching.
           </p>
@@ -285,33 +284,35 @@ export function AuthScreen() {
               <button
                 type="button"
                 onClick={() => switchMode("signin")}
-                className="tap-none mb-4 flex items-center gap-1.5 text-[13px] font-medium text-mist-400 active:text-mist-200"
+                className="tap-none mb-4 flex items-center gap-1.5 text-[0.9375rem] font-normal text-accent-500 active:opacity-70"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                   <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 Back to sign in
               </button>
-              <h2 className="text-[20px] font-bold text-mist-100">{copy.title}</h2>
-              <p className="mt-1 mb-6 text-[13px] text-mist-400">{copy.subtitle}</p>
+              <h2 className="text-[1.25rem] font-bold tracking-[-0.015em] text-white">{copy.title}</h2>
+              <p className="mt-1 mb-6 text-[0.875rem] text-mist-500">{copy.subtitle}</p>
             </>
           ) : (
             <>
-              <div className="mb-5 flex rounded-xl bg-ink-800 p-1">
+              <div className="mb-5 flex rounded-[9px] bg-ink-850 p-[2px]">
                 {(["signin", "signup"] as const).map((value) => (
                   <button
                     key={value}
                     type="button"
                     onClick={() => switchMode(value)}
-                    className={`tap-none flex-1 rounded-lg py-2.5 text-[13px] font-semibold transition-colors ${
-                      mode === value ? "bg-accent-600 text-white" : "text-mist-400 active:text-mist-200"
+                    className={`tap-none min-h-[34px] flex-1 rounded-[7px] text-[0.8125rem] font-semibold transition-all duration-150 ${
+                      mode === value
+                        ? "bg-ink-700 text-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
+                        : "text-mist-400 active:text-mist-200"
                     }`}
                   >
                     {value === "signin" ? "Sign in" : "Sign up"}
                   </button>
                 ))}
               </div>
-              <p className="mb-5 text-[13px] text-mist-400">{copy.subtitle}</p>
+              <p className="mb-5 text-[0.875rem] text-mist-500">{copy.subtitle}</p>
             </>
           )}
 
@@ -364,7 +365,7 @@ export function AuthScreen() {
                     required
                   />
                 </div>
-                {hint ? <p className={`mt-1.5 px-1 text-[12px] ${hint.className}`}>{hint.text}</p> : null}
+                {hint ? <p className={`mt-1.5 px-1 text-[0.75rem] ${hint.className}`}>{hint.text}</p> : null}
               </div>
             ) : null}
 
@@ -403,13 +404,13 @@ export function AuthScreen() {
             ) : null}
 
             {error ? (
-              <p role="alert" className="px-1 text-[13px] text-danger-500">
+              <p role="alert" className="px-1 text-[0.8125rem] text-danger-500">
                 {error}
               </p>
             ) : null}
 
             {notice ? (
-              <p role="status" className="px-1 text-[13px] text-accent-400">
+              <p role="status" className="px-1 text-[0.8125rem] text-accent-400">
                 {notice}
               </p>
             ) : null}
@@ -423,7 +424,7 @@ export function AuthScreen() {
             <button
               type="button"
               onClick={() => switchMode("forgot")}
-              className="tap-none mt-4 w-full py-2 text-center text-[13px] text-mist-500 active:text-mist-300"
+              className="tap-none mt-4 w-full py-2 text-center text-[0.875rem] text-accent-500 active:opacity-70"
             >
               Forgot your password?
             </button>

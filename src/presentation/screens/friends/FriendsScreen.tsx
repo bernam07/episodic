@@ -39,11 +39,11 @@ export function FriendsScreen() {
         action={
           <Link
             to="/search?tab=users"
-            className="tap-none flex size-10 items-center justify-center rounded-full border border-white/10 bg-ink-850/80 text-mist-300 shadow-sm backdrop-blur-md transition-all active:scale-95 hover:border-white/20 hover:text-white"
+            className="tap-none flex size-9 items-center justify-center rounded-full bg-ink-850 text-accent-500 transition-opacity active:opacity-70 hover:bg-ink-800"
             aria-label={t("findPeople")}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4-4v2" strokeLinecap="round" strokeLinejoin="round" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
               <circle cx="9" cy="7" r="4" />
               <path d="M19 8v6M22 11h-6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -52,16 +52,16 @@ export function FriendsScreen() {
       />
 
       {data && data.length > 0 ? (
-        <div className="no-scrollbar sticky top-0 z-20 flex gap-2 overflow-x-auto bg-ink-950/80 px-5 pt-1 pb-3 backdrop-blur-xl">
+        <div className="ios-material no-scrollbar sticky top-0 z-20 flex gap-2 overflow-x-auto border-b border-white/[0.08] px-5 pt-2 pb-3">
           {filterTabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setFilter(tab.id)}
-              className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[13px] font-semibold transition-all ${
+              className={`tap-none min-h-[34px] shrink-0 rounded-full px-4 text-[0.8125rem] font-semibold transition-colors ${
                 filter === tab.id
-                  ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white shadow-md shadow-accent-600/30"
-                  : "border border-white/10 bg-ink-900/60 text-mist-400 backdrop-blur-md hover:border-white/20 hover:text-mist-200"
+                  ? "bg-white text-black"
+                  : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:bg-ink-800 hover:text-white"
               }`}
             >
               {tab.label}
@@ -74,13 +74,13 @@ export function FriendsScreen() {
 
       {!isLoading && (!data || data.length === 0) ? (
         <div className="px-5 pt-10 text-center">
-          <p className="text-[15px] font-semibold text-mist-200">{t("noActivity")}</p>
-          <p className="mx-auto mt-1 max-w-xs text-[13px] text-mist-500">
+          <p className="text-[1.0625rem] font-semibold text-white">{t("noActivity")}</p>
+          <p className="mx-auto mt-1 max-w-xs text-[0.875rem] text-mist-500">
             Follow people to see the series they start, finish and rate.
           </p>
           <Link
             to="/search?tab=users"
-            className="tap-none mt-5 inline-flex min-h-[44px] items-center rounded-xl bg-accent-600 px-5 text-[14px] font-semibold text-white active:bg-accent-500"
+            className="tap-none mt-5 inline-flex min-h-[44px] items-center rounded-[12px] bg-accent-500 px-5 text-[1.0625rem] font-semibold text-white active:opacity-80"
           >
             {t("findPeople")}
           </Link>
@@ -88,24 +88,26 @@ export function FriendsScreen() {
       ) : null}
 
       {data && data.length > 0 && filteredEvents.length === 0 ? (
-        <p className="px-5 pt-8 text-center text-[14px] text-mist-500">
+        <p className="px-5 pt-8 text-center text-[0.9375rem] text-mist-500">
           No activity in this filter yet.
         </p>
       ) : null}
 
       {filteredEvents.length > 0 ? (
-        <ul className="divide-y divide-ink-800 px-5">
-          {filteredEvents.map((event) => (
-            <ActivityRow
-              key={`${event.actorId}-${event.eventType}-${event.seriesId}-${event.occurredAt}`}
-              event={event}
-            />
-          ))}
-        </ul>
+        <div className="mx-5 mt-3 overflow-hidden rounded-[14px] border border-white/[0.07] bg-ink-850 px-4">
+          <ul className="divide-y divide-white/[0.08]">
+            {filteredEvents.map((event) => (
+              <ActivityRow
+                key={`${event.actorId}-${event.eventType}-${event.seriesId}-${event.occurredAt}`}
+                event={event}
+              />
+            ))}
+          </ul>
+        </div>
       ) : null}
 
       {data && data.length > 0 ? (
-        <p className="px-5 py-8 text-center text-[12px] text-mist-500">
+        <p className="px-5 py-8 text-center text-[0.75rem] text-mist-500">
           Recent activity from {plural(actorCount, "person", "people")} you follow.
         </p>
       ) : null}

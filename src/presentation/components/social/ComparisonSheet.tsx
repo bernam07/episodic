@@ -52,38 +52,40 @@ export function ComparisonSheet({ open, onClose, userId, displayName }: Comparis
           <Spinner />
         </div>
       ) : !data || data.length === 0 ? (
-        <p className="py-8 text-center text-[14px] text-mist-500">No series to compare yet.</p>
+        <p className="py-8 text-center text-[0.9375rem] text-mist-500">No series to compare yet.</p>
       ) : (
-        <>
+        <div className="pt-3">
           {stats ? (
             <div className="mb-5 flex items-center justify-center gap-3">
               <div className="flex size-16 flex-col items-center justify-center rounded-full border-2 border-accent-500">
-                <span className="text-[18px] font-bold leading-none text-mist-100">
+                <span className="text-[1.125rem] font-bold leading-none tabular-nums text-white">
                   {stats.compatibilityPercent}%
                 </span>
               </div>
-              <div className="text-[13px] text-mist-400">
+              <div className="text-[0.8125rem] text-mist-400">
                 <p>
-                  <strong className="font-semibold text-mist-200">{stats.both}</strong> in common
+                  <strong className="font-semibold text-white">{stats.both}</strong> in common
                 </p>
                 <p>
-                  <strong className="font-semibold text-mist-200">{stats.onlyMe}</strong> only you
+                  <strong className="font-semibold text-white">{stats.onlyMe}</strong> only you
                 </p>
                 <p>
-                  <strong className="font-semibold text-mist-200">{stats.onlyThem}</strong> only them
+                  <strong className="font-semibold text-white">{stats.onlyThem}</strong> only them
                 </p>
               </div>
             </div>
           ) : null}
 
-          <div className="mb-4 flex gap-2">
+          <div className="mb-4 flex rounded-[9px] bg-ink-850 p-[2px]">
             {(["both", "only_me", "only_them"] as Tab[]).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setTab(t)}
-                className={`tap-none flex-1 rounded-full py-2 text-[12px] font-semibold transition-colors ${
-                  tab === t ? "bg-accent-600 text-white" : "bg-ink-800 text-mist-400 active:bg-ink-700"
+                className={`tap-none min-h-[32px] flex-1 rounded-[7px] text-[0.75rem] font-semibold transition-all duration-150 ${
+                  tab === t
+                    ? "bg-ink-700 text-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
+                    : "text-mist-400 active:text-mist-200"
                 }`}
               >
                 {TAB_LABELS[t]} ({tabCounts[t]})
@@ -97,44 +99,44 @@ export function ComparisonSheet({ open, onClose, userId, displayName }: Comparis
                 key={item.tmdbId}
                 to={`/series/${item.tmdbId}`}
                 onClick={onClose}
-                className="tap-none flex items-center gap-3 rounded-xl bg-ink-850 p-2 active:bg-ink-800"
+                className="tap-none flex items-center gap-3 rounded-[14px] border border-white/[0.07] bg-ink-850 p-2.5 active:bg-ink-800"
               >
                 {posterUrl(item.posterPath, "w154") ? (
                   <img
                     src={posterUrl(item.posterPath, "w154")!}
                     alt=""
-                    className="h-16 w-11 shrink-0 rounded-lg object-cover"
+                    className="h-16 w-11 shrink-0 rounded-[8px] object-cover ring-1 ring-white/10 ring-inset"
                   />
                 ) : (
-                  <div className="flex h-16 w-11 shrink-0 items-center justify-center rounded-lg bg-ink-700">
-                    <span className="text-[10px] text-mist-600">N/A</span>
+                  <div className="flex h-16 w-11 shrink-0 items-center justify-center rounded-[8px] bg-ink-800">
+                    <span className="text-[0.625rem] text-mist-500">N/A</span>
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-semibold text-mist-100">{item.seriesName}</p>
-                  <div className="mt-1 flex gap-3 text-[11px]">
+                  <p className="truncate text-[0.875rem] font-semibold text-white">{item.seriesName}</p>
+                  <div className="mt-1 flex gap-3 text-[0.75rem]">
                     {item.myStatus ? (
                       <span className="text-accent-400">
                         You: {SERIES_STATUS_LABELS[item.myStatus]}
                         {item.myRating !== null ? ` · ${item.myRating.toFixed(1)}` : ""}
                       </span>
                     ) : (
-                      <span className="text-mist-600">You: —</span>
+                      <span className="text-mist-500">You: —</span>
                     )}
                     {item.theirStatus ? (
-                      <span className="text-emerald-400">
+                      <span className="text-[#30d158]">
                         Them: {SERIES_STATUS_LABELS[item.theirStatus]}
                         {item.theirRating !== null ? ` · ${item.theirRating.toFixed(1)}` : ""}
                       </span>
                     ) : (
-                      <span className="text-mist-600">Them: —</span>
+                      <span className="text-mist-500">Them: —</span>
                     )}
                   </div>
                 </div>
               </Link>
             ))}
           </div>
-        </>
+        </div>
       )}
     </Sheet>
   );

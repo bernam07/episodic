@@ -11,7 +11,7 @@ import { Sheet } from "@/presentation/components/ui/Sheet";
 import { useCreateList, useUpdateList } from "@/presentation/hooks/useLists";
 
 const inputClass =
-  "w-full rounded-xl border border-ink-700 bg-ink-850 px-4 py-3 text-[15px] text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none";
+  "w-full rounded-[12px] border border-white/[0.08] bg-ink-850 px-4 py-3 text-[1.0625rem] text-white placeholder:text-mist-500 transition-colors focus:border-accent-500 focus:bg-ink-800 focus:outline-none";
 
 type ListFormSheetProps = {
   open: boolean;
@@ -59,9 +59,9 @@ function ListFormContent({
 
   return (
     <>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 pt-2">
         <div>
-          <label htmlFor={titleId} className="mb-1.5 block text-[12px] font-medium text-mist-400">
+          <label htmlFor={titleId} className="mb-1.5 block text-[0.8125rem] font-medium text-mist-400">
             Title
           </label>
           <input
@@ -74,7 +74,7 @@ function ListFormContent({
         </div>
 
         <div>
-          <label htmlFor={descriptionId} className="mb-1.5 block text-[12px] font-medium text-mist-400">
+          <label htmlFor={descriptionId} className="mb-1.5 block text-[0.8125rem] font-medium text-mist-400">
             Description
           </label>
           <textarea
@@ -85,7 +85,7 @@ function ListFormContent({
             rows={3}
             className={`${inputClass} resize-none`}
           />
-          <p className="mt-1 text-right text-[11px] tabular-nums text-mist-500">
+          <p className="mt-1 text-right text-[0.75rem] tabular-nums text-mist-500">
             {description.length}/{MAX_LIST_DESCRIPTION}
           </p>
         </div>
@@ -96,20 +96,20 @@ function ListFormContent({
           aria-checked={isPrivate}
           aria-label="Private list"
           onClick={() => setIsPrivate((value) => !value)}
-          className="tap-none flex items-center justify-between rounded-xl border border-ink-700 bg-ink-850 px-4 py-3 text-left active:bg-ink-800"
+          className="tap-none flex items-center justify-between rounded-[14px] border border-white/[0.07] bg-ink-850 px-4 py-3 text-left active:bg-ink-800"
         >
           <span>
-            <span className="block text-[14px] font-semibold text-mist-100">Private list</span>
-            <span className="block text-[12px] text-mist-500">Only you can see it</span>
+            <span className="block text-[0.9375rem] font-semibold text-white">Private list</span>
+            <span className="block text-[0.8125rem] text-mist-500">Only you can see it</span>
           </span>
           <span
-            className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${
-              isPrivate ? "bg-accent-600" : "bg-ink-700"
+            className={`relative h-[31px] w-[51px] shrink-0 rounded-full p-[2px] transition-colors ${
+              isPrivate ? "bg-[#30d158]" : "bg-ink-700"
             }`}
           >
             <span
-              className={`absolute top-0.5 size-5 rounded-full bg-white transition-transform ${
-                isPrivate ? "translate-x-[18px]" : "translate-x-0.5"
+              className={`block size-[27px] rounded-full bg-white shadow-sm transition-transform ${
+                isPrivate ? "translate-x-[20px]" : "translate-x-0"
               }`}
             />
           </span>
@@ -117,7 +117,7 @@ function ListFormContent({
       </div>
 
       {error ? (
-        <p role="alert" className="mt-3 text-[13px] text-danger-500">
+        <p role="alert" className="mt-3 text-[0.8125rem] text-danger-500">
           {error}
         </p>
       ) : null}

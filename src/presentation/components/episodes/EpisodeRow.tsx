@@ -23,23 +23,23 @@ export function EpisodeRow({ episode, watched, onToggle, onOpenDetail, disabled 
         aria-label={`View details for episode ${episode.episodeNumber}, ${episode.name}`}
         className="tap-none flex min-w-0 flex-1 items-center gap-3 text-left active:opacity-70"
       >
-        <div className="relative h-13 w-23 shrink-0 overflow-hidden rounded-lg bg-ink-800">
+        <div className="relative h-13 w-23 shrink-0 overflow-hidden rounded-[8px] bg-ink-850 ring-1 ring-white/10 ring-inset">
           {still ? (
             <img
               src={still}
               alt=""
               loading="lazy"
               decoding="async"
-              className={`size-full object-cover ${watched ? "" : "opacity-60"}`}
+              className={`size-full object-cover ${watched ? "" : "opacity-65"}`}
             />
           ) : null}
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className={`truncate text-[14px] font-medium ${watched ? "text-mist-100" : "text-mist-300"}`}>
+          <p className={`truncate text-[0.9375rem] font-medium ${watched ? "text-white" : "text-mist-300"}`}>
             {episode.episodeNumber}. {episode.name}
           </p>
-          <p className="mt-0.5 text-[11px] text-mist-500">
+          <p className="mt-0.5 text-[0.75rem] text-mist-500">
             {aired ? (airDate ?? episode.airDate) : "Not aired yet"}
             {episode.runtime ? ` · ${episode.runtime} min` : ""}
           </p>

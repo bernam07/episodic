@@ -53,7 +53,7 @@ export function StatusPicker({
   watchedEpisodes = 0,
 }: StatusPickerProps) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 pt-2">
       {SERIES_STATUSES.map((status) => {
         const active = value === status;
         const busy = pending && pendingStatus === status;
@@ -71,34 +71,34 @@ export function StatusPicker({
             type="button"
             disabled={pending}
             onClick={() => onChange(status)}
-            className={`tap-none flex min-h-[60px] items-center gap-3.5 rounded-xl px-4 text-left transition-colors disabled:opacity-60 ${
+            className={`tap-none flex min-h-[60px] items-center gap-3.5 rounded-[14px] border px-4 text-left transition-colors disabled:opacity-60 ${
               active
-                ? "bg-accent-600/15 ring-1 ring-accent-500/40"
-                : "bg-ink-800 active:bg-ink-700"
+                ? "border-accent-500/40 bg-accent-500/15"
+                : "border-white/[0.07] bg-ink-850 active:bg-ink-800"
             }`}
           >
-            <span className={active ? "text-accent-400" : "text-mist-500"}>{ICONS[status]}</span>
+            <span className={active ? "text-accent-500" : "text-mist-400"}>{ICONS[status]}</span>
 
             <span className="min-w-0 flex-1">
-              <span className={`block text-[15px] font-semibold ${active ? "text-accent-300" : "text-mist-100"}`}>
+              <span className={`block text-[0.9375rem] font-semibold ${active ? "text-accent-400" : "text-white"}`}>
                 {SERIES_STATUS_LABELS[status]}
               </span>
               <span
-                className={`mt-0.5 block truncate text-[12px] ${resetsProgress ? "text-star-500" : "text-mist-500"}`}
+                className={`mt-0.5 block truncate text-[0.75rem] ${resetsProgress ? "text-star-500" : "text-mist-500"}`}
               >
                 {description}
               </span>
             </span>
 
             {busy ? (
-              <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-accent-400 border-t-transparent" />
+              <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
             ) : active ? (
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2.5"
-                className="size-5 shrink-0 text-accent-400"
+                className="size-5 shrink-0 text-accent-500"
               >
                 <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -112,7 +112,7 @@ export function StatusPicker({
           type="button"
           disabled={pending}
           onClick={onRemove}
-          className="tap-none mt-1 min-h-[52px] rounded-xl text-[15px] font-medium text-danger-500 active:bg-ink-800 disabled:opacity-50"
+          className="tap-none mt-1 min-h-[48px] rounded-[14px] text-[0.9375rem] font-normal text-danger-500 active:opacity-70 disabled:opacity-50"
         >
           Remove from library
         </button>
