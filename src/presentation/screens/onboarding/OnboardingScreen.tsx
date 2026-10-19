@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { releaseYear, type SeriesSummary } from "@/domain/entities/Series";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
+import { BrandMark } from "@/presentation/components/ui/BrandMark";
 import { Button } from "@/presentation/components/ui/Button";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
@@ -99,10 +100,13 @@ export function OnboardingScreen() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-3xl flex-col">
       <header className="px-5 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-4">
-        <p className="text-[0.8125rem] font-semibold text-accent-400">
-          Welcome{profile?.displayName || profile?.username ? `, ${profile.displayName || profile.username}` : ""}
-        </p>
-        <h1 className="mt-1 text-[1.75rem] leading-[1.12] font-bold tracking-[-0.022em] text-white">
+        <div className="mb-3 flex items-center gap-2.5">
+          <BrandMark size="sm" />
+          <span className="text-[0.8125rem] font-semibold text-accent-400">
+            Welcome{profile?.displayName || profile?.username ? `, ${profile.displayName || profile.username}` : ""}
+          </span>
+        </div>
+        <h1 className="text-[1.75rem] leading-[1.12] font-bold tracking-[-0.022em] text-white">
           Add a few series you love
         </h1>
         <p className="mt-1.5 text-[0.9375rem] text-mist-400">

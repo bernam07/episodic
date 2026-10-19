@@ -24,7 +24,7 @@ export function durationParts(minutes: number): { value: number; unit: string }[
 
 export function Duration({ minutes, className = "" }: { minutes: number; className?: string }) {
   return (
-    <span className={className}>
+    <span className={`whitespace-nowrap ${className}`.trim()}>
       {durationParts(minutes).map((part, index) => (
         <span key={part.unit}>
           {index > 0 ? <span className="mr-1" /> : null}
@@ -47,9 +47,11 @@ export function SectionHeading({ children, hint }: { children: ReactNode; hint?:
 
 export function InlineStat({ value, label }: { value: ReactNode; label: string }) {
   return (
-    <div className="flex-1">
-      <p className="text-[1.25rem] leading-none font-bold tabular-nums text-white">{value}</p>
-      <p className="mt-1.5 text-[0.75rem] text-mist-500">{label}</p>
+    <div className="min-w-0 flex-1">
+      <p className="truncate text-[1.125rem] leading-none font-bold tabular-nums text-white sm:text-[1.25rem]">
+        {value}
+      </p>
+      <p className="mt-1.5 truncate text-[0.75rem] text-mist-500">{label}</p>
     </div>
   );
 }

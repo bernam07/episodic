@@ -274,17 +274,17 @@ function TasteProfileAndStats() {
 
       <div className="rounded-[18px] border border-white/[0.08] bg-ink-850 p-3.5">
         {topThreeGenres.length > 0 ? (
-          <div className="mb-3.5 grid grid-cols-3 gap-2.5">
+          <div className="mb-3 grid grid-cols-3 gap-2">
             {topThreeGenres.map((entry, idx) => {
               const pct = Math.min(Math.round((entry.count / Math.max(maxGenreCount, 1)) * 100), 100);
               return (
                 <div
                   key={entry.genre}
-                  className="rounded-[12px] border border-white/[0.06] bg-ink-900 p-3"
+                  className="min-w-0 rounded-[12px] border border-white/[0.06] bg-ink-900 p-2.5 sm:p-3"
                 >
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex min-w-0 items-center gap-1.5">
                     <GenreSvgIcon index={idx} />
-                    <span className="truncate text-[0.75rem] font-semibold text-mist-200">
+                    <span className="min-w-0 truncate text-[0.75rem] font-semibold text-mist-200">
                       {entry.genre}
                     </span>
                   </div>
@@ -303,14 +303,18 @@ function TasteProfileAndStats() {
           </div>
         ) : null}
 
-        <div className="flex items-baseline justify-between rounded-[12px] border border-white/[0.06] bg-ink-900 px-4 py-3">
-          <div>
-            <p className="text-[0.75rem] font-medium text-mist-500">Episodes watched</p>
-            <p className="mt-0.5 text-[1.75rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums text-white">
+        <div className="rounded-[12px] border border-white/[0.06] bg-ink-900 px-4 py-3.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-[0.8125rem] font-semibold text-mist-400">Episodes watched</p>
+            <p className="text-[1.625rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums text-white">
               {stats.episodesWatched}
             </p>
           </div>
-          <div className="flex gap-4">
+          <div
+            className={`mt-3 grid gap-2 border-t border-white/[0.06] pt-3 ${
+              watchTimeMinutes > 0 ? "grid-cols-4" : "grid-cols-3"
+            }`}
+          >
             <InlineStat value={stats.seriesTracked} label="series" />
             <InlineStat value={stats.finished} label="finished" />
             <InlineStat value={stats.averageRating ?? "—"} label="avg rating" />

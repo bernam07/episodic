@@ -44,18 +44,19 @@ export default defineConfig(({ mode }) => {
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["icons/apple-touch-icon.png"],
+      includeAssets: ["favicon.svg", "icons/apple-touch-icon.png"],
       manifest: {
         name: "Episodic",
         short_name: "Episodic",
         description: "Track the series you watch.",
-        theme_color: "#0a1120",
-        background_color: "#0a1120",
+        theme_color: "#0b0b0d",
+        background_color: "#0b0b0d",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
         start_url: "/",
         icons: [
+          { src: "/favicon.svg", sizes: "any", type: "image/svg+xml" },
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
           { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },

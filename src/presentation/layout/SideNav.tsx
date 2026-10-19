@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { DeleteAccountSheet } from "@/presentation/components/social/DeleteAccountSheet";
 import { SettingsSheet } from "@/presentation/components/social/SettingsSheet";
+import { BrandMark } from "@/presentation/components/ui/BrandMark";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useI18n } from "@/presentation/i18n/I18nProvider";
 import { NAV_TABS } from "./navigation";
@@ -37,11 +38,7 @@ export function SideNav() {
         <div>
           <div className="px-2.5 pb-6">
             <div className="flex items-center gap-2.5">
-              <span className="flex size-8 items-center justify-center rounded-[9px] bg-accent-500 text-white shadow-[0_2px_10px_rgba(239,51,64,0.35)]">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="size-[18px]">
-                  <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V5zm6 2.5v5l4.5-2.5L10 7.5z" />
-                </svg>
-              </span>
+              <BrandMark size="md" />
               <p className="text-[1.25rem] font-extrabold tracking-[-0.025em] text-white">
                 Episodic
               </p>

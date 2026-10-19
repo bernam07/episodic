@@ -7,6 +7,7 @@ import { RecommendationsRail } from "@/presentation/components/home/Recommendati
 import { ThisWeekRail } from "@/presentation/components/home/ThisWeekRail";
 import { TrendingRail } from "@/presentation/components/home/TrendingRail";
 import { UpNextRail } from "@/presentation/components/home/UpNextRail";
+import { BrandMark } from "@/presentation/components/ui/BrandMark";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useTrending } from "@/presentation/hooks/useDiscovery";
 import { useUnreadCount } from "@/presentation/hooks/useNotifications";
@@ -50,11 +51,7 @@ export function HomeScreen() {
       <header className="ios-material sticky top-0 z-30 border-b border-white/[0.08] pt-[calc(env(safe-area-inset-top)+0.625rem)]">
         <div className="flex items-center justify-between px-5 pb-2.5">
           <div className="flex items-center gap-2.5">
-            <span className="flex size-8 items-center justify-center rounded-[9px] bg-accent-500 text-white shadow-[0_2px_10px_rgba(239,51,64,0.35)]">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="size-[18px]">
-                <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V5zm6 2.5v5l4.5-2.5L10 7.5z" />
-              </svg>
-            </span>
+            <BrandMark size="md" />
             <div>
               <h1 className="text-[1.25rem] leading-none font-extrabold tracking-[-0.025em] text-white">
                 Episodic
