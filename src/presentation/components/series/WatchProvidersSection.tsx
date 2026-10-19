@@ -13,7 +13,7 @@ function ProviderGroup({ label, providers }: { label: string; providers: WatchPr
   return (
     <div className="flex items-center gap-3">
       <span className="w-14 shrink-0 text-[0.75rem] font-semibold text-mist-500">
-        {label}
+        {label}:
       </span>
       <div className="no-scrollbar flex gap-2 overflow-x-auto">
         {sorted.map((provider) => {
@@ -22,15 +22,14 @@ function ProviderGroup({ label, providers }: { label: string; providers: WatchPr
             <div
               key={provider.providerId}
               title={provider.providerName}
-              className="size-10 shrink-0 overflow-hidden rounded-[10px] bg-ink-800 ring-1 ring-white/10 ring-inset"
+              className="flex shrink-0 items-center gap-2 rounded-[8px] border border-white/[0.08] bg-ink-800 px-2.5 py-1.5"
             >
               {logo ? (
-                <img src={logo} alt={provider.providerName} loading="lazy" className="size-full object-cover" />
-              ) : (
-                <span className="flex size-full items-center justify-center text-[0.5625rem] text-mist-500">
-                  {provider.providerName.slice(0, 3)}
-                </span>
-              )}
+                <img src={logo} alt={provider.providerName} loading="lazy" className="size-5 rounded-[4px] object-cover" />
+              ) : null}
+              <span className="text-[0.75rem] font-semibold text-white">
+                {provider.providerName}
+              </span>
             </div>
           );
         })}
@@ -44,9 +43,9 @@ export function WatchProvidersSection({ tmdbId }: { tmdbId: number }) {
 
   if (isLoading) {
     return (
-      <section className="mt-7">
+      <section className="mt-6">
         <Skeleton className="mb-3 h-4 w-32" />
-        <Skeleton className="h-16 w-full rounded-[14px]" />
+        <Skeleton className="h-14 w-full rounded-[14px]" />
       </section>
     );
   }
@@ -56,15 +55,15 @@ export function WatchProvidersSection({ tmdbId }: { tmdbId: number }) {
   }
 
   return (
-    <section className="mt-7">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="flex items-baseline gap-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
-          <span>Where to Watch</span>
-          <span className="text-[0.875rem] font-normal text-mist-500">{data.region}</span>
+    <section className="mt-6">
+      <div className="mb-2.5 flex items-baseline justify-between">
+        <h2 className="flex items-baseline gap-2 text-[0.875rem] font-bold tracking-[-0.01em] text-mist-300">
+          <span>Available on</span>
+          <span className="text-[0.75rem] font-normal text-mist-500">({data.region})</span>
         </h2>
         <span className="text-[0.6875rem] text-mist-500">via JustWatch</span>
       </div>
-      <div className="flex flex-col gap-3 rounded-[14px] border border-white/[0.07] bg-ink-850 p-4">
+      <div className="flex flex-col gap-2.5 rounded-[14px] border border-white/[0.08] bg-ink-850 p-3.5">
         <ProviderGroup label="Stream" providers={data.flatrate} />
         <ProviderGroup label="Rent" providers={data.rent} />
         <ProviderGroup label="Buy" providers={data.buy} />

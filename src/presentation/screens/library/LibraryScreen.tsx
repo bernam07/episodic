@@ -219,7 +219,7 @@ export function LibraryScreen() {
         subtitle={data && data.length > 0 ? `${data.length} ${t("series")}` : undefined}
       />
 
-      <div className="ios-material sticky top-0 z-20 px-5 pt-2 pb-2.5">
+      <div className="ios-material sticky top-0 z-20 px-5 pt-2.5 pb-2">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <svg
@@ -227,7 +227,7 @@ export function LibraryScreen() {
               fill="none"
               stroke="currentColor"
               strokeWidth="2.2"
-              className="pointer-events-none absolute top-1/2 left-3 size-[17px] -translate-y-1/2 text-mist-500"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-[17px] -translate-y-1/2 text-mist-500"
             >
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
@@ -240,7 +240,7 @@ export function LibraryScreen() {
               placeholder={t("searchLibraryPlaceholder")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="w-full rounded-[10px] bg-ink-850 py-2 pr-4 pl-9 text-[1.0625rem] text-white placeholder:text-mist-500 transition-colors focus:bg-ink-800 focus:outline-none"
+              className="w-full rounded-[12px] border border-white/[0.08] bg-ink-850 py-2.5 pr-4 pl-10 text-[0.9375rem] text-white placeholder:text-mist-500 transition-colors focus:border-accent-500 focus:bg-ink-800 focus:outline-none"
             />
           </div>
 
@@ -249,7 +249,7 @@ export function LibraryScreen() {
             onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
             aria-label={viewMode === "grid" ? t("listView") : t("gridView")}
             title={viewMode === "grid" ? t("listView") : t("gridView")}
-            className="tap-none flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-ink-850 text-accent-500 transition-opacity active:opacity-70 hover:bg-ink-800"
+            className="tap-none flex size-[42px] shrink-0 items-center justify-center rounded-[12px] border border-white/[0.08] bg-ink-850 text-white transition-opacity active:opacity-70 hover:bg-ink-800"
           >
             {viewMode === "grid" ? (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
@@ -271,7 +271,7 @@ export function LibraryScreen() {
             disabled={!data || data.length === 0}
             aria-label={t("surpriseMe")}
             title={t("surpriseMe")}
-            className="tap-none flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-ink-850 text-accent-500 transition-opacity active:opacity-70 hover:bg-ink-800 disabled:opacity-40"
+            className="tap-none flex size-[42px] shrink-0 items-center justify-center rounded-[12px] border border-white/[0.08] bg-ink-850 text-white transition-opacity active:opacity-70 hover:bg-ink-800 disabled:opacity-40"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
               <rect x="3" y="3" width="18" height="18" rx="4" />
@@ -286,7 +286,7 @@ export function LibraryScreen() {
       </div>
 
       {focused ? (
-        <div className="ios-material sticky top-[52px] z-20 border-b border-white/[0.08] px-5 pb-3.5">
+        <div className="ios-material sticky top-[56px] z-20 border-b border-white/[0.08] px-5 pb-3.5">
           <button
             type="button"
             onClick={clearView}
@@ -299,28 +299,32 @@ export function LibraryScreen() {
           </button>
         </div>
       ) : (
-        <div className="ios-material no-scrollbar sticky top-[52px] z-20 flex gap-2 overflow-x-auto border-b border-white/[0.08] px-5 pb-3.5">
-          {FILTERS.map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setFilter(value)}
-              className={`tap-none flex min-h-[34px] shrink-0 items-center gap-1.5 rounded-full px-4 text-[0.8125rem] font-semibold transition-colors ${
-                filter === value
-                  ? "bg-white text-black"
-                  : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:bg-ink-800 hover:text-white"
-              }`}
-            >
-              {filterLabels[value]}
-              <span
-                className={`text-[0.75rem] tabular-nums ${
-                  filter === value ? "text-black/60" : "text-mist-500"
+        <div className="ios-material no-scrollbar sticky top-[56px] z-20 flex gap-6 overflow-x-auto border-b border-white/[0.08] px-5">
+          {FILTERS.map((value) => {
+            const active = filter === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setFilter(value)}
+                className={`tap-none relative flex shrink-0 items-center gap-1.5 py-2.5 text-[0.875rem] font-semibold transition-colors ${
+                  active ? "text-white" : "text-mist-500 hover:text-mist-300"
                 }`}
               >
-                {counts[value]}
-              </span>
-            </button>
-          ))}
+                {filterLabels[value]}
+                <span
+                  className={`text-[0.75rem] tabular-nums ${
+                    active ? "text-mist-300" : "text-mist-500"
+                  }`}
+                >
+                  {counts[value]}
+                </span>
+                {active ? (
+                  <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-white" />
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       )}
 

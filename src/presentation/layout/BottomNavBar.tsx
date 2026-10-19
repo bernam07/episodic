@@ -8,7 +8,7 @@ export function BottomNavBar() {
   const { t } = useI18n();
 
   return (
-    <nav className="pb-safe ios-material fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.12] md:hidden">
+    <nav className="pb-safe ios-material fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] md:hidden">
       <ul className="flex items-stretch justify-around px-1">
         {NAV_TABS.map((tab) => (
           <li key={tab.to} className="flex-1">
@@ -17,8 +17,8 @@ export function BottomNavBar() {
               end={tab.to === "/"}
               onClick={onTabClick(tab.to)}
               className={({ isActive }) =>
-                `tap-none relative flex min-h-[3.125rem] flex-col items-center justify-center gap-0.5 pt-1.5 pb-1 transition-colors duration-150 ${
-                  isActive ? "text-accent-500" : "text-mist-500 active:text-mist-300"
+                `tap-none relative flex min-h-[3.375rem] flex-col items-center justify-center gap-1 pt-1.5 pb-1 transition-colors duration-150 ${
+                  isActive ? "text-white" : "text-mist-500 active:text-mist-300"
                 }`
               }
             >
@@ -26,8 +26,8 @@ export function BottomNavBar() {
                 <>
                   <div className="relative">{tab.icon}</div>
                   <span
-                    className={`text-[0.625rem] leading-tight tracking-[-0.01em] ${
-                      isActive ? "font-semibold text-accent-500" : "font-medium"
+                    className={`text-[0.6875rem] leading-tight tracking-[-0.01em] ${
+                      isActive ? "font-semibold text-white" : "font-medium text-mist-500"
                     }`}
                   >
                     {t(tab.key)}

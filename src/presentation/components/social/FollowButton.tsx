@@ -9,7 +9,10 @@ type FollowButtonProps = {
 export function FollowButton({ userId, isFollowing, size = "sm" }: FollowButtonProps) {
   const toggle = useToggleFollow();
 
-  const height = size === "sm" ? "min-h-[34px] px-4 text-[0.8125rem]" : "min-h-[40px] px-5 text-[0.9375rem]";
+  const height =
+    size === "sm"
+      ? "min-h-[34px] rounded-[9px] px-3.5 text-[0.8125rem]"
+      : "min-h-[38px] rounded-[10px] px-4 text-[0.8125rem]";
 
   return (
     <button
@@ -20,10 +23,10 @@ export function FollowButton({ userId, isFollowing, size = "sm" }: FollowButtonP
         event.stopPropagation();
         toggle.mutate({ userId, follow: !isFollowing });
       }}
-      className={`tap-none shrink-0 rounded-full font-semibold transition-colors disabled:opacity-50 ${height} ${
+      className={`tap-none shrink-0 font-bold transition-all disabled:opacity-50 ${height} ${
         isFollowing
-          ? "bg-ink-700 text-white active:bg-ink-600"
-          : "bg-accent-500 text-white active:opacity-80"
+          ? "border border-white/15 bg-ink-800 text-white hover:bg-ink-700 active:opacity-80"
+          : "bg-accent-500 text-white shadow-[0_2px_10px_rgba(239,51,64,0.3)] hover:bg-accent-400 active:opacity-85"
       }`}
     >
       {toggle.isPending ? "…" : isFollowing ? "Following" : "Follow"}

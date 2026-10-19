@@ -331,14 +331,14 @@ export function SearchScreen() {
     <>
       <ScreenHeader title={t("search")} />
 
-      <div className="ios-material sticky top-0 z-20 border-b border-white/[0.08] px-5 pt-2 pb-3">
+      <div className="ios-material sticky top-0 z-20 border-b border-white/[0.08] px-5 pt-2.5">
         <div className="relative">
           <svg
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2.2"
-            className="pointer-events-none absolute top-1/2 left-3 size-[17px] -translate-y-1/2 text-mist-500"
+            className="pointer-events-none absolute top-1/2 left-3.5 size-[17px] -translate-y-1/2 text-mist-500"
           >
             <circle cx="11" cy="11" r="7" />
             <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
@@ -357,7 +357,7 @@ export function SearchScreen() {
                 setRecentSearches(getRecentSearches());
               }
             }}
-            className="w-full rounded-[10px] bg-ink-850 py-2 pr-9 pl-9 text-[1.0625rem] text-white placeholder:text-mist-500 transition-colors focus:bg-ink-800 focus:outline-none"
+            className="w-full rounded-[12px] border border-white/[0.08] bg-ink-850 py-2.5 pr-9 pl-10 text-[0.9375rem] text-white placeholder:text-mist-500 transition-colors focus:border-accent-500 focus:bg-ink-800 focus:outline-none"
           />
           {query.length > 0 ? (
             <button
@@ -376,21 +376,25 @@ export function SearchScreen() {
           ) : null}
         </div>
 
-        <div className="mt-2.5 flex rounded-[9px] bg-ink-850 p-[2px]">
-          {(["series", "users"] as Tab[]).map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setTab(value)}
-              className={`tap-none min-h-[30px] flex-1 rounded-[7px] text-[0.8125rem] font-semibold transition-all duration-150 ${
-                tab === value
-                  ? "bg-ink-700 text-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
-                  : "text-mist-400 hover:text-mist-200"
-              }`}
-            >
-              {value === "series" ? t("series") : t("people")}
-            </button>
-          ))}
+        <div className="mt-2 flex gap-6">
+          {(["series", "users"] as Tab[]).map((value) => {
+            const active = tab === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setTab(value)}
+                className={`tap-none relative py-2.5 text-[0.875rem] font-semibold transition-colors ${
+                  active ? "text-white" : "text-mist-500 hover:text-mist-300"
+                }`}
+              >
+                {value === "series" ? t("series") : t("people")}
+                {active ? (
+                  <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-white" />
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { backdropUrl } from "@/data/tmdb/images";
+import { computeLibraryInsights } from "@/domain/entities/LibraryInsights";
 import { computeLibraryStats } from "@/domain/entities/LibraryStats";
 import { ListsSection } from "@/presentation/components/lists/ListsSection";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
-import { RatingBadge, WatchedBadge } from "@/presentation/components/series/SeriesCard";
+import { RatingBadge, SeriesCard, WatchedBadge } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { DeleteAccountSheet } from "@/presentation/components/social/DeleteAccountSheet";
@@ -25,49 +27,84 @@ import {
 } from "@/presentation/hooks/useTracking";
 import { pluralize } from "@/presentation/utils/plural";
 
-function Header({ onOpenSettings }: { onOpenSettings: () => void }) {
+type ProfileTab = "overview" | "watchlist" | "reviews" | "lists" | "diary";
+
+const GENRE_BAR_COLORS = ["bg-accent-500", "bg-[#3b82f6]", "bg-[#f59e0b]"];
+const GENRE_ICON_COLORS = ["text-accent-400", "text-[#60a5fa]", "text-[#fbbf24]"];
+
+function GenreSvgIcon({ index }: { index: number }) {
+  const color = GENRE_ICON_COLORS[index % GENRE_ICON_COLORS.length];
+  if (index === 0) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`size-3.5 shrink-0 ${color}`}>
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (index === 1) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`size-3.5 shrink-0 ${color}`}>
+        <rect x="2" y="3" width="20" height="14" rx="2" />
+        <path d="M8 21h8M12 17v4" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`size-3.5 shrink-0 ${color}`}>
+      <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V5z" />
+    </svg>
+  );
+}
+
+function Header({
+  onOpenSettings,
+  activeTab,
+  onSelectTab,
+}: {
+  onOpenSettings: () => void;
+  activeTab: ProfileTab;
+  onSelectTab: (tab: ProfileTab) => void;
+}) {
   const { profile, user } = useAuth();
   const { data: summary } = useProfileSummary(profile?.username ?? null);
+  const { data: library } = useLibrary();
   const [editOpen, setEditOpen] = useState(false);
   const [followMode, setFollowMode] = useState<"followers" | "following" | null>(null);
 
+  const bannerPath = useMemo(() => {
+    if (!library || library.length === 0) return null;
+    const pinned = library.find((item) => item.favoritePinnedAt && item.backdropPath);
+    if (pinned?.backdropPath) return pinned.backdropPath;
+    const fav = library.find((item) => item.isFavorite && item.backdropPath);
+    if (fav?.backdropPath) return fav.backdropPath;
+    const anyWithBackdrop = library.find((item) => item.backdropPath);
+    return anyWithBackdrop?.backdropPath ?? null;
+  }, [library]);
+
+  const bannerUrl = backdropUrl(bannerPath, "w1280");
+  const seriesCount = summary?.seriesCount ?? library?.length ?? 0;
+
+  const tabs: { id: ProfileTab; label: string }[] = [
+    { id: "overview", label: "Overview" },
+    { id: "watchlist", label: "Watchlist" },
+    { id: "reviews", label: "Reviews" },
+    { id: "lists", label: "Lists" },
+    { id: "diary", label: "Activity" },
+  ];
+
   return (
-    <header className="px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-5">
-      <div className="flex items-center gap-4">
-        <Avatar
-          username={profile?.username ?? "?"}
-          displayName={profile?.displayName}
-          avatarUrl={profile?.avatarUrl}
-          size="lg"
-        />
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[1.375rem] font-bold tracking-[-0.02em] text-white">
-            {profile?.displayName || profile?.username || "Profile"}
-          </h1>
-          {profile ? <p className="truncate text-[0.8125rem] text-mist-500">@{profile.username}</p> : null}
-          <p className="mt-0.5 truncate text-[0.75rem] text-mist-500">{user?.email}</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setEditOpen(true)}
-            aria-label="Edit profile"
-            className="tap-none flex size-9 items-center justify-center rounded-full bg-ink-850 text-accent-500 transition-opacity active:opacity-70 hover:bg-ink-800"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
-              <path
-                d="M4 20l4.3-.9L19.6 7.8a1.5 1.5 0 0 0 0-2.1l-1.3-1.3a1.5 1.5 0 0 0-2.1 0L4.9 15.7z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path d="M14.5 6.5l3 3" strokeLinecap="round" />
-            </svg>
-          </button>
+    <header className="border-b border-white/[0.08]">
+      <div className="relative h-[148px] w-full overflow-hidden bg-gradient-to-br from-accent-600/25 via-ink-900 to-ink-950 md:h-[180px]">
+        {bannerUrl ? (
+          <img src={bannerUrl} alt="" className="size-full object-cover opacity-55" />
+        ) : null}
+        <div className="hero-scrim absolute inset-0" />
+        <div className="pt-safe absolute top-0 right-0 flex items-center gap-2 px-5 pt-3">
           <button
             type="button"
             onClick={onOpenSettings}
             aria-label="Settings"
-            className="tap-none flex size-9 items-center justify-center rounded-full bg-ink-850 text-accent-500 transition-opacity active:opacity-70 hover:bg-ink-800"
+            className="ios-material tap-none flex size-9 items-center justify-center rounded-full border border-white/10 text-white transition-opacity active:opacity-70 hover:bg-ink-800"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
               <circle cx="12" cy="12" r="3" />
@@ -81,19 +118,101 @@ function Header({ onOpenSettings }: { onOpenSettings: () => void }) {
         </div>
       </div>
 
-      {profile?.bio ? <p className="mt-3 text-[0.9375rem] whitespace-pre-wrap text-mist-300">{profile.bio}</p> : null}
-
-      {summary ? (
-        <div className="mt-4 flex gap-5">
-          <button type="button" onClick={() => setFollowMode("followers")} className="tap-none text-[0.8125rem] text-mist-500">
-            <strong className="font-semibold text-white">{summary.followersCount}</strong>{" "}
-            {pluralize(summary.followersCount, "follower")}
-          </button>
-          <button type="button" onClick={() => setFollowMode("following")} className="tap-none text-[0.8125rem] text-mist-500">
-            <strong className="font-semibold text-white">{summary.followingCount}</strong> following
-          </button>
+      <div className="relative -mt-10 px-5">
+        <div className="flex items-end justify-between gap-4">
+          <Avatar
+            username={profile?.username ?? "?"}
+            displayName={profile?.displayName}
+            avatarUrl={profile?.avatarUrl}
+            size="lg"
+            ring
+          />
+          <div className="flex shrink-0 items-center gap-2 pb-1">
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              aria-label="Edit profile"
+              className="tap-none flex min-h-[36px] items-center gap-1.5 rounded-[10px] bg-accent-500 px-4 text-[0.8125rem] font-bold text-white shadow-[0_2px_10px_rgba(239,51,64,0.3)] transition-opacity hover:bg-accent-400 active:opacity-80"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                <path
+                  d="M4 20l4.3-.9L19.6 7.8a1.5 1.5 0 0 0 0-2.1l-1.3-1.3a1.5 1.5 0 0 0-2.1 0L4.9 15.7z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Edit Profile
+            </button>
+          </div>
         </div>
-      ) : null}
+
+        <div className="mt-3">
+          <h1 className="truncate text-[1.375rem] font-extrabold tracking-[-0.025em] text-white">
+            {profile?.displayName || profile?.username || "Profile"}
+          </h1>
+          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[0.8125rem] text-mist-500">
+            {profile ? <span>@{profile.username}</span> : null}
+            {user?.email ? (
+              <>
+                <span>•</span>
+                <span className="truncate">{user.email}</span>
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        {profile?.bio ? (
+          <p className="mt-2.5 text-[0.875rem] leading-relaxed whitespace-pre-wrap text-mist-300">{profile.bio}</p>
+        ) : null}
+
+        <div className="mt-4 flex items-center divide-x divide-white/[0.12] text-[0.8125rem]">
+          <div className="pr-4">
+            <strong className="font-bold tabular-nums text-white">{seriesCount}</strong>{" "}
+            <span className="text-mist-400">Series</span>
+          </div>
+          {summary ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setFollowMode("following")}
+                className="tap-none px-4 text-mist-400 hover:text-white"
+              >
+                <strong className="font-bold tabular-nums text-white">{summary.followingCount}</strong>{" "}
+                Following
+              </button>
+              <button
+                type="button"
+                onClick={() => setFollowMode("followers")}
+                className="tap-none pl-4 text-mist-400 hover:text-white"
+              >
+                <strong className="font-bold tabular-nums text-white">{summary.followersCount}</strong>{" "}
+                {pluralize(summary.followersCount, "Follower", "Followers")}
+              </button>
+            </>
+          ) : null}
+        </div>
+
+        <div className="no-scrollbar mt-4 flex gap-6 overflow-x-auto">
+          {tabs.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onSelectTab(tab.id)}
+                className={`tap-none relative shrink-0 py-2.5 text-[0.875rem] font-semibold transition-colors ${
+                  active ? "text-white" : "text-mist-500 hover:text-mist-300"
+                }`}
+              >
+                {tab.label}
+                {active ? (
+                  <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-white" />
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <EditProfileSheet open={editOpen} onClose={() => setEditOpen(false)} />
       <FollowListSheet
@@ -106,64 +225,99 @@ function Header({ onOpenSettings }: { onOpenSettings: () => void }) {
   );
 }
 
-function Stats() {
+function TasteProfileAndStats() {
   const { data, isLoading } = useLibrary();
   const { data: streak } = useWatchStreak();
 
   if (isLoading) {
     return (
-      <section className="px-5">
-        <Skeleton className="h-42 w-full rounded-[20px]" />
+      <section className="mt-5 px-5">
+        <Skeleton className="h-44 w-full rounded-[18px]" />
       </section>
     );
   }
 
   const library = data ?? [];
   const stats = computeLibraryStats(library);
+  const insights = computeLibraryInsights(library);
+  const topThreeGenres = insights.topGenres.slice(0, 3);
+  const maxGenreCount = topThreeGenres[0]?.count ?? 1;
   const watchTimeMinutes = library.reduce(
     (total, item) => total + item.watchedEpisodes * item.episodeRuntime,
     0
   );
 
   return (
-    <section className="px-5">
-      <div className="relative overflow-hidden rounded-[20px] border border-white/[0.07] bg-ink-850 px-6 pt-5 pb-5">
-        <div className="relative flex items-baseline justify-between gap-3">
-          <p className="text-[0.8125rem] font-semibold text-mist-500">
-            Episodes watched
-          </p>
-          <div className="flex shrink-0 items-center gap-3">
-            {streak && streak > 0 ? (
-              <span className="flex items-center gap-1 text-[0.8125rem] font-bold text-[#ff9f0a]" title={`${streak}-day check-in streak`}>
-                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5">
-                  <path d="M12 2c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1 0-2-1-3 2 1 4 4 4 8a8 8 0 0 1-16 0c0-3 2-5 3-7 1 2 2 2 3 1 0-2-1-3-1-5z" />
-                </svg>
-                {streak}
-              </span>
-            ) : null}
-            <Link
-              to="/stats"
-              className="tap-none flex shrink-0 items-center gap-1 text-[0.875rem] font-normal text-accent-500 active:opacity-70"
-            >
-              All stats
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
-                <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+    <section className="mt-5 px-5">
+      <div className="mb-2.5 flex items-center justify-between">
+        <h2 className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">Taste Profile</h2>
+        <div className="flex items-center gap-3">
+          {streak && streak > 0 ? (
+            <span className="flex items-center gap-1 text-[0.8125rem] font-bold text-[#ff9f0a]" title={`${streak}-day check-in streak`}>
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5">
+                <path d="M12 2c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1 0-2-1-3 2 1 4 4 4 8a8 8 0 0 1-16 0c0-3 2-5 3-7 1 2 2 2 3 1 0-2-1-3-1-5z" />
               </svg>
-            </Link>
-          </div>
-        </div>
-
-        <p className="relative mt-2 text-[2.75rem] leading-none font-bold tracking-[-0.03em] tabular-nums text-white">
-          {stats.episodesWatched}
-        </p>
-
-        <div className="relative mt-5 flex gap-2 border-t border-white/[0.08] pt-4">
-          <InlineStat value={stats.seriesTracked} label="series" />
-          <InlineStat value={stats.finished} label="finished" />
-          <InlineStat value={stats.averageRating ?? "—"} label="avg rating" />
-          {watchTimeMinutes > 0 ? (
-            <InlineStat value={<Duration minutes={watchTimeMinutes} />} label="watched" />
+              {streak}
+            </span>
           ) : null}
+          <Link
+            to="/stats"
+            className="tap-none flex items-center gap-1 text-[0.8125rem] font-semibold text-mist-400 hover:text-white active:opacity-70"
+          >
+            All stats
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+              <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        </div>
+      </div>
+
+      <div className="rounded-[18px] border border-white/[0.08] bg-ink-850 p-3.5">
+        {topThreeGenres.length > 0 ? (
+          <div className="mb-3.5 grid grid-cols-3 gap-2.5">
+            {topThreeGenres.map((entry, idx) => {
+              const pct = Math.min(Math.round((entry.count / Math.max(maxGenreCount, 1)) * 100), 100);
+              return (
+                <div
+                  key={entry.genre}
+                  className="rounded-[12px] border border-white/[0.06] bg-ink-900 p-3"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <GenreSvgIcon index={idx} />
+                    <span className="truncate text-[0.75rem] font-semibold text-mist-200">
+                      {entry.genre}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[1.125rem] leading-none font-extrabold tabular-nums text-white">
+                    {pct}%
+                  </p>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
+                    <div
+                      className={`bar-grow-x h-full rounded-full ${GENRE_BAR_COLORS[idx % GENRE_BAR_COLORS.length]}`}
+                      style={{ width: `${Math.max(pct, 8)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+
+        <div className="flex items-baseline justify-between rounded-[12px] border border-white/[0.06] bg-ink-900 px-4 py-3">
+          <div>
+            <p className="text-[0.75rem] font-medium text-mist-500">Episodes watched</p>
+            <p className="mt-0.5 text-[1.75rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums text-white">
+              {stats.episodesWatched}
+            </p>
+          </div>
+          <div className="flex gap-4">
+            <InlineStat value={stats.seriesTracked} label="series" />
+            <InlineStat value={stats.finished} label="finished" />
+            <InlineStat value={stats.averageRating ?? "—"} label="avg rating" />
+            {watchTimeMinutes > 0 ? (
+              <InlineStat value={<Duration minutes={watchTimeMinutes} />} label="watched" />
+            ) : null}
+          </div>
         </div>
       </div>
     </section>
@@ -202,10 +356,10 @@ function Favorites() {
   if (favorites.length === 0) return null;
 
   return (
-    <section className="mt-8">
+    <section className="mt-7">
       <div className="mb-3 flex items-baseline justify-between px-5">
-        <h2 className="flex items-center gap-1.5 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
-          <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 text-danger-500">
+        <h2 className="flex items-center gap-1.5 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 text-accent-500">
             <path d="M12 21.23l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
           </svg>
           <span>Favorites</span>
@@ -283,13 +437,55 @@ function Favorites() {
   );
 }
 
+function RecentlyWatchedGrid() {
+  const { data } = useLibrary();
+  const recent = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    return [...data]
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .slice(0, 6);
+  }, [data]);
+
+  if (recent.length === 0) return null;
+
+  return (
+    <section className="mt-7 px-5">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">Recently Watched</h2>
+        <Link
+          to="/library"
+          className="tap-none flex items-center gap-1 text-[0.8125rem] font-semibold text-mist-400 hover:text-white active:opacity-70"
+        >
+          See all
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+            <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
+      </div>
+      <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
+        {recent.map((item) => (
+          <SeriesCard
+            key={item.seriesId}
+            tmdbId={item.tmdbId}
+            name={item.name}
+            posterPath={item.posterPath}
+            status={item.status}
+            rating={item.userRating}
+            progressPercent={item.progressPercent}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function OwnReviews() {
   const { user } = useAuth();
   const { data, isLoading } = useOwnReviews();
 
   return (
-    <section className="mt-8 px-5">
-      <h2 className="mb-1 flex items-baseline gap-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
+    <section className="mt-7 px-5">
+      <h2 className="mb-1 flex items-baseline gap-2 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
         <span>Your Reviews</span>
         {data && data.length > 0 ? <span className="text-[0.875rem] font-normal text-mist-500">{data.length}</span> : null}
       </h2>
@@ -314,15 +510,39 @@ export function ProfileScreen() {
   const { profile, user } = useAuth();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
 
   return (
     <>
-      <Header onOpenSettings={() => setSettingsOpen(true)} />
-      <Stats />
-      <Favorites />
-      <ListsSection userId={user?.id ?? null} isOwn />
-      <DiarySection userId={user?.id ?? null} />
-      <OwnReviews />
+      <Header
+        onOpenSettings={() => setSettingsOpen(true)}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+      />
+
+      {activeTab === "overview" ? (
+        <>
+          <TasteProfileAndStats />
+          <Favorites />
+          <RecentlyWatchedGrid />
+          <ListsSection userId={user?.id ?? null} isOwn />
+          <DiarySection userId={user?.id ?? null} />
+          <OwnReviews />
+        </>
+      ) : null}
+
+      {activeTab === "watchlist" ? (
+        <>
+          <Favorites />
+          <RecentlyWatchedGrid />
+        </>
+      ) : null}
+
+      {activeTab === "reviews" ? <OwnReviews /> : null}
+
+      {activeTab === "lists" ? <ListsSection userId={user?.id ?? null} isOwn /> : null}
+
+      {activeTab === "diary" ? <DiarySection userId={user?.id ?? null} /> : null}
 
       <div className="h-6" />
 

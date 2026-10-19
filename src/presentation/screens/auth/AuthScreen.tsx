@@ -262,10 +262,17 @@ export function AuthScreen() {
         <PosterWall posterPaths={posterPaths} />
         <div className="hero-scrim absolute inset-0" />
         <div className="pt-safe absolute inset-x-0 bottom-0 px-6 pb-7 md:inset-0 md:flex md:flex-col md:justify-end md:px-14 md:pb-16">
-          <p className="text-[0.8125rem] font-semibold text-accent-400">
-            Episodic
-          </p>
-          <h1 className="mt-1.5 max-w-md text-[1.75rem] leading-[1.12] font-bold tracking-[-0.022em] text-white md:max-w-lg md:text-[2.125rem]">
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-8 items-center justify-center rounded-[9px] bg-accent-500 text-white shadow-[0_2px_10px_rgba(239,51,64,0.35)]">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-[18px]">
+                <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V5zm6 2.5v5l4.5-2.5L10 7.5z" />
+              </svg>
+            </span>
+            <p className="text-[1.125rem] font-extrabold tracking-[-0.02em] text-white">
+              Episodic
+            </p>
+          </div>
+          <h1 className="mt-3 max-w-md text-[1.75rem] leading-[1.12] font-extrabold tracking-[-0.025em] text-white md:max-w-lg md:text-[2.125rem]">
             Track every episode. Rate what you finish.
           </h1>
           <p className="mt-2 max-w-sm text-[0.9375rem] text-mist-300 md:mt-3 md:text-[1.0625rem]">
@@ -296,21 +303,25 @@ export function AuthScreen() {
             </>
           ) : (
             <>
-              <div className="mb-5 flex rounded-[9px] bg-ink-850 p-[2px]">
-                {(["signin", "signup"] as const).map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => switchMode(value)}
-                    className={`tap-none min-h-[34px] flex-1 rounded-[7px] text-[0.8125rem] font-semibold transition-all duration-150 ${
-                      mode === value
-                        ? "bg-ink-700 text-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
-                        : "text-mist-400 active:text-mist-200"
-                    }`}
-                  >
-                    {value === "signin" ? "Sign in" : "Sign up"}
-                  </button>
-                ))}
+              <div className="mb-5 flex gap-6 border-b border-white/[0.08]">
+                {(["signin", "signup"] as const).map((value) => {
+                  const active = mode === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => switchMode(value)}
+                      className={`tap-none relative pb-2.5 text-[0.9375rem] font-semibold transition-colors ${
+                        active ? "text-white" : "text-mist-500 hover:text-mist-300"
+                      }`}
+                    >
+                      {value === "signin" ? "Sign in" : "Sign up"}
+                      {active ? (
+                        <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-white" />
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
               <p className="mb-5 text-[0.875rem] text-mist-500">{copy.subtitle}</p>
             </>
