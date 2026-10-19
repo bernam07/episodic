@@ -95,16 +95,19 @@ function GenreRecommendations({
     <>
       {recentSearches.length > 0 ? (
         <div className="mb-5 px-5 pt-2">
-          <div className="mb-2 flex items-baseline justify-between">
+          <div className="mb-2.5 flex items-center justify-between">
             <span className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
               {t("recentSearches")}
             </span>
             <button
               type="button"
               onClick={onClearRecent}
-              className="tap-none text-[0.9375rem] font-normal text-accent-500 active:opacity-70"
+              className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-2.5 py-1 text-[0.75rem] font-semibold text-mist-300 transition-colors hover:bg-ink-800 hover:text-white active:opacity-75"
             >
-              {t("clearHistory")}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-mist-400">
+                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              </svg>
+              <span>{t("clearHistory")}</span>
             </button>
           </div>
           <div className="no-scrollbar flex flex-wrap gap-2">

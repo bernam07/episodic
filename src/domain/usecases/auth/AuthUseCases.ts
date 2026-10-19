@@ -133,7 +133,10 @@ export class CheckUsernameAvailable {
 export class UpdateProfile {
   constructor(private readonly auth: IAuthRepository) {}
 
-  async execute(userId: string, input: { displayName: string; bio: string }): Promise<Profile> {
+  async execute(
+    userId: string,
+    input: { displayName: string; bio: string; bannerUrl?: string | null }
+  ): Promise<Profile> {
     const displayName = input.displayName.trim();
     const bio = input.bio.trim();
 
@@ -149,7 +152,11 @@ export class UpdateProfile {
       throw new AppError("validation", `Bio must be ${MAX_BIO_LENGTH} characters or fewer.`);
     }
 
-    return this.auth.updateProfile(userId, { displayName, bio: bio || null });
+    return this.auth.updateProfile(userId, {
+      displayName,
+      bio: bio || null,
+      ...(input.bannerUrl !== undefined ? { bannerUrl: input.bannerUrl } : {}),
+    });
   }
 }
 
@@ -162,6 +169,18 @@ export class UploadAvatar {
     }
 
     return this.auth.uploadAvatar(userId, file);
+  }
+}
+
+export class UploadBanner {
+  constructor(private readonly auth: IAuthRepository) {}
+
+  async execute(userId: string, file: File): Promise<string> {
+    if (!isValidAvatarFile(file.type, file.size)) {
+      throw new AppError("validation", "Choose a JPG, PNG or WEBP image under 5MB.");
+    }
+
+    return this.auth.uploadBanner(userId, file);
   }
 }
 

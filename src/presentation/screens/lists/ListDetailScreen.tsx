@@ -100,7 +100,7 @@ export function ListDetailScreen() {
           type="button"
           onClick={() => navigate(-1)}
           aria-label="Go back"
-          className="tap-none -ml-2 flex size-9 items-center justify-center rounded-full bg-ink-850 text-accent-500 active:opacity-70"
+          className="tap-none -ml-2 flex size-9 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-70"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
             <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -149,7 +149,7 @@ export function ListDetailScreen() {
               aria-pressed={saveInfo?.saved ?? false}
               className={`tap-none inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] px-4 text-[0.8125rem] font-semibold transition-colors disabled:opacity-50 ${
                 saveInfo?.saved
-                  ? "bg-ink-850 text-white active:bg-ink-800"
+                  ? "border border-white/10 bg-ink-850 text-white active:bg-ink-800"
                   : "bg-accent-500 text-white active:opacity-80"
               }`}
             >
@@ -173,7 +173,7 @@ export function ListDetailScreen() {
               type="button"
               onClick={() => setEditing((value) => !value)}
               className={`tap-none min-h-[38px] flex-1 rounded-[10px] text-[0.8125rem] font-semibold transition-colors ${
-                editing ? "bg-accent-500 text-white" : "bg-ink-850 text-white active:bg-ink-800"
+                editing ? "bg-accent-500 text-white" : "border border-white/10 bg-ink-850 text-white hover:bg-ink-800 active:opacity-80"
               }`}
             >
               {editing ? "Done" : "Manage series"}
@@ -181,7 +181,7 @@ export function ListDetailScreen() {
             <button
               type="button"
               onClick={() => setEditOpen(true)}
-              className="tap-none min-h-[38px] flex-1 rounded-[10px] bg-ink-850 text-[0.8125rem] font-semibold text-white active:bg-ink-800"
+              className="tap-none min-h-[38px] flex-1 rounded-[10px] border border-white/10 bg-ink-850 text-[0.8125rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80"
             >
               Edit details
             </button>
@@ -189,7 +189,7 @@ export function ListDetailScreen() {
               type="button"
               onClick={() => setDeleteOpen(true)}
               aria-label="Delete list"
-              className="tap-none flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-ink-850 text-danger-500 active:bg-ink-800"
+              className="tap-none flex size-[38px] shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-ink-850 text-danger-500 transition-colors hover:bg-ink-800 active:opacity-80"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
                 <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7" strokeLinecap="round" strokeLinejoin="round" />
@@ -220,7 +220,7 @@ export function ListDetailScreen() {
       <ListFormSheet open={editOpen} onClose={() => setEditOpen(false)} existing={list} />
 
       <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete list">
-        <p className="text-[0.9375rem] text-mist-300">
+        <p className="pt-3 text-[0.9375rem] text-mist-300">
           Delete “{list.title}”? This can’t be undone. The series stay in your library.
         </p>
         <Button
@@ -232,13 +232,14 @@ export function ListDetailScreen() {
         >
           Delete list
         </Button>
-        <button
-          type="button"
+        <Button
+          fullWidth
+          variant="secondary"
+          className="mt-2.5"
           onClick={() => setDeleteOpen(false)}
-          className="tap-none mt-2 min-h-[44px] w-full text-[0.9375rem] font-normal text-accent-500 active:opacity-70"
         >
           Cancel
-        </button>
+        </Button>
       </Sheet>
     </>
   );

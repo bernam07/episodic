@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { backdropUrl } from "@/data/tmdb/images";
 import { computeLibraryInsights } from "@/domain/entities/LibraryInsights";
 import { computeLibraryStats } from "@/domain/entities/LibraryStats";
+import type { SeriesProgress } from "@/domain/entities/Progress";
 import { ListsSection } from "@/presentation/components/lists/ListsSection";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
-import { RatingBadge, SeriesCard, WatchedBadge } from "@/presentation/components/series/SeriesCard";
+import { RatingBadge, SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { DeleteAccountSheet } from "@/presentation/components/social/DeleteAccountSheet";
@@ -23,6 +24,7 @@ import {
   useLibrary,
   useReorderFavorites,
   useSetFavoritePinned,
+  useToggleFavorite,
   useWatchStreak,
 } from "@/presentation/hooks/useTracking";
 import { pluralize } from "@/presentation/utils/plural";
@@ -71,7 +73,7 @@ function Header({
   const [editOpen, setEditOpen] = useState(false);
   const [followMode, setFollowMode] = useState<"followers" | "following" | null>(null);
 
-  const bannerPath = useMemo(() => {
+  const fallbackBannerPath = useMemo(() => {
     if (!library || library.length === 0) return null;
     const pinned = library.find((item) => item.favoritePinnedAt && item.backdropPath);
     if (pinned?.backdropPath) return pinned.backdropPath;
@@ -81,7 +83,7 @@ function Header({
     return anyWithBackdrop?.backdropPath ?? null;
   }, [library]);
 
-  const bannerUrl = backdropUrl(bannerPath, "w1280");
+  const bannerUrl = profile?.bannerUrl || backdropUrl(fallbackBannerPath, "w1280");
   const seriesCount = summary?.seriesCount ?? library?.length ?? 0;
 
   const tabs: { id: ProfileTab; label: string }[] = [
@@ -94,12 +96,28 @@ function Header({
 
   return (
     <header className="border-b border-white/[0.08]">
-      <div className="relative h-[148px] w-full overflow-hidden bg-gradient-to-br from-accent-600/25 via-ink-900 to-ink-950 md:h-[180px]">
+      <div className="relative h-[156px] w-full overflow-hidden bg-gradient-to-br from-accent-600/25 via-ink-900 to-ink-950 md:h-[188px]">
         {bannerUrl ? (
-          <img src={bannerUrl} alt="" className="size-full object-cover opacity-55" />
+          <img src={bannerUrl} alt="" className="size-full object-cover opacity-65" />
         ) : null}
         <div className="hero-scrim absolute inset-0" />
-        <div className="pt-safe absolute top-0 right-0 flex items-center gap-2 px-5 pt-3">
+        <div className="pt-safe absolute inset-x-0 top-0 flex items-center justify-between px-5 pt-3">
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            aria-label="Change profile banner"
+            className="ios-material tap-none inline-flex h-8 items-center gap-1.5 rounded-full border border-white/15 px-3 text-[0.75rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-75"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+              <path
+                d="M4 8.5a2 2 0 0 1 2-2h1.2l.9-1.5h5.8l.9 1.5H16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"
+                strokeLinejoin="round"
+              />
+              <circle cx="12" cy="12.5" r="3" />
+            </svg>
+            <span>Cover</span>
+          </button>
+
           <button
             type="button"
             onClick={onOpenSettings}
@@ -262,10 +280,10 @@ function TasteProfileAndStats() {
           ) : null}
           <Link
             to="/stats"
-            className="tap-none flex items-center gap-1 text-[0.8125rem] font-semibold text-mist-400 hover:text-white active:opacity-70"
+            className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-3 py-1 text-[0.75rem] font-semibold text-mist-200 transition-colors hover:bg-ink-800 hover:text-white active:opacity-70"
           >
             All stats
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
               <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
@@ -328,9 +346,145 @@ function TasteProfileAndStats() {
   );
 }
 
+function ReviewIndicatorBadge() {
+  return (
+    <span
+      className="ios-material absolute right-2 bottom-2 flex size-6 items-center justify-center rounded-[6px] border border-white/15 text-mist-200 shadow-sm shadow-black/50"
+      aria-label="Reviewed"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+        <path d="M4 6h16M4 12h16M4 18h10" strokeLinecap="round" />
+      </svg>
+    </span>
+  );
+}
+
+function FavoriteItemCard({
+  item,
+  rank,
+  organizing,
+  hasReview,
+  canPinMore,
+  pinPending,
+  reorderPending,
+  onTogglePin,
+  onMove,
+}: {
+  item: SeriesProgress;
+  rank: number | null;
+  organizing: boolean;
+  hasReview: boolean;
+  canPinMore: boolean;
+  pinPending: boolean;
+  reorderPending: boolean;
+  onTogglePin: () => void;
+  onMove?: (direction: -1 | 1) => void;
+}) {
+  const toggleFav = useToggleFavorite(item.seriesId);
+  const pinned = rank !== null;
+
+  return (
+    <div className="relative">
+      <Link to={`/series/${item.tmdbId}`} className="tap-none group block active:opacity-75">
+        <div className="relative">
+          <SeriesPoster path={item.posterPath} alt={item.name} />
+          {pinned ? (
+            <span className="ios-material absolute top-2 left-2 flex h-5 min-w-5 items-center justify-center rounded-[6px] border border-white/20 px-1.5 text-[0.6875rem] font-extrabold tabular-nums text-white shadow-sm">
+              #{rank + 1}
+            </span>
+          ) : null}
+          {item.userRating ? (
+            <RatingBadge value={item.userRating} />
+          ) : hasReview ? (
+            <ReviewIndicatorBadge />
+          ) : null}
+        </div>
+        <p className="mt-2 truncate text-[0.8125rem] font-semibold tracking-[-0.01em] text-white">
+          {item.name}
+        </p>
+      </Link>
+
+      {organizing ? (
+        <div className="mt-2 flex items-center justify-between gap-1 rounded-[10px] border border-white/10 bg-ink-850 p-1">
+          <button
+            type="button"
+            disabled={pinPending || (!pinned && !canPinMore)}
+            aria-pressed={pinned}
+            aria-label={pinned ? "Unpin from top 3" : "Pin to top 3"}
+            onClick={onTogglePin}
+            className={`tap-none flex h-6 flex-1 items-center justify-center gap-1 rounded-[7px] px-1.5 text-[0.6875rem] font-semibold transition-colors disabled:opacity-35 ${
+              pinned
+                ? "bg-accent-500 text-white"
+                : "bg-ink-800 text-mist-300 hover:text-white"
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill={pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="size-3">
+              <path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 15v5" strokeLinecap="round" />
+            </svg>
+            <span>{pinned ? "Top" : "Pin"}</span>
+          </button>
+
+          {pinned && onMove ? (
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                disabled={reorderPending || rank === 0}
+                aria-label="Move left"
+                onClick={() => onMove(-1)}
+                className="tap-none flex size-6 items-center justify-center rounded-[7px] bg-ink-800 text-mist-300 hover:text-white disabled:opacity-30"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
+                  <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                disabled={reorderPending}
+                aria-label="Move right"
+                onClick={() => onMove(1)}
+                className="tap-none flex size-6 items-center justify-center rounded-[7px] bg-ink-800 text-mist-300 hover:text-white disabled:opacity-30"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
+                  <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={toggleFav.isPending}
+              aria-label={`Remove ${item.name} from favorites`}
+              onClick={() => toggleFav.mutate()}
+              className="tap-none flex size-6 shrink-0 items-center justify-center rounded-[7px] bg-ink-800 text-mist-400 hover:text-danger-500 disabled:opacity-40"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-3">
+                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function Favorites() {
   const { data } = useLibrary();
+  const { data: ownReviews } = useOwnReviews();
   const setPinned = useSetFavoritePinned();
+  const reorder = useReorderFavorites();
+  const [organizing, setOrganizing] = useState(false);
+
+  const reviewedSeriesIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const review of ownReviews ?? []) {
+      if (review.body && review.body.trim().length > 0) {
+        ids.add(review.seriesId);
+      }
+    }
+    return ids;
+  }, [ownReviews]);
 
   const favorites = useMemo(() => {
     const list = (data ?? []).filter((item) => item.isFavorite);
@@ -344,7 +498,6 @@ function Favorites() {
     });
   }, [data]);
 
-  const reorder = useReorderFavorites();
   const pinnedList = favorites.filter((item) => item.favoritePinnedAt);
   const pinnedCount = pinnedList.length;
   const pinnedIndex = new Map(pinnedList.map((item, index) => [item.seriesId, index]));
@@ -360,8 +513,8 @@ function Favorites() {
   if (favorites.length === 0) return null;
 
   return (
-    <section className="mt-7">
-      <div className="mb-3 flex items-baseline justify-between px-5">
+    <section className="mt-7 px-5">
+      <div className="mb-3 flex items-center justify-between">
         <h2 className="flex items-center gap-1.5 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
           <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 text-accent-500">
             <path d="M12 21.23l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
@@ -369,71 +522,58 @@ function Favorites() {
           <span>Favorites</span>
           <span className="text-[0.875rem] font-normal text-mist-500">{favorites.length}</span>
         </h2>
-        {favorites.length > 1 ? (
-          <span className="text-[0.75rem] text-mist-500">Pin up to 3 to feature</span>
-        ) : null}
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setOrganizing((current) => !current)}
+            className={`tap-none inline-flex items-center gap-1 rounded-full px-3 py-1 text-[0.75rem] font-semibold transition-colors ${
+              organizing
+                ? "bg-accent-500 text-white"
+                : "border border-white/10 bg-ink-850 text-mist-200 hover:bg-ink-800 hover:text-white"
+            }`}
+          >
+            {organizing ? "Done" : "Organize"}
+          </button>
+          {favorites.length > 6 ? (
+            <Link
+              to="/library?view=favorites"
+              className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-3 py-1 text-[0.75rem] font-semibold text-mist-200 transition-colors hover:bg-ink-800 hover:text-white"
+            >
+              See all
+            </Link>
+          ) : null}
+        </div>
       </div>
-      <div className="no-scrollbar flex gap-3.5 overflow-x-auto px-5 pb-1">
-        {favorites.map((item) => {
-          const pinned = item.favoritePinnedAt !== null;
-          const disabled = setPinned.isPending || (!pinned && pinnedCount >= 3);
+
+      {organizing ? (
+        <p className="mb-3 text-[0.75rem] text-mist-400">
+          Pin up to 3 series to showcase at the top of your Favorites and reorder them.
+        </p>
+      ) : null}
+
+      <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
+        {(organizing ? favorites : favorites.slice(0, 6)).map((item) => {
+          const rank = pinnedIndex.has(item.seriesId) ? (pinnedIndex.get(item.seriesId) ?? null) : null;
           return (
-            <div key={item.seriesId} className="relative w-[116px] shrink-0">
-              <Link to={`/series/${item.tmdbId}`} className="tap-none block active:opacity-75">
-                <div className="relative">
-                  <SeriesPoster path={item.posterPath} alt={item.name} />
-                  {item.userRating ? (
-                    <RatingBadge value={item.userRating} />
-                  ) : item.status === "watched" ? (
-                    <WatchedBadge />
-                  ) : null}
-                </div>
-                <p className="mt-2 truncate text-[0.8125rem] font-semibold tracking-[-0.01em] text-white">{item.name}</p>
-              </Link>
-              <button
-                type="button"
-                disabled={disabled}
-                aria-pressed={pinned}
-                aria-label={pinned ? "Unpin from featured" : "Pin to featured"}
-                onClick={() => setPinned.mutate({ seriesId: item.seriesId, pinned: !pinned })}
-                className={`tap-none absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded-full backdrop-blur-md transition-colors disabled:opacity-40 ${
-                  pinned
-                    ? "bg-accent-500 text-white"
-                    : "bg-black/65 text-mist-300 active:bg-ink-850"
-                }`}
-              >
-                <svg viewBox="0 0 24 24" fill={pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="size-3.5">
-                  <path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M12 15v5" strokeLinecap="round" />
-                </svg>
-              </button>
-              {pinned && pinnedCount > 1 ? (
-                <div className="mt-1 flex items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    disabled={reorder.isPending || (pinnedIndex.get(item.seriesId) ?? 0) === 0}
-                    aria-label="Move left"
-                    onClick={() => move(pinnedIndex.get(item.seriesId) ?? 0, -1)}
-                    className="tap-none flex size-6 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700 disabled:opacity-30"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
-                      <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    disabled={reorder.isPending || (pinnedIndex.get(item.seriesId) ?? 0) === pinnedCount - 1}
-                    aria-label="Move right"
-                    onClick={() => move(pinnedIndex.get(item.seriesId) ?? 0, 1)}
-                    className="tap-none flex size-6 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700 disabled:opacity-30"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
-                      <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                </div>
-              ) : null}
-            </div>
+            <FavoriteItemCard
+              key={item.seriesId}
+              item={item}
+              rank={rank}
+              organizing={organizing}
+              hasReview={reviewedSeriesIds.has(item.seriesId)}
+              canPinMore={pinnedCount < 3}
+              pinPending={setPinned.isPending}
+              reorderPending={reorder.isPending}
+              onTogglePin={() =>
+                setPinned.mutate({ seriesId: item.seriesId, pinned: rank === null })
+              }
+              onMove={
+                rank !== null && pinnedCount > 1
+                  ? (direction) => move(rank, direction)
+                  : undefined
+              }
+            />
           );
         })}
       </div>
@@ -458,10 +598,10 @@ function RecentlyWatchedGrid() {
         <h2 className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">Recently Watched</h2>
         <Link
           to="/library"
-          className="tap-none flex items-center gap-1 text-[0.8125rem] font-semibold text-mist-400 hover:text-white active:opacity-70"
+          className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-3 py-1 text-[0.75rem] font-semibold text-mist-200 transition-colors hover:bg-ink-800 hover:text-white active:opacity-70"
         >
           See all
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
             <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </Link>

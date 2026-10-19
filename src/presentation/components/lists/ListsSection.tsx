@@ -54,8 +54,8 @@ export function ListsSection({ userId, isOwn }: { userId: string | null; isOwn: 
 
   return (
     <section className="mt-8 px-5">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="flex items-baseline gap-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="flex items-baseline gap-2 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
           <span>Lists</span>
           {lists.length > 0 ? <span className="text-[0.875rem] font-normal text-mist-500">{lists.length}</span> : null}
         </h2>
@@ -63,9 +63,12 @@ export function ListsSection({ userId, isOwn }: { userId: string | null; isOwn: 
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="tap-none text-[0.9375rem] font-normal text-accent-500 active:opacity-70"
+            className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-3 py-1.5 text-[0.75rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-75"
           >
-            New list
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5 text-accent-400">
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+            </svg>
+            <span>New list</span>
           </button>
         ) : null}
       </div>

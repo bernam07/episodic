@@ -236,7 +236,7 @@ export function SeriesDetailScreen() {
               ) : null}
               <span>•</span>
               <span>
-                {detail.numberOfSeasons} {t("seasons")}
+                {detail.numberOfSeasons} {detail.numberOfSeasons === 1 ? t("season") : t("seasons")}
               </span>
               {year ? (
                 <>

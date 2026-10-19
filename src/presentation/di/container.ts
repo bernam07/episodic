@@ -32,6 +32,7 @@ import {
   UpdatePassword,
   UpdateProfile,
   UploadAvatar,
+  UploadBanner,
 } from "@/domain/usecases/auth/AuthUseCases";
 import {
   DiscoverByGenre,
@@ -120,6 +121,7 @@ export const container = {
     checkUsernameAvailable: new CheckUsernameAvailable(socialRepository),
     updateProfile: new UpdateProfile(authRepository),
     uploadAvatar: new UploadAvatar(authRepository),
+    uploadBanner: new UploadBanner(authRepository),
     deleteAccount: new DeleteAccount(authRepository),
 
     searchSeries: new SearchSeries(tmdbRepository),

@@ -191,10 +191,20 @@ export function ThisWeekRail() {
 
   return (
     <section className="mt-7">
-      <div className="mb-3 flex items-baseline justify-between px-5">
+      <div className="mb-3 flex items-center justify-between px-5">
         <h2 className="text-[1.1875rem] font-bold tracking-[-0.015em] text-white">{t("thisWeek")}</h2>
-        <Link to="/calendar" className="tap-none text-[0.9375rem] font-normal text-accent-500 active:opacity-70">
-          {t("calendar")}
+        <Link
+          to="/calendar"
+          className="tap-none inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-ink-850 px-3 py-1.5 text-[0.75rem] font-semibold text-mist-200 transition-colors hover:bg-ink-800 hover:text-white active:opacity-75"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-accent-400">
+            <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span>{t("calendar")}</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-3 text-mist-400">
+            <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </Link>
       </div>
       <div className="no-scrollbar flex gap-3.5 overflow-x-auto px-5 pb-1">

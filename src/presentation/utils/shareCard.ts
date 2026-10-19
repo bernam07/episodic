@@ -14,15 +14,18 @@ export type ShareCardInput = {
 
 const WIDTH = 1080;
 const HEIGHT = 1920;
-const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";
+const FONT = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";
 
-const INK_950 = "#060b16";
-const INK_800 = "#111b2f";
-const MIST_100 = "#e8edf7";
-const MIST_400 = "#7c8db0";
-const ACCENT = "#3b82f6";
-const ACCENT_LIGHT = "#60a5fa";
-const STAR = "#fbbf24";
+const INK_950 = "#0b0b0d";
+const INK_900 = "#121216";
+const INK_850 = "#16161b";
+const WHITE = "#ffffff";
+const MIST_300 = "#c4c4cc";
+const MIST_400 = "#8e8e98";
+const MIST_500 = "#63636c";
+const ACCENT = "#ef3340";
+const ACCENT_LIGHT = "#ff646c";
+const STAR = "#f5b50a";
 
 export function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -58,7 +61,7 @@ function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
 }
 
 function starPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, outer: number) {
-  const inner = outer * 0.42;
+  const inner = outer * 0.44;
   ctx.beginPath();
   for (let i = 0; i < 10; i += 1) {
     const radius = i % 2 === 0 ? outer : inner;
@@ -75,8 +78,8 @@ function starPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, outer: 
 }
 
 function drawStars(ctx: CanvasRenderingContext2D, centerX: number, y: number, rating: number) {
-  const size = 42;
-  const gap = 100;
+  const size = 34;
+  const gap = 82;
   const total = 5;
   const startX = centerX - ((total - 1) * gap) / 2;
 
@@ -86,7 +89,7 @@ function drawStars(ctx: CanvasRenderingContext2D, centerX: number, y: number, ra
 
     ctx.save();
     starPath(ctx, cx, y, size);
-    ctx.fillStyle = "rgba(255,255,255,0.16)";
+    ctx.fillStyle = "rgba(255,255,255,0.14)";
     ctx.fill();
     ctx.restore();
 
@@ -103,20 +106,38 @@ function drawStars(ctx: CanvasRenderingContext2D, centerX: number, y: number, ra
   }
 }
 
-function drawLogo(ctx: CanvasRenderingContext2D, cx: number, cy: number, height: number) {
-  const bw = height * 0.28;
-  const gap = height * 0.18;
-  const heights = [height * 0.6, height, height * 0.78];
-  const colors = [ACCENT_LIGHT, ACCENT, ACCENT_LIGHT];
-  const totalW = bw * 3 + gap * 2;
-  let x = cx - totalW / 2;
+function drawLogo(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
+  const x = cx - size / 2;
+  const y = cy - size / 2;
+  const s = size / 64;
 
-  heights.forEach((barHeight, i) => {
-    roundedRect(ctx, x, cy - barHeight / 2, bw, barHeight, bw * 0.42);
-    ctx.fillStyle = colors[i];
-    ctx.fill();
-    x += bw + gap;
-  });
+  ctx.save();
+  roundedRect(ctx, x, y, size, size, 16 * s);
+  const bg = ctx.createLinearGradient(x, y, x + size, y + size);
+  bg.addColorStop(0, "#1c1c24");
+  bg.addColorStop(1, "#09090c");
+  ctx.fillStyle = bg;
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.22)";
+  ctx.lineWidth = 2 * s;
+  ctx.stroke();
+
+  roundedRect(ctx, x + 23 * s, y + 12 * s, 29 * s, 29 * s, 8 * s);
+  ctx.fillStyle = ACCENT;
+  ctx.fill();
+
+  roundedRect(ctx, x + 12 * s, y + 23 * s, 29 * s, 29 * s, 8 * s);
+  ctx.fillStyle = WHITE;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(x + 23.5 * s, y + 31.2 * s);
+  ctx.lineTo(x + 33.4 * s, y + 36.8 * s);
+  ctx.lineTo(x + 23.5 * s, y + 42.4 * s);
+  ctx.closePath();
+  ctx.fillStyle = ACCENT;
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawCover(ctx: CanvasRenderingContext2D, image: HTMLImageElement, w: number, h: number) {
@@ -162,6 +183,31 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return lines;
 }
 
+function drawBrandFooter(ctx: CanvasRenderingContext2D, handle: string) {
+  const footerY = HEIGHT - 116;
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.1)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(100, footerY - 70);
+  ctx.lineTo(WIDTH - 100, footerY - 70);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  ctx.font = `600 38px ${FONT}`;
+  ctx.fillStyle = MIST_300;
+  ctx.fillText(handle, 100, footerY);
+
+  ctx.textAlign = "right";
+  ctx.font = `800 40px ${FONT}`;
+  ctx.fillStyle = WHITE;
+  ctx.fillText("Episodic", WIDTH - 100, footerY);
+  const wordmarkWidth = ctx.measureText("Episodic").width;
+  drawLogo(ctx, WIDTH - 100 - wordmarkWidth - 42, footerY, 54);
+}
+
 export function drawShareCard(canvas: HTMLCanvasElement, input: ShareCardInput) {
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
@@ -174,28 +220,33 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: ShareCardInput) 
 
   if (input.background.kind === "image") {
     ctx.save();
-    ctx.filter = "blur(64px)";
+    ctx.filter = "blur(56px)";
     drawCover(ctx, input.background.image, WIDTH, HEIGHT);
     ctx.restore();
     const shade = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-    shade.addColorStop(0, "rgba(6,11,22,0.68)");
-    shade.addColorStop(0.5, "rgba(6,11,22,0.62)");
-    shade.addColorStop(1, "rgba(6,11,22,0.86)");
+    shade.addColorStop(0, "rgba(11,11,13,0.58)");
+    shade.addColorStop(0.5, "rgba(11,11,13,0.72)");
+    shade.addColorStop(1, "rgba(11,11,13,0.96)");
     ctx.fillStyle = shade;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
   } else if (input.background.kind === "gradient") {
     const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
-    gradient.addColorStop(0, ACCENT);
-    gradient.addColorStop(0.55, "#12224a");
+    gradient.addColorStop(0, "#470a12");
+    gradient.addColorStop(0.45, "#19090d");
     gradient.addColorStop(1, INK_950);
     ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    const radial = ctx.createRadialGradient(WIDTH * 0.5, HEIGHT * 0.25, 80, WIDTH * 0.5, HEIGHT * 0.25, 860);
+    radial.addColorStop(0, "rgba(239,51,64,0.28)");
+    radial.addColorStop(1, "rgba(11,11,13,0)");
+    ctx.fillStyle = radial;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
   } else {
     ctx.fillStyle = INK_950;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    const glow = ctx.createRadialGradient(WIDTH / 2, HEIGHT * 0.34, 120, WIDTH / 2, HEIGHT * 0.34, 980);
-    glow.addColorStop(0, "rgba(37,99,235,0.3)");
-    glow.addColorStop(1, "rgba(6,11,22,0)");
+    const glow = ctx.createRadialGradient(WIDTH / 2, HEIGHT * 0.34, 100, WIDTH / 2, HEIGHT * 0.34, 920);
+    glow.addColorStop(0, "rgba(239,51,64,0.22)");
+    glow.addColorStop(1, "rgba(11,11,13,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
   }
@@ -203,41 +254,48 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: ShareCardInput) 
   const posterW = 620;
   const posterH = 930;
   const posterX = (WIDTH - posterW) / 2;
-  const posterY = 250;
+  const posterY = 210;
 
   ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.55)";
-  ctx.shadowBlur = 70;
-  ctx.shadowOffsetY = 34;
-  roundedRect(ctx, posterX, posterY, posterW, posterH, 32);
-  ctx.fillStyle = INK_800;
+  ctx.shadowColor = "rgba(0,0,0,0.75)";
+  ctx.shadowBlur = 80;
+  ctx.shadowOffsetY = 38;
+  roundedRect(ctx, posterX, posterY, posterW, posterH, 36);
+  ctx.fillStyle = INK_850;
   ctx.fill();
   ctx.restore();
 
   ctx.save();
-  roundedRect(ctx, posterX, posterY, posterW, posterH, 32);
+  roundedRect(ctx, posterX, posterY, posterW, posterH, 36);
   ctx.clip();
   ctx.translate(posterX, posterY);
   if (input.poster) {
     drawCover(ctx, input.poster, posterW, posterH);
   } else {
-    ctx.fillStyle = INK_800;
+    ctx.fillStyle = INK_850;
     ctx.fillRect(0, 0, posterW, posterH);
     ctx.fillStyle = MIST_400;
-    ctx.font = `700 240px ${FONT}`;
+    ctx.font = `800 220px ${FONT}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText((input.name[0] ?? "?").toUpperCase(), posterW / 2, posterH / 2);
   }
   ctx.restore();
 
-  const contentTop = posterY + posterH + 128;
-  const lineHeight = 84;
+  ctx.save();
+  roundedRect(ctx, posterX, posterY, posterW, posterH, 36);
+  ctx.strokeStyle = "rgba(255,255,255,0.16)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.restore();
+
+  const contentTop = posterY + posterH + 118;
+  const lineHeight = 82;
 
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  ctx.font = `800 68px ${FONT}`;
-  ctx.fillStyle = MIST_100;
+  ctx.font = `800 66px ${FONT}`;
+  ctx.fillStyle = WHITE;
   const lines = wrapLines(ctx, input.name, WIDTH - 180, 2);
   lines.forEach((line, index) => {
     ctx.fillText(line, WIDTH / 2, contentTop + index * lineHeight);
@@ -246,38 +304,20 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: ShareCardInput) 
   const lastBaseline = contentTop + Math.max(lines.length - 1, 0) * lineHeight;
 
   if (input.year) {
-    ctx.font = `500 40px ${FONT}`;
+    ctx.font = `600 36px ${FONT}`;
     ctx.fillStyle = MIST_400;
-    ctx.fillText(input.year, WIDTH / 2, lastBaseline + 58);
+    ctx.fillText(input.year, WIDTH / 2, lastBaseline + 56);
   }
 
-  const starsY = lastBaseline + (input.year ? 140 : 100);
+  const starsY = lastBaseline + (input.year ? 132 : 92);
   if (input.rating && input.rating > 0) {
     drawStars(ctx, WIDTH / 2, starsY, input.rating);
+    ctx.font = `800 34px ${FONT}`;
+    ctx.fillStyle = STAR;
+    ctx.fillText(`${input.rating.toFixed(1)} / 5.0`, WIDTH / 2, starsY + 74);
   }
 
-  const footerY = HEIGHT - 118;
-  ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,0.12)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(130, footerY - 72);
-  ctx.lineTo(WIDTH - 130, footerY - 72);
-  ctx.stroke();
-  ctx.restore();
-
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "left";
-  ctx.font = `600 42px ${FONT}`;
-  ctx.fillStyle = MIST_400;
-  ctx.fillText(input.handle, 130, footerY);
-
-  ctx.textAlign = "right";
-  ctx.font = `800 44px ${FONT}`;
-  ctx.fillStyle = MIST_100;
-  ctx.fillText("EPISODIC", WIDTH - 130, footerY);
-  const wordmarkWidth = ctx.measureText("EPISODIC").width;
-  drawLogo(ctx, WIDTH - 130 - wordmarkWidth - 40, footerY, 52);
+  drawBrandFooter(ctx, input.handle);
 }
 
 export type StatsCardBackground = "gradient" | "dark";
@@ -300,24 +340,7 @@ function formatHours(minutes: number): string {
   return rest ? `${days}d ${rest}h` : `${days}d`;
 }
 
-function footer(ctx: CanvasRenderingContext2D) {
-  const footerY = HEIGHT - 118;
-  ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,0.12)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(130, footerY - 72);
-  ctx.lineTo(WIDTH - 130, footerY - 72);
-  ctx.stroke();
-  ctx.restore();
-
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "left";
-  ctx.font = `800 40px ${FONT}`;
-  ctx.fillStyle = MIST_100;
-  ctx.fillText("EPISODIC", 176, footerY);
-  drawLogo(ctx, 148, footerY, 48);
-}
+const GENRE_PALETTE = ["#ef3340", "#3b82f6", "#f59e0b", "#10b981"];
 
 export function drawStatsCard(canvas: HTMLCanvasElement, input: StatsCardInput) {
   canvas.width = WIDTH;
@@ -331,85 +354,115 @@ export function drawStatsCard(canvas: HTMLCanvasElement, input: StatsCardInput) 
 
   if (input.background === "gradient") {
     const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
-    gradient.addColorStop(0, ACCENT);
-    gradient.addColorStop(0.55, "#12224a");
+    gradient.addColorStop(0, "#420910");
+    gradient.addColorStop(0.5, "#16090d");
     gradient.addColorStop(1, INK_950);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
   } else {
     ctx.fillStyle = INK_950;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    const glow = ctx.createRadialGradient(WIDTH / 2, HEIGHT * 0.3, 120, WIDTH / 2, HEIGHT * 0.3, 980);
-    glow.addColorStop(0, "rgba(37,99,235,0.3)");
-    glow.addColorStop(1, "rgba(6,11,22,0)");
+    const glow = ctx.createRadialGradient(WIDTH / 2, HEIGHT * 0.24, 100, WIDTH / 2, HEIGHT * 0.24, 920);
+    glow.addColorStop(0, "rgba(239,51,64,0.22)");
+    glow.addColorStop(1, "rgba(11,11,13,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
   }
 
-  ctx.textAlign = "center";
+  ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
 
-  ctx.font = `600 40px ${FONT}`;
-  ctx.fillStyle = MIST_400;
-  ctx.fillText(input.handle, WIDTH / 2, 210);
+  ctx.font = `700 28px ${FONT}`;
+  ctx.fillStyle = ACCENT_LIGHT;
+  ctx.fillText("TASTE PROFILE & STATS", 100, 175);
 
-  ctx.font = `800 82px ${FONT}`;
-  ctx.fillStyle = MIST_100;
-  ctx.fillText("Watch DNA", WIDTH / 2, 300);
+  ctx.font = `800 76px ${FONT}`;
+  ctx.fillStyle = WHITE;
+  ctx.fillText("Watch DNA", 100, 260);
+
+  roundedRect(ctx, 100, 320, WIDTH - 200, 480, 40);
+  ctx.fillStyle = "rgba(22,22,27,0.9)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.1)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
 
   ctx.font = `700 26px ${FONT}`;
-  ctx.fillStyle = ACCENT_LIGHT;
-  ctx.fillText("TOTAL WATCH TIME", WIDTH / 2, 470);
+  ctx.fillStyle = MIST_400;
+  ctx.fillText("TOTAL TIME WATCHED", 156, 400);
 
-  ctx.font = `800 168px ${FONT}`;
-  ctx.fillStyle = MIST_100;
-  ctx.fillText(formatHours(input.watchTimeMinutes), WIDTH / 2, 620);
+  ctx.font = `800 148px ${FONT}`;
+  ctx.fillStyle = WHITE;
+  ctx.fillText(formatHours(input.watchTimeMinutes), 156, 555);
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(156, 616);
+  ctx.lineTo(WIDTH - 156, 616);
+  ctx.stroke();
+  ctx.restore();
 
   const tiles: [number, string][] = [
-    [input.episodesWatched, "episodes"],
-    [input.seriesTracked, "series"],
-    [input.finished, "finished"],
+    [input.episodesWatched, "Episodes"],
+    [input.seriesTracked, "Series"],
+    [input.finished, "Finished"],
   ];
-  const tileGap = WIDTH / 3;
+  const innerW = WIDTH - 312;
+  const colW = innerW / 3;
   tiles.forEach(([value, label], index) => {
-    const cx = tileGap * index + tileGap / 2;
-    ctx.font = `800 66px ${FONT}`;
-    ctx.fillStyle = MIST_100;
-    ctx.fillText(String(value), cx, 780);
-    ctx.font = `500 32px ${FONT}`;
-    ctx.fillStyle = MIST_400;
-    ctx.fillText(label, cx, 828);
+    const colX = 156 + colW * index;
+    ctx.font = `800 58px ${FONT}`;
+    ctx.fillStyle = WHITE;
+    ctx.fillText(String(value), colX, 695);
+    ctx.font = `600 28px ${FONT}`;
+    ctx.fillStyle = MIST_500;
+    ctx.fillText(label, colX, 740);
   });
 
   const genres = input.topGenres.slice(0, 4);
   if (genres.length > 0) {
-    const max = genres[0].count || 1;
-    ctx.textAlign = "left";
+    const cardTop = 850;
+    const cardH = 140 + genres.length * 145;
+    roundedRect(ctx, 100, cardTop, WIDTH - 200, cardH, 40);
+    ctx.fillStyle = "rgba(22,22,27,0.9)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
     ctx.font = `700 26px ${FONT}`;
-    ctx.fillStyle = ACCENT_LIGHT;
-    ctx.fillText("TOP GENRES", 130, 980);
+    ctx.fillStyle = MIST_400;
+    ctx.fillText("TOP GENRES", 156, cardTop + 76);
 
+    const max = genres[0].count || 1;
     genres.forEach((entry, index) => {
-      const rowY = 1050 + index * 108;
-      ctx.font = `700 40px ${FONT}`;
-      ctx.fillStyle = MIST_100;
-      ctx.fillText(entry.genre, 130, rowY);
+      const rowY = cardTop + 155 + index * 135;
+      const pct = Math.min(Math.round((entry.count / max) * 100), 100);
+      const barColor = GENRE_PALETTE[index % GENRE_PALETTE.length];
 
-      ctx.font = `600 34px ${FONT}`;
-      ctx.fillStyle = MIST_400;
-      ctx.textAlign = "right";
-      ctx.fillText(String(entry.count), WIDTH - 130, rowY);
       ctx.textAlign = "left";
+      ctx.font = `700 38px ${FONT}`;
+      ctx.fillStyle = WHITE;
+      ctx.fillText(entry.genre, 156, rowY);
 
-      const trackY = rowY + 26;
-      roundedRect(ctx, 130, trackY, WIDTH - 260, 12, 6);
-      ctx.fillStyle = "rgba(255,255,255,0.1)";
+      ctx.textAlign = "right";
+      ctx.font = `800 34px ${FONT}`;
+      ctx.fillStyle = MIST_300;
+      ctx.fillText(`${pct}%`, WIDTH - 156, rowY);
+
+      const trackY = rowY + 24;
+      const trackW = WIDTH - 312;
+      roundedRect(ctx, 156, trackY, trackW, 16, 8);
+      ctx.fillStyle = INK_900;
       ctx.fill();
-      roundedRect(ctx, 130, trackY, Math.max((entry.count / max) * (WIDTH - 260), 12), 12, 6);
-      ctx.fillStyle = ACCENT;
+
+      roundedRect(ctx, 156, trackY, Math.max((entry.count / max) * trackW, 20), 16, 8);
+      ctx.fillStyle = barColor;
       ctx.fill();
     });
   }
 
-  footer(ctx);
+  drawBrandFooter(ctx, input.handle);
 }

@@ -101,39 +101,42 @@ export function StatsShareSheet({
   }
 
   const backgrounds: { id: StatsCardBackground; label: string }[] = [
-    { id: "dark", label: "Midnight" },
-    { id: "gradient", label: "Gradient" },
+    { id: "dark", label: "Carbon" },
+    { id: "gradient", label: "Cinema Glow" },
   ];
 
   return (
     <Sheet open={open} onClose={onClose} title="Watch DNA">
-      <div className="mx-auto w-full max-w-[240px] overflow-hidden rounded-2xl border border-ink-700 bg-ink-950 shadow-xl">
-        <canvas ref={canvasRef} className="block h-auto w-full" />
+      <div className="flex justify-center pt-3 pb-2">
+        <canvas
+          ref={canvasRef}
+          className="aspect-9/16 max-h-[380px] w-auto rounded-[16px] ring-1 ring-white/15 shadow-2xl"
+        />
       </div>
 
-      <div className="mt-5">
-        <p className="mb-2 text-[12px] font-medium text-mist-400">Background</p>
-        <div className="flex gap-2">
-          {backgrounds.map((option) => (
+      <div className="mt-4 flex rounded-[10px] border border-white/[0.08] bg-ink-850 p-1">
+        {backgrounds.map((option) => {
+          const active = background === option.id;
+          return (
             <button
               key={option.id}
               type="button"
-              aria-pressed={background === option.id}
+              aria-pressed={active}
               onClick={() => setBackground(option.id)}
-              className={`tap-none min-h-[40px] flex-1 rounded-xl border text-[13px] font-semibold transition-colors ${
-                background === option.id
-                  ? "border-accent-500 bg-accent-600/15 text-accent-300"
-                  : "border-ink-700 bg-ink-850 text-mist-300 active:bg-ink-800"
+              className={`tap-none min-h-[34px] flex-1 rounded-[8px] text-[0.8125rem] font-semibold transition-all duration-150 ${
+                active
+                  ? "bg-ink-700 text-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
+                  : "text-mist-400 hover:text-mist-200"
               }`}
             >
               {option.label}
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {error ? (
-        <p role="alert" className="mt-3 text-[13px] text-danger-500">
+        <p role="alert" className="mt-3 text-[0.8125rem] text-danger-500">
           {error}
         </p>
       ) : null}

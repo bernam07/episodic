@@ -195,7 +195,7 @@ export function StatsScreen() {
           type="button"
           onClick={() => navigate(-1)}
           aria-label="Go back"
-          className="tap-none -ml-2 flex size-9 items-center justify-center rounded-full bg-ink-850 text-accent-500 active:opacity-70"
+          className="tap-none -ml-2 flex size-9 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-70"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
             <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -207,7 +207,7 @@ export function StatsScreen() {
             type="button"
             onClick={() => setShareOpen(true)}
             aria-label="Share your Watch DNA"
-            className="tap-none ml-auto flex size-9 items-center justify-center rounded-full bg-ink-850 text-accent-500 active:opacity-70"
+            className="tap-none ml-auto flex size-9 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-70"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
               <path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7" strokeLinecap="round" strokeLinejoin="round" />

@@ -71,6 +71,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
 
     return {
       ...toProfileSearchResult(row),
+      bannerUrl: (row as { banner_url?: string | null }).banner_url ?? null,
       bio: row.bio,
       episodesWatched: row.episodes_watched,
       reviewsCount: row.reviews_count,

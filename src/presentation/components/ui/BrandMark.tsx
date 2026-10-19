@@ -16,55 +16,74 @@ export function BrandMark({
   className?: string;
 }) {
   const uid = useId();
-  const bgId = `episodic-bg-${uid}`;
-  const glowId = `episodic-glow-${uid}`;
-  const rimId = `episodic-rim-${uid}`;
+  const bgId = `ep-bg-${uid}`;
+  const auraId = `ep-aura-${uid}`;
+  const rimId = `ep-rim-${uid}`;
+  const cardId = `ep-card-${uid}`;
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center overflow-hidden shadow-[0_4px_14px_rgba(229,9,20,0.38)] ${SIZE_CLASSES[size]} ${className}`.trim()}
+      className={`inline-flex shrink-0 items-center justify-center overflow-hidden shadow-[0_4px_14px_rgba(0,0,0,0.55)] ${SIZE_CLASSES[size]} ${className}`.trim()}
       aria-hidden="true"
     >
       <svg viewBox="0 0 64 64" fill="none" className="size-full">
         <defs>
-          <linearGradient id={bgId} x1="6" y1="4" x2="58" y2="62" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#ff384f" />
-            <stop offset="48%" stopColor="#e50914" />
-            <stop offset="100%" stopColor="#99040c" />
+          <linearGradient id={bgId} x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#1c1c24" />
+            <stop offset="55%" stopColor="#111116" />
+            <stop offset="100%" stopColor="#09090c" />
           </linearGradient>
           <radialGradient
-            id={glowId}
+            id={auraId}
             cx="0"
             cy="0"
             r="1"
             gradientUnits="userSpaceOnUse"
-            gradientTransform="translate(18 12) rotate(45) scale(38)"
+            gradientTransform="translate(46 18) rotate(135) scale(36)"
           >
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="0%" stopColor="#ef3340" stopOpacity="0.38" />
+            <stop offset="100%" stopColor="#ef3340" stopOpacity="0" />
           </radialGradient>
           <linearGradient id={rimId} x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.36" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.06" />
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.26" />
+            <stop offset="50%" stopColor="#ffffff" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="#ef3340" stopOpacity="0.32" />
+          </linearGradient>
+          <linearGradient id={cardId} x1="22" y1="11" x2="52" y2="41" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#ff4754" />
+            <stop offset="100%" stopColor="#d90b1c" />
           </linearGradient>
         </defs>
         <rect width="64" height="64" rx="16" fill={`url(#${bgId})`} />
-        <rect width="64" height="64" rx="16" fill={`url(#${glowId})`} />
+        <rect width="64" height="64" rx="16" fill={`url(#${auraId})`} />
         <rect
           x="1"
           y="1"
           width="62"
           height="62"
           rx="15"
-           stroke={`url(#${rimId})`}
+          stroke={`url(#${rimId})`}
           strokeWidth="1.5"
         />
-        <rect x="14" y="17" width="14" height="6.5" rx="3.25" fill="#ffffff" />
-        <rect x="14" y="28.75" width="10.5" height="6.5" rx="3.25" fill="#ffffff" fillOpacity="0.92" />
-        <rect x="14" y="40.5" width="14" height="6.5" rx="3.25" fill="#ffffff" />
-        <path
-          d="M31.5 20.4C31.5 18.52 33.56 17.37 35.16 18.36L49.68 29.46C51.14 30.56 51.14 33.44 49.68 34.54L35.16 45.64C33.56 46.63 31.5 45.48 31.5 43.6V20.4Z"
+        <rect
+          x="23"
+          y="12"
+          width="29"
+          height="29"
+          rx="8"
+          fill={`url(#${cardId})`}
+        />
+        <rect
+          x="12"
+          y="23"
+          width="29"
+          height="29"
+          rx="8"
           fill="#ffffff"
+        />
+        <path
+          d="M23.2 32.1C23.2 30.88 24.54 30.14 25.58 30.78L33.24 35.5C34.22 36.1 34.22 37.52 33.24 38.12L25.58 42.84C24.54 43.48 23.2 42.74 23.2 41.52V32.1Z"
+          fill="#ef3340"
         />
       </svg>
     </span>

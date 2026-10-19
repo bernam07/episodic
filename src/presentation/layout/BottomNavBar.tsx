@@ -17,7 +17,7 @@ export function BottomNavBar() {
               end={tab.to === "/"}
               onClick={onTabClick(tab.to)}
               className={({ isActive }) =>
-                `tap-none relative flex min-h-[3.375rem] flex-col items-center justify-center gap-1 pt-1.5 pb-1 transition-colors duration-150 ${
+                `tap-none relative flex h-[44px] flex-col items-center justify-center gap-0.5 py-1 transition-colors duration-150 ${
                   isActive ? "text-white" : "text-mist-500 active:text-mist-300"
                 }`
               }
@@ -26,7 +26,7 @@ export function BottomNavBar() {
                 <>
                   <div className="relative">{tab.icon}</div>
                   <span
-                    className={`text-[0.6875rem] leading-tight tracking-[-0.01em] ${
+                    className={`text-[0.625rem] leading-none tracking-[-0.01em] ${
                       isActive ? "font-semibold text-white" : "font-medium text-mist-500"
                     }`}
                   >

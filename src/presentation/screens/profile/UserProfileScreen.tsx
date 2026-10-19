@@ -76,6 +76,9 @@ export function UserProfileScreen() {
     <>
       <header className="border-b border-white/[0.08]">
         <div className="relative h-[144px] w-full overflow-hidden bg-gradient-to-br from-accent-600/25 via-ink-900 to-ink-950 md:h-[172px]">
+          {summary.bannerUrl ? (
+            <img src={summary.bannerUrl} alt="" className="size-full object-cover opacity-65" />
+          ) : null}
           <div className="hero-scrim absolute inset-0" />
           <div className="pt-safe absolute top-0 left-0 px-5 pt-3">
             <button
@@ -217,7 +220,6 @@ export function UserProfileScreen() {
                     tmdbId={item.tmdbId}
                     name={item.seriesName}
                     posterPath={item.posterPath}
-                    status={item.status}
                     rating={item.rating}
                   />
                 ))}

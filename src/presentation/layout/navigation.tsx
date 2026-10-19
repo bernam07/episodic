@@ -7,7 +7,7 @@ export type NavTab = {
   icon: ReactNode;
 };
 
-const iconClass = "size-6";
+const iconClass = "size-[19px]";
 
 export const NAV_TABS: NavTab[] = [
   {

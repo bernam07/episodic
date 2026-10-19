@@ -19,7 +19,7 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: { displayName: string; bio: string }) => {
+    mutationFn: (input: { displayName: string; bio: string; bannerUrl?: string | null }) => {
       if (!user) {
         throw new AppError("auth", "You need to be signed in.");
       }
@@ -50,6 +50,25 @@ export function useUploadAvatar() {
       await refreshProfile();
       queryClient.invalidateQueries({ queryKey: ["profile-summary"] });
       queryClient.invalidateQueries({ queryKey: ["search-profiles"] });
+    },
+  });
+}
+
+export function useUploadBanner() {
+  const { user, refreshProfile } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => {
+      if (!user) {
+        throw new AppError("auth", "You need to be signed in.");
+      }
+
+      return container.usecases.uploadBanner.execute(user.id, file);
+    },
+    onSuccess: async () => {
+      await refreshProfile();
+      queryClient.invalidateQueries({ queryKey: ["profile-summary"] });
     },
   });
 }

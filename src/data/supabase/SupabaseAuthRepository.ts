@@ -13,6 +13,26 @@ function toAuthUser(user: { id: string; email?: string }): AuthUser {
   return { id: user.id, email: user.email ?? null };
 }
 
+function getLocalBanner(userId: string): string | null {
+  try {
+    return localStorage.getItem(`episodic_banner_${userId}`);
+  } catch {
+    return null;
+  }
+}
+
+function setLocalBanner(userId: string, url: string | null): void {
+  try {
+    if (url) {
+      localStorage.setItem(`episodic_banner_${userId}`, url);
+    } else {
+      localStorage.removeItem(`episodic_banner_${userId}`);
+    }
+  } catch {
+    return;
+  }
+}
+
 export class SupabaseAuthRepository implements IAuthRepository {
   async getCurrentUser(): Promise<AuthUser | null> {
     const { data, error } = await supabase.auth.getSession();
@@ -27,7 +47,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
   async getProfile(userId: string): Promise<Profile | null> {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, username, display_name, avatar_url, bio, onboarded")
+      .select("*")
       .eq("id", userId)
       .maybeSingle();
 
@@ -39,26 +59,58 @@ export class SupabaseAuthRepository implements IAuthRepository {
       return null;
     }
 
+    const row = data as Record<string, unknown>;
+    const dbBanner = typeof row.banner_url === "string" ? row.banner_url : null;
+
     return {
-      id: data.id,
-      username: data.username,
-      displayName: data.display_name,
-      avatarUrl: data.avatar_url,
-      bio: data.bio,
-      onboarded: data.onboarded,
+      id: String(row.id),
+      username: String(row.username),
+      displayName: typeof row.display_name === "string" ? row.display_name : null,
+      avatarUrl: typeof row.avatar_url === "string" ? row.avatar_url : null,
+      bannerUrl: dbBanner ?? getLocalBanner(userId),
+      bio: typeof row.bio === "string" ? row.bio : null,
+      onboarded: Boolean(row.onboarded),
     };
   }
 
   async updateProfile(userId: string, input: UpdateProfileInput): Promise<Profile> {
-    const { data, error } = await supabase
+    if (input.bannerUrl !== undefined) {
+      setLocalBanner(userId, input.bannerUrl);
+    }
+
+    const payload: {
+      display_name: string | null;
+      bio: string | null;
+      banner_url?: string | null;
+    } = {
+      display_name: input.displayName,
+      bio: input.bio,
+    };
+
+    if (input.bannerUrl !== undefined) {
+      payload.banner_url = input.bannerUrl;
+    }
+
+    let { data, error } = await supabase
       .from("profiles")
-      .update({ display_name: input.displayName, bio: input.bio })
+      .update(payload)
       .eq("id", userId)
-      .select("id, username, display_name, avatar_url, bio, onboarded")
+      .select("*")
       .single();
 
-    if (error) {
-      throw new AppError("unknown", error.message, error);
+    if (error && input.bannerUrl !== undefined) {
+      const retry = await supabase
+        .from("profiles")
+        .update({ display_name: input.displayName, bio: input.bio })
+        .eq("id", userId)
+        .select("*")
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
+
+    if (error || !data) {
+      throw new AppError("unknown", error?.message ?? "Could not update profile.", error);
     }
 
     return {
@@ -66,6 +118,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
       username: data.username,
       displayName: data.display_name,
       avatarUrl: data.avatar_url,
+      bannerUrl: data.banner_url ?? getLocalBanner(userId),
       bio: data.bio,
       onboarded: data.onboarded,
     };
@@ -103,6 +156,30 @@ export class SupabaseAuthRepository implements IAuthRepository {
     }
 
     return avatarUrl;
+  }
+
+  async uploadBanner(userId: string, file: File): Promise<string> {
+    const path = `${userId}/banner`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
+
+    if (uploadError) {
+      throw new AppError("unknown", uploadError.message, uploadError);
+    }
+
+    const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(path);
+    const bannerUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+    setLocalBanner(userId, bannerUrl);
+
+    await supabase
+      .from("profiles")
+      .update({ banner_url: bannerUrl })
+      .eq("id", userId);
+
+    return bannerUrl;
   }
 
   async signIn({ identifier, password }: SignInInput): Promise<AuthUser> {

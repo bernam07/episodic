@@ -103,24 +103,40 @@ export function SeasonAccordion({
 
           {data ? (
             <>
-              {canTrack ? (
-                <button
-                  type="button"
-                  onClick={() => onToggleSeason(season.seasonNumber, data.episodes, !allWatched)}
-                  className="tap-none mb-1 min-h-[36px] rounded-[8px] px-2 text-[0.875rem] font-normal text-accent-500 active:opacity-70"
-                >
-                  {allWatched ? "Mark season unwatched" : "Mark season watched"}
-                </button>
-              ) : null}
+              {canTrack || (nextUnwatched && !allWatched) ? (
+                <div className="mb-2.5 flex flex-wrap items-center gap-2">
+                  {canTrack ? (
+                    <button
+                      type="button"
+                      onClick={() => onToggleSeason(season.seasonNumber, data.episodes, !allWatched)}
+                      className="tap-none inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-ink-850 px-3 py-1.5 text-[0.75rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-75"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        className={`size-3.5 ${allWatched ? "text-mist-400" : "text-[#30d158]"}`}
+                      >
+                        <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <span>{allWatched ? "Mark season unwatched" : "Mark season watched"}</span>
+                    </button>
+                  ) : null}
 
-              {nextUnwatched && !allWatched ? (
-                <button
-                  type="button"
-                  onClick={() => nextRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
-                  className="tap-none mb-1 ml-2 min-h-[36px] rounded-[8px] px-2 text-[0.875rem] font-normal text-mist-300 active:opacity-70"
-                >
-                  Jump to E{nextUnwatched.episodeNumber}
-                </button>
+                  {nextUnwatched && !allWatched ? (
+                    <button
+                      type="button"
+                      onClick={() => nextRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                      className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-3 py-1.5 text-[0.75rem] font-semibold text-mist-300 transition-colors hover:bg-ink-800 hover:text-white active:opacity-75"
+                    >
+                      <span>Jump to E{nextUnwatched.episodeNumber}</span>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-3">
+                        <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
 
               <div className="divide-y divide-white/[0.08]">

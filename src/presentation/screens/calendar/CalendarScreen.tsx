@@ -262,12 +262,12 @@ export function CalendarScreen() {
             ))}
           </div>
 
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-1.5">
             {offset !== 0 ? (
               <button
                 type="button"
                 onClick={() => setOffset(0)}
-                className="tap-none mr-1 rounded-full bg-ink-850 px-3 py-1.5 text-[0.75rem] font-semibold text-accent-500 active:bg-ink-800"
+                className="tap-none mr-0.5 rounded-full border border-white/10 bg-ink-850 px-3 py-1.5 text-[0.75rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-75"
               >
                 Today
               </button>
@@ -276,7 +276,7 @@ export function CalendarScreen() {
               type="button"
               onClick={() => setOffset((o) => o - 1)}
               aria-label="Previous"
-              className="tap-none flex size-8 items-center justify-center rounded-full bg-ink-850 text-accent-500 active:bg-ink-800"
+              className="tap-none flex size-8 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-75"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                 <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -286,7 +286,7 @@ export function CalendarScreen() {
               type="button"
               onClick={() => setOffset((o) => o + 1)}
               aria-label="Next"
-              className="tap-none flex size-8 items-center justify-center rounded-full bg-ink-850 text-accent-500 active:bg-ink-800"
+              className="tap-none flex size-8 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-75"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                 <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />

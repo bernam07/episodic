@@ -12,6 +12,7 @@ export type ProfileSearchResult = {
 };
 
 export type ProfileSummary = ProfileSearchResult & {
+  bannerUrl?: string | null;
   bio: string | null;
   episodesWatched: number;
   reviewsCount: number;

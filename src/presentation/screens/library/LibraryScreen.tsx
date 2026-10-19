@@ -446,9 +446,9 @@ export function LibraryScreen() {
                   tmdbId={item.tmdbId}
                   name={item.name}
                   posterPath={item.posterPath}
-                  status={item.status}
-                  caption={`${item.watchedEpisodes}/${item.numberOfEpisodes} ${t("episodes")}`}
-                  progressPercent={item.progressPercent}
+                  status={view === "favorites" ? undefined : item.status}
+                  caption={view === "favorites" ? undefined : `${item.watchedEpisodes}/${item.numberOfEpisodes} ${t("episodes")}`}
+                  progressPercent={view === "favorites" ? undefined : item.progressPercent}
                   rating={item.userRating}
                 />
               ))}
