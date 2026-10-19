@@ -1203,4 +1203,67 @@ describe("new_episode notifications", () => {
     expect(r.rows[0]).toMatchObject({ type: "new_episode", actor_id: null, season_number: 2, episode_number: 5 });
     expect(r.rows[0].series_name).toBeTruthy();
   });
+
+  it("automatically moves a watched series back to watching when new episodes air", async () => {
+    await asAuthenticated(db, ALICE);
+    const created = await db.query<{ id: string }>(
+      `select public.upsert_series_from_tmdb($1::jsonb) as id`,
+      [
+        JSON.stringify({
+          ...BREAKING_BAD,
+          tmdb_id: 98765,
+          name: "Returning Show",
+          tmdb_status: "Returning Series",
+          number_of_seasons: 1,
+          number_of_episodes: 3,
+          aired_episodes: 3,
+          seasons_meta: [{ season_number: 1, episode_count: 3 }],
+        }),
+      ]
+    );
+    const returningId = created.rows[0].id;
+
+    await db.query(
+      `select public.set_series_watched($1, $2::jsonb)`,
+      [
+        returningId,
+        JSON.stringify([
+          { tmdb_episode_id: 9876501, season_number: 1, episode_number: 1 },
+          { tmdb_episode_id: 9876502, season_number: 1, episode_number: 2 },
+          { tmdb_episode_id: 9876503, season_number: 1, episode_number: 3 },
+        ]),
+      ]
+    );
+
+    const before = await db.query<{ status: string }>(
+      `select status from public.user_series_status where user_id = $1 and series_id = $2`,
+      [ALICE, returningId]
+    );
+    expect(before.rows[0].status).toBe("watched");
+
+    await db.query(`select public.upsert_series_from_tmdb($1::jsonb)`, [
+      JSON.stringify({
+        ...BREAKING_BAD,
+        tmdb_id: 98765,
+        name: "Returning Show",
+        tmdb_status: "Returning Series",
+        number_of_seasons: 2,
+        number_of_episodes: 6,
+        aired_episodes: 4,
+        seasons_meta: [
+          { season_number: 1, episode_count: 3 },
+          { season_number: 2, episode_count: 3 },
+        ],
+      }),
+    ]);
+
+    const after = await db.query<{ status: string; completed_at: string | null }>(
+      `select status, completed_at from public.user_series_status where user_id = $1 and series_id = $2`,
+      [ALICE, returningId]
+    );
+    await reset(db);
+
+    expect(after.rows[0].status).toBe("watching");
+    expect(after.rows[0].completed_at).toBeNull();
+  });
 });

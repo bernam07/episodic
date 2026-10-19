@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
-import { SERIES_STATUS_LABELS, SERIES_STATUSES, type SeriesStatus } from "@/domain/entities/SeriesStatus";
+import {
+  formatSeriesStatusLabel,
+  SERIES_STATUSES,
+  type SeriesStatus,
+} from "@/domain/entities/SeriesStatus";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
 
 type StatusPickerProps = {
   value: SeriesStatus | null;
@@ -9,6 +14,7 @@ type StatusPickerProps = {
   pendingStatus?: SeriesStatus | null;
   airedEpisodes?: number;
   watchedEpisodes?: number;
+  tmdbStatus?: string | null;
 };
 
 const DESCRIPTIONS: Record<SeriesStatus, string> = {
@@ -51,7 +57,10 @@ export function StatusPicker({
   pendingStatus = null,
   airedEpisodes,
   watchedEpisodes = 0,
+  tmdbStatus,
 }: StatusPickerProps) {
+  const { t } = useI18n();
+
   return (
     <div className="flex flex-col gap-2 pt-2">
       {SERIES_STATUSES.map((status) => {
@@ -64,6 +73,7 @@ export function StatusPicker({
           : status === "watched" && airedEpisodes !== undefined && airedEpisodes > 0
             ? `Marks all ${airedEpisodes} aired episodes as seen`
             : DESCRIPTIONS[status];
+        const label = formatSeriesStatusLabel(status, tmdbStatus, t("upToDate"));
 
         return (
           <button
@@ -81,7 +91,7 @@ export function StatusPicker({
 
             <span className="min-w-0 flex-1">
               <span className={`block text-[0.9375rem] font-semibold ${active ? "text-accent-400" : "text-white"}`}>
-                {SERIES_STATUS_LABELS[status]}
+                {label}
               </span>
               <span
                 className={`mt-0.5 block truncate text-[0.75rem] ${resetsProgress ? "text-star-500" : "text-mist-500"}`}

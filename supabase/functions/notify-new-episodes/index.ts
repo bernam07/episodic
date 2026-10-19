@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
     const { data } = await service
       .from("user_series_status")
       .select("series_id")
-      .eq("status", "watching")
+      .in("status", ["watching", "watched"])
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
     const rows = (data ?? []) as { series_id: string }[];
     allWatchingRows.push(...rows);
@@ -136,7 +136,10 @@ Deno.serve(async (req) => {
       continue;
     }
 
-    await service.from("series").update({ aired_episodes: aired }).eq("id", series.id);
+    await service
+      .from("series")
+      .update({ aired_episodes: aired, tmdb_status: detail.status })
+      .eq("id", series.id);
 
     if (series.aired_episodes === 0) {
       continue;
@@ -148,7 +151,7 @@ Deno.serve(async (req) => {
       .from("user_series_status")
       .select("user_id")
       .eq("series_id", series.id)
-      .eq("status", "watching");
+      .in("status", ["watching", "watched"]);
 
     const userIds = (watchers ?? []).map((w: { user_id: string }) => w.user_id);
     if (userIds.length === 0) {

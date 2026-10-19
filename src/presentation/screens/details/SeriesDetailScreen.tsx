@@ -4,7 +4,10 @@ import { backdropUrl } from "@/data/tmdb/images";
 import { airedEpisodeCount } from "@/domain/entities/Airing";
 import type { Episode } from "@/domain/entities/Episode";
 import { releaseYear } from "@/domain/entities/Series";
-import { SERIES_STATUS_LABELS, type SeriesStatus } from "@/domain/entities/SeriesStatus";
+import {
+  formatSeriesStatusLabel,
+  type SeriesStatus,
+} from "@/domain/entities/SeriesStatus";
 import { ActorDetailSheet } from "@/presentation/components/actors/ActorDetailSheet";
 import { SeasonAccordion } from "@/presentation/components/episodes/SeasonAccordion";
 import { AddToListSheet } from "@/presentation/components/lists/AddToListSheet";
@@ -35,6 +38,7 @@ import {
   useSeriesTracking,
   useSetRating,
   useSetSeriesStatus,
+  useSyncSeriesDetailProgress,
   useToggleEpisode,
   useToggleFavorite,
   useToggleSeason,
@@ -90,6 +94,11 @@ export function SeriesDetailScreen() {
   const bumpRewatch = useBumpRewatch(seriesId ?? null);
   const setRating = useSetRating(seriesId ?? null);
 
+  const syncedWatchedCount = seasonProgress
+    ? seasonProgress.reduce((sum, season) => sum + season.watchedEpisodes, 0)
+    : null;
+  useSyncSeriesDetailProgress(seriesId ?? null, detail, tracking, syncedWatchedCount);
+
   const [todayMs] = useState(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -125,7 +134,11 @@ export function SeriesDetailScreen() {
 
     try {
       await setStatus.mutateAsync(status);
-      toast.success(t("statusUpdatedToast", { status: SERIES_STATUS_LABELS[status] }));
+      toast.success(
+        t("statusUpdatedToast", {
+          status: formatSeriesStatusLabel(status, detail?.tmdbStatus, t("upToDate")),
+        })
+      );
       setStatusSheetOpen(false);
     } finally {
       setPendingStatus(null);
@@ -318,7 +331,9 @@ export function SeriesDetailScreen() {
               </svg>
             ) : null}
             <span className="truncate">
-              {tracking ? SERIES_STATUS_LABELS[tracking.status] : t("addToLibrary")}
+              {tracking
+                ? formatSeriesStatusLabel(tracking.status, detail.tmdbStatus, t("upToDate"))
+                : t("addToLibrary")}
             </span>
           </Button>
 
@@ -463,6 +478,7 @@ export function SeriesDetailScreen() {
           pendingStatus={pendingStatus}
           airedEpisodes={airedEpisodes}
           watchedEpisodes={totalWatched}
+          tmdbStatus={detail.tmdbStatus}
           onChange={handleStatusChange}
           onRemove={seriesId ? handleRemove : undefined}
         />

@@ -256,6 +256,7 @@ export function UserProfileScreen() {
                       name={item.seriesName}
                       posterPath={item.posterPath}
                       status={item.status}
+                      tmdbStatus={item.tmdbStatus}
                       rating={item.rating}
                     />
                   ))}

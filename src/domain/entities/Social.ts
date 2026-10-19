@@ -27,6 +27,7 @@ export type UserLibraryItem = {
   status: SeriesStatus;
   isFavorite: boolean;
   rating: number | null;
+  tmdbStatus?: string | null;
   updatedAt: string;
 };
 

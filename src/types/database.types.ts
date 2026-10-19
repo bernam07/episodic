@@ -487,6 +487,7 @@ export type Database = {
           started_at: string | null
           status: Database["public"]["Enums"]["series_watch_status"] | null
           tmdb_id: number | null
+          tmdb_status: string | null
           updated_at: string | null
           user_id: string | null
           user_rating: number | null
@@ -741,6 +742,7 @@ export type Database = {
           series_name: string
           status: Database["public"]["Enums"]["series_watch_status"]
           tmdb_id: number
+          tmdb_status: string
           updated_at: string
         }[]
       }

@@ -1,9 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { airedEpisodeCount } from "@/domain/entities/Airing";
 import { hasAired, type Episode } from "@/domain/entities/Episode";
 import type { SeriesProgress } from "@/domain/entities/Progress";
 import type { SeriesDetail } from "@/domain/entities/Series";
-import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
+import {
+  isContinuingSeries,
+  type SeriesStatus,
+  type UserSeriesStatus,
+} from "@/domain/entities/SeriesStatus";
 import { container } from "@/presentation/di/container";
 import { queryKeys } from "./queryKeys";
 
@@ -333,4 +338,113 @@ export function useToggleSeason(seriesId: string | null) {
       ),
     onSuccess: () => invalidate(seriesId),
   });
+}
+
+const syncedSeriesKeys = new Set<string>();
+const syncedContinuingTmdbIds = new Set<number>();
+
+export function useSyncSeriesDetailProgress(
+  seriesId: string | null,
+  detail: SeriesDetail | undefined,
+  tracking: UserSeriesStatus | null | undefined,
+  watchedEpisodes: number | null
+) {
+  const invalidate = useTrackingInvalidator();
+
+  useEffect(() => {
+    if (!seriesId || !detail || !tracking || watchedEpisodes === null) {
+      return;
+    }
+
+    const aired = airedEpisodeCount(detail);
+    const syncKey = `${seriesId}:${aired}:${detail.tmdbStatus ?? ""}:${tracking.status}:${watchedEpisodes}`;
+    if (syncedSeriesKeys.has(syncKey)) {
+      return;
+    }
+    syncedSeriesKeys.add(syncKey);
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        await container.repositories.series.cacheSeries(detail, aired);
+        if (tracking.status === "watched" && aired > watchedEpisodes) {
+          await container.repositories.tracking.setStatus(seriesId, "watching");
+        }
+        if (!cancelled) {
+          invalidate(seriesId);
+        }
+      } catch {
+        return;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [seriesId, detail, tracking, watchedEpisodes, invalidate]);
+}
+
+export function useSyncContinuingSeries() {
+  const { data: library } = useLibrary();
+  const queryClient = useQueryClient();
+  const runningRef = useRef(false);
+
+  useEffect(() => {
+    if (!library || library.length === 0 || runningRef.current) {
+      return;
+    }
+
+    const candidates = library.filter(
+      (item) =>
+        (item.status === "watched" || item.status === "watching") &&
+        !syncedContinuingTmdbIds.has(item.tmdbId) &&
+        (isContinuingSeries(item.tmdbStatus) ||
+          !item.tmdbStatus ||
+          (item.status === "watched" && item.airedEpisodes > item.watchedEpisodes))
+    );
+
+    if (candidates.length === 0) {
+      return;
+    }
+
+    runningRef.current = true;
+
+    void (async () => {
+      let changed = false;
+
+      for (const item of candidates.slice(0, 12)) {
+        syncedContinuingTmdbIds.add(item.tmdbId);
+        try {
+          const detail = await container.usecases.getSeriesDetail.execute(item.tmdbId);
+          const freshAired = airedEpisodeCount(detail);
+          const needsCacheUpdate =
+            freshAired > item.airedEpisodes ||
+            detail.numberOfEpisodes !== item.numberOfEpisodes ||
+            detail.tmdbStatus !== item.tmdbStatus;
+
+          if (needsCacheUpdate) {
+            await container.repositories.series.cacheSeries(detail, freshAired);
+            changed = true;
+          }
+
+          const targetAired = Math.max(freshAired, item.airedEpisodes);
+          if (item.status === "watched" && targetAired > item.watchedEpisodes) {
+            await container.repositories.tracking.setStatus(item.seriesId, "watching");
+            changed = true;
+          }
+        } catch {
+          continue;
+        }
+      }
+
+      runningRef.current = false;
+
+      if (changed) {
+        queryClient.invalidateQueries({ queryKey: ["library"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.upNext });
+        queryClient.invalidateQueries({ queryKey: queryKeys.continueWatching });
+      }
+    })();
+  }, [library, queryClient]);
 }

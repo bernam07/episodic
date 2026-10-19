@@ -1,8 +1,11 @@
 import { Outlet } from "react-router-dom";
+import { useSyncContinuingSeries } from "@/presentation/hooks/useTracking";
 import { BottomNavBar } from "./BottomNavBar";
 import { SideNav } from "./SideNav";
 
 export function AppShell() {
+  useSyncContinuingSeries();
+
   return (
     <div className="relative min-h-dvh bg-ink-950 text-mist-100">
       <SideNav />

@@ -123,6 +123,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
       status: row.status,
       isFavorite: row.is_favorite,
       rating: row.rating === null ? null : Number(row.rating),
+      tmdbStatus: (row as { tmdb_status?: string | null }).tmdb_status ?? null,
       updatedAt: row.updated_at,
     }));
   }

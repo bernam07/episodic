@@ -39,6 +39,11 @@ export function isFinished(detail: Pick<SeriesDetail, "tmdbStatus">): boolean {
   return airingStatus(detail) === "ended";
 }
 
+export function hasContinuation(tmdbStatus: string | null | undefined): boolean {
+  const status = airingStatus({ tmdbStatus: tmdbStatus ?? null });
+  return status === "returning" || status === "in_production" || status === "planned";
+}
+
 export function airedEpisodeCount(
   detail: Pick<SeriesDetail, "seasonsMeta" | "numberOfEpisodes" | "lastEpisodeToAir" | "tmdbStatus">
 ): number {

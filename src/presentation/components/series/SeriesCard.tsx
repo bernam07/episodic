@@ -78,6 +78,7 @@ type SeriesCardProps = {
   progressPercent?: number;
   caption?: string;
   status?: SeriesStatus;
+  tmdbStatus?: string | null;
   rating?: number | null;
   watched?: boolean;
   libraryStatus?: SeriesStatus | null;
@@ -91,6 +92,7 @@ export function SeriesCard({
   progressPercent,
   caption,
   status,
+  tmdbStatus,
   rating,
   watched,
   libraryStatus,
@@ -100,7 +102,7 @@ export function SeriesCard({
       <div className="relative">
         <SeriesPoster path={posterPath} alt={name} />
         {status ? (
-          <StatusBadge status={status} className="absolute top-2 left-2 shadow-sm" />
+          <StatusBadge status={status} tmdbStatus={tmdbStatus} className="absolute top-2 left-2 shadow-sm" />
         ) : watched ? (
           <WatchedBadge />
         ) : libraryStatus ? (

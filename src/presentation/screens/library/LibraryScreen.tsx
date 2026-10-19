@@ -63,7 +63,7 @@ function SeriesListRow({ item }: { item: SeriesProgress }) {
 
         <div className="mt-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <StatusBadge status={item.status} />
+            <StatusBadge status={item.status} tmdbStatus={item.tmdbStatus} />
             {item.rewatchCount > 0 ? (
               <span className="rounded-full border border-white/10 bg-ink-800 px-2 py-0.5 text-[0.6875rem] font-semibold text-mist-300">
                 {item.rewatchCount}×
@@ -417,6 +417,7 @@ export function LibraryScreen() {
                         name={item.name}
                         posterPath={item.posterPath}
                         status={item.status}
+                        tmdbStatus={item.tmdbStatus}
                         caption={`${item.watchedEpisodes}/${item.numberOfEpisodes} ${t("episodes")}`}
                         progressPercent={item.progressPercent}
                         rating={item.userRating}
@@ -447,6 +448,7 @@ export function LibraryScreen() {
                   name={item.name}
                   posterPath={item.posterPath}
                   status={view === "favorites" ? undefined : item.status}
+                  tmdbStatus={item.tmdbStatus}
                   caption={view === "favorites" ? undefined : `${item.watchedEpisodes}/${item.numberOfEpisodes} ${t("episodes")}`}
                   progressPercent={view === "favorites" ? undefined : item.progressPercent}
                   rating={item.userRating}

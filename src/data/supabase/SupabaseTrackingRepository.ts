@@ -25,6 +25,7 @@ type ProgressRow = {
   aired_episodes: number;
   episode_runtime: number;
   genres: string[];
+  tmdb_status: string | null;
   watched_episodes: number;
   remaining_episodes: number;
   progress_percent: number;
@@ -48,6 +49,7 @@ function toProgress(row: ProgressRow): SeriesProgress {
     airedEpisodes: row.aired_episodes ?? 0,
     episodeRuntime: row.episode_runtime ?? 0,
     genres: row.genres ?? [],
+    tmdbStatus: row.tmdb_status ?? null,
     watchedEpisodes: row.watched_episodes,
     remainingEpisodes: row.remaining_episodes,
     progressPercent: Number(row.progress_percent),
