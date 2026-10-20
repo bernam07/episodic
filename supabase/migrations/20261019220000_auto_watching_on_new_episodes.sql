@@ -79,24 +79,39 @@ begin
     else coalesce(new.number_of_episodes, 0)
   end;
 
-  if v_target > 0 and (
-    coalesce(new.aired_episodes, 0) > coalesce(old.aired_episodes, 0)
-    or (
-      coalesce(new.aired_episodes, 0) = 0
-      and coalesce(new.number_of_episodes, 0) > coalesce(old.number_of_episodes, 0)
-    )
-  ) then
+  if v_target > 0 then
+    if (
+      coalesce(new.aired_episodes, 0) > coalesce(old.aired_episodes, 0)
+      or (
+        coalesce(new.aired_episodes, 0) = 0
+        and coalesce(new.number_of_episodes, 0) > coalesce(old.number_of_episodes, 0)
+      )
+    ) then
+      update public.user_series_status uss
+      set status = 'watching',
+          completed_at = null
+      where uss.series_id = new.id
+        and uss.status = 'watched'
+        and (
+          select count(*)::integer
+          from public.episode_tracking et
+          where et.user_id = uss.user_id
+            and et.series_id = new.id
+        ) < v_target;
+    end if;
+
     update public.user_series_status uss
-    set status = 'watching',
-        completed_at = null
+    set status = 'watched',
+        completed_at = coalesce(uss.completed_at, now()),
+        started_at = coalesce(uss.started_at, now())
     where uss.series_id = new.id
-      and uss.status = 'watched'
+      and uss.status = 'watching'
       and (
         select count(*)::integer
         from public.episode_tracking et
         where et.user_id = uss.user_id
           and et.series_id = new.id
-      ) < v_target;
+      ) >= v_target;
   end if;
 
   return new;
@@ -122,6 +137,21 @@ where s.id = uss.series_id
     where et.user_id = uss.user_id
       and et.series_id = uss.series_id
   ) between 1 and s.aired_episodes - 1;
+
+update public.user_series_status uss
+set status = 'watched',
+    completed_at = coalesce(uss.completed_at, now()),
+    started_at = coalesce(uss.started_at, now())
+from public.series s
+where s.id = uss.series_id
+  and uss.status = 'watching'
+  and coalesce(s.aired_episodes, 0) > 0
+  and (
+    select count(*)::integer
+    from public.episode_tracking et
+    where et.user_id = uss.user_id
+      and et.series_id = uss.series_id
+  ) >= s.aired_episodes;
 
 drop view if exists public.user_series_progress;
 

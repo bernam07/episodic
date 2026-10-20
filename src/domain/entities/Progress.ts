@@ -16,6 +16,7 @@ export type SeriesProgress = {
   episodeRuntime: number;
   genres: string[];
   tmdbStatus?: string | null;
+  hasUnairedSeason?: boolean;
   watchedEpisodes: number;
   remainingEpisodes: number;
   progressPercent: number;

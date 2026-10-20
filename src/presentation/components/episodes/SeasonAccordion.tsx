@@ -5,6 +5,8 @@ import type { SeasonProgress } from "@/domain/entities/Progress";
 import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useSeason } from "@/presentation/hooks/useDiscovery";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
+import { formatDate } from "@/presentation/utils/date";
 import { EpisodeDetailSheet } from "./EpisodeDetailSheet";
 import { EpisodeRow } from "./EpisodeRow";
 
@@ -27,13 +29,27 @@ export function SeasonAccordion({
   onToggleEpisode,
   onToggleSeason,
 }: SeasonAccordionProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [detailEpisode, setDetailEpisode] = useState<Episode | null>(null);
   const { data, isLoading } = useSeason(tmdbId, open ? season.seasonNumber : null);
   const nextRef = useRef<HTMLDivElement | null>(null);
   const didScrollRef = useRef(false);
 
-  const liveTotal = data ? data.episodes.length : null;
+  const today = new Date().toISOString().slice(0, 10);
+  const isUpcomingByMeta =
+    (Boolean(season.airDate) && (season.airDate as string) > today) ||
+    (!season.airDate && season.episodeCount === 0);
+  const airedEpisodesInSeason = data ? data.episodes.filter((ep) => hasAired(ep)) : null;
+  const isSeasonUpcoming =
+    isUpcomingByMeta ||
+    (airedEpisodesInSeason !== null && airedEpisodesInSeason.length === 0);
+
+  const liveTotal = data
+    ? airedEpisodesInSeason && airedEpisodesInSeason.length > 0
+      ? airedEpisodesInSeason.length
+      : data.episodes.length
+    : null;
   const liveWatched = data
     ? data.episodes.filter((ep) => watchedIds.has(ep.tmdbEpisodeId)).length
     : null;
@@ -41,11 +57,11 @@ export function SeasonAccordion({
   const total = liveTotal ?? season.episodeCount;
   const watchedCount = Math.min(liveWatched ?? progress?.watchedEpisodes ?? 0, total);
   const percent = total > 0 ? Math.min(Math.round((watchedCount / total) * 1000) / 10, 100) : 0;
-  const allWatched = total > 0 && watchedCount >= total;
+  const allWatched = !isSeasonUpcoming && total > 0 && watchedCount >= total;
+  const upcomingDateLabel = formatDate(season.airDate);
 
-  const nextUnwatched = data?.episodes.find(
-    (ep) => hasAired(ep) && !watchedIds.has(ep.tmdbEpisodeId)
-  ) ?? null;
+  const nextUnwatched =
+    data?.episodes.find((ep) => hasAired(ep) && !watchedIds.has(ep.tmdbEpisodeId)) ?? null;
 
   useEffect(() => {
     if (data && nextRef.current && !didScrollRef.current) {
@@ -58,12 +74,9 @@ export function SeasonAccordion({
     if (!open) didScrollRef.current = false;
   }, [open]);
 
-  const setNextRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      nextRef.current = node;
-    },
-    []
-  );
+  const setNextRef = useCallback((node: HTMLDivElement | null) => {
+    nextRef.current = node;
+  }, []);
 
   return (
     <div className="border-b border-white/[0.08] last:border-b-0">
@@ -75,12 +88,20 @@ export function SeasonAccordion({
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-[1rem] font-semibold tracking-[-0.01em] text-white">{season.name}</span>
-            <span className="shrink-0 text-[0.75rem] tabular-nums text-mist-500">
-              {watchedCount}/{total}
+            <span className="text-[1rem] font-semibold tracking-[-0.01em] text-white">
+              {season.name}
             </span>
+            {isSeasonUpcoming ? (
+              <span className="shrink-0 rounded-full border border-[#38bdf8]/30 bg-[#38bdf8]/10 px-2.5 py-0.5 text-[0.6875rem] font-semibold text-[#38bdf8]">
+                {upcomingDateLabel ? `${t("upcoming")} · ${upcomingDateLabel}` : t("upcoming")}
+              </span>
+            ) : (
+              <span className="shrink-0 text-[0.75rem] tabular-nums text-mist-500">
+                {watchedCount}/{total}
+              </span>
+            )}
           </div>
-          <ProgressBar value={percent} className="mt-2" />
+          {!isSeasonUpcoming ? <ProgressBar value={percent} className="mt-2" /> : null}
         </div>
         <svg
           viewBox="0 0 24 24"
@@ -103,12 +124,20 @@ export function SeasonAccordion({
 
           {data ? (
             <>
-              {canTrack || (nextUnwatched && !allWatched) ? (
+              {(!isSeasonUpcoming && canTrack) || (nextUnwatched && !allWatched) ? (
                 <div className="mb-2.5 flex flex-wrap items-center gap-2">
-                  {canTrack ? (
+                  {!isSeasonUpcoming && canTrack ? (
                     <button
                       type="button"
-                      onClick={() => onToggleSeason(season.seasonNumber, data.episodes, !allWatched)}
+                      onClick={() =>
+                        onToggleSeason(
+                          season.seasonNumber,
+                          !allWatched && airedEpisodesInSeason && airedEpisodesInSeason.length > 0
+                            ? airedEpisodesInSeason
+                            : data.episodes,
+                          !allWatched
+                        )
+                      }
                       className="tap-none inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-ink-850 px-3 py-1.5 text-[0.75rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-75"
                     >
                       <svg
@@ -120,18 +149,28 @@ export function SeasonAccordion({
                       >
                         <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                      <span>{allWatched ? "Mark season unwatched" : "Mark season watched"}</span>
+                      <span>{allWatched ? t("markSeasonUnwatched") : t("markSeasonWatched")}</span>
                     </button>
                   ) : null}
 
                   {nextUnwatched && !allWatched ? (
                     <button
                       type="button"
-                      onClick={() => nextRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                      onClick={() =>
+                        nextRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+                      }
                       className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-3 py-1.5 text-[0.75rem] font-semibold text-mist-300 transition-colors hover:bg-ink-800 hover:text-white active:opacity-75"
                     >
-                      <span>Jump to E{nextUnwatched.episodeNumber}</span>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-3">
+                      <span>
+                        {t("jumpTo")} E{nextUnwatched.episodeNumber}
+                      </span>
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        className="size-3"
+                      >
                         <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </button>
@@ -139,22 +178,30 @@ export function SeasonAccordion({
                 </div>
               ) : null}
 
-              <div className="divide-y divide-white/[0.08]">
-                {data.episodes.map((episode) => (
-                  <div
-                    key={episode.tmdbEpisodeId}
-                    ref={nextUnwatched?.tmdbEpisodeId === episode.tmdbEpisodeId ? setNextRef : undefined}
-                  >
-                    <EpisodeRow
-                      episode={episode}
-                      watched={watchedIds.has(episode.tmdbEpisodeId)}
-                      disabled={!canTrack}
-                      onToggle={(watched) => onToggleEpisode(episode, watched)}
-                      onOpenDetail={() => setDetailEpisode(episode)}
-                    />
-                  </div>
-                ))}
-              </div>
+              {data.episodes.length === 0 ? (
+                <p className="py-2 text-[0.8125rem] text-mist-500">{t("notAiredYet")}</p>
+              ) : (
+                <div className="divide-y divide-white/[0.08]">
+                  {data.episodes.map((episode) => (
+                    <div
+                      key={episode.tmdbEpisodeId}
+                      ref={
+                        nextUnwatched?.tmdbEpisodeId === episode.tmdbEpisodeId
+                          ? setNextRef
+                          : undefined
+                      }
+                    >
+                      <EpisodeRow
+                        episode={episode}
+                        watched={watchedIds.has(episode.tmdbEpisodeId)}
+                        disabled={!canTrack}
+                        onToggle={(watched) => onToggleEpisode(episode, watched)}
+                        onOpenDetail={() => setDetailEpisode(episode)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           ) : null}
         </div>

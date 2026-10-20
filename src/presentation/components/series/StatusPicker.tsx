@@ -15,6 +15,7 @@ type StatusPickerProps = {
   airedEpisodes?: number;
   watchedEpisodes?: number;
   tmdbStatus?: string | null;
+  hasUnairedSeason?: boolean;
 };
 
 const DESCRIPTIONS: Record<SeriesStatus, string> = {
@@ -58,13 +59,20 @@ export function StatusPicker({
   airedEpisodes,
   watchedEpisodes = 0,
   tmdbStatus,
+  hasUnairedSeason,
 }: StatusPickerProps) {
   const { t } = useI18n();
+  const isCaughtUp =
+    value === "watching" &&
+    airedEpisodes !== undefined &&
+    airedEpisodes > 0 &&
+    watchedEpisodes >= airedEpisodes;
+  const effectiveValue: SeriesStatus | null = isCaughtUp ? "watched" : value;
 
   return (
     <div className="flex flex-col gap-2 pt-2">
       {SERIES_STATUSES.map((status) => {
-        const active = value === status;
+        const active = effectiveValue === status;
         const busy = pending && pendingStatus === status;
 
         const resetsProgress = status === "want_to_watch" && watchedEpisodes > 0;
@@ -73,7 +81,10 @@ export function StatusPicker({
           : status === "watched" && airedEpisodes !== undefined && airedEpisodes > 0
             ? `Marks all ${airedEpisodes} aired episodes as seen`
             : DESCRIPTIONS[status];
-        const label = formatSeriesStatusLabel(status, tmdbStatus, t("upToDate"));
+        const label = formatSeriesStatusLabel(status, tmdbStatus, t("upToDate"), {
+          hasUnairedSeason,
+          airedEpisodes,
+        });
 
         return (
           <button

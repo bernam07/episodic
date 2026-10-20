@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { posterUrl } from "@/data/tmdb/images";
 import {
-  SERIES_STATUSES,
-  type SeriesStatus,
+  DISPLAY_SERIES_STATUSES,
+  effectiveEpisodeTotal,
+  resolveDisplayStatus,
+  type DisplaySeriesStatus,
 } from "@/domain/entities/SeriesStatus";
 import type { SeriesProgress } from "@/domain/entities/Progress";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
@@ -15,10 +17,10 @@ import { useI18n } from "@/presentation/i18n/I18nProvider";
 import { useToast } from "@/presentation/providers/ToastProvider";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 
-type Filter = SeriesStatus | "all";
+type Filter = DisplaySeriesStatus | "all";
 type ViewMode = "grid" | "list";
 
-const FILTERS: Filter[] = ["all", ...SERIES_STATUSES];
+const FILTERS: Filter[] = ["all", ...DISPLAY_SERIES_STATUSES];
 const VALID_FILTERS = new Set<string>(FILTERS);
 
 type SortKey = "recent" | "alpha" | "rating" | "progress";
@@ -32,6 +34,8 @@ const SORT_FNS: Record<SortKey, (a: SeriesProgress, b: SeriesProgress) => number
 
 function SeriesListRow({ item }: { item: SeriesProgress }) {
   const poster = posterUrl(item.posterPath, "w154");
+  const displayStatus = resolveDisplayStatus(item);
+  const totalEpisodes = effectiveEpisodeTotal(item);
 
   return (
     <Link
@@ -55,7 +59,7 @@ function SeriesListRow({ item }: { item: SeriesProgress }) {
         <div className="flex items-center justify-between gap-2">
           <h3 className="truncate text-[0.9375rem] font-semibold tracking-[-0.01em] text-white">{item.name}</h3>
           <span className="shrink-0 text-[0.75rem] font-medium tabular-nums text-mist-500">
-            {item.watchedEpisodes}/{item.numberOfEpisodes}
+            {item.watchedEpisodes}/{totalEpisodes}
           </span>
         </div>
 
@@ -63,7 +67,11 @@ function SeriesListRow({ item }: { item: SeriesProgress }) {
 
         <div className="mt-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <StatusBadge status={item.status} tmdbStatus={item.tmdbStatus} />
+            <StatusBadge
+              status={displayStatus}
+              tmdbStatus={item.tmdbStatus}
+              hasUnairedSeason={item.hasUnairedSeason}
+            />
             {item.rewatchCount > 0 ? (
               <span className="rounded-full border border-white/10 bg-ink-800 px-2 py-0.5 text-[0.6875rem] font-semibold text-mist-300">
                 {item.rewatchCount}×
@@ -123,8 +131,9 @@ export function LibraryScreen() {
 
   const filterLabels: Record<Filter, string> = {
     all: t("all"),
-    want_to_watch: t("wantToWatch"),
     watching: t("watching"),
+    up_to_date: t("upToDate"),
+    want_to_watch: t("wantToWatch"),
     watched: t("watched"),
     abandoned: t("abandoned"),
   };
@@ -148,14 +157,15 @@ export function LibraryScreen() {
   const counts = useMemo(() => {
     const base: Record<Filter, number> = {
       all: data?.length ?? 0,
-      want_to_watch: 0,
       watching: 0,
+      up_to_date: 0,
+      want_to_watch: 0,
       watched: 0,
       abandoned: 0,
     };
 
     for (const item of data ?? []) {
-      base[item.status] += 1;
+      base[resolveDisplayStatus(item)] += 1;
     }
 
     return base;
@@ -182,7 +192,7 @@ export function LibraryScreen() {
         (item) => item.userRating !== null && (!ratingParam || item.userRating === Number(ratingParam))
       );
     }
-    if (filter !== "all") result = result.filter((item) => item.status === filter);
+    if (filter !== "all") result = result.filter((item) => resolveDisplayStatus(item) === filter);
     if (genreParam) result = result.filter((item) => item.genres.includes(genreParam));
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -399,8 +409,8 @@ export function LibraryScreen() {
 
       {visible.length > 0 && filter === "all" && !focused ? (
         <div className="space-y-7 px-5 pt-3">
-          {SERIES_STATUSES.map((status) => {
-            const group = visible.filter((item) => item.status === status);
+          {DISPLAY_SERIES_STATUSES.map((status) => {
+            const group = visible.filter((item) => resolveDisplayStatus(item) === status);
             if (group.length === 0) return null;
             return (
               <section key={status}>
@@ -416,9 +426,9 @@ export function LibraryScreen() {
                         tmdbId={item.tmdbId}
                         name={item.name}
                         posterPath={item.posterPath}
-                        status={item.status}
+                        status={resolveDisplayStatus(item)}
                         tmdbStatus={item.tmdbStatus}
-                        caption={`${item.watchedEpisodes}/${item.numberOfEpisodes} ${t("episodes")}`}
+                        caption={`${item.watchedEpisodes}/${effectiveEpisodeTotal(item)} ${t("episodes")}`}
                         progressPercent={item.progressPercent}
                         rating={item.userRating}
                       />
@@ -447,9 +457,13 @@ export function LibraryScreen() {
                   tmdbId={item.tmdbId}
                   name={item.name}
                   posterPath={item.posterPath}
-                  status={view === "favorites" ? undefined : item.status}
+                  status={view === "favorites" ? undefined : resolveDisplayStatus(item)}
                   tmdbStatus={item.tmdbStatus}
-                  caption={view === "favorites" ? undefined : `${item.watchedEpisodes}/${item.numberOfEpisodes} ${t("episodes")}`}
+                  caption={
+                    view === "favorites"
+                      ? undefined
+                      : `${item.watchedEpisodes}/${effectiveEpisodeTotal(item)} ${t("episodes")}`
+                  }
                   progressPercent={view === "favorites" ? undefined : item.progressPercent}
                   rating={item.userRating}
                 />

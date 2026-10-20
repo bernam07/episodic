@@ -6,7 +6,11 @@ import type {
   SeriesProgress,
   WatchedEpisodeRef,
 } from "@/domain/entities/Progress";
-import type { SeriesStatus, UserSeriesStatus } from "@/domain/entities/SeriesStatus";
+import {
+  effectiveEpisodeTotal,
+  type SeriesStatus,
+  type UserSeriesStatus,
+} from "@/domain/entities/SeriesStatus";
 import type { ITrackingRepository } from "@/domain/repositories/ITrackingRepository";
 import { supabase } from "./client";
 
@@ -22,10 +26,10 @@ type ProgressRow = {
   rewatch_count: number;
   number_of_seasons: number;
   number_of_episodes: number;
-  aired_episodes: number;
+  aired_episodes?: number;
   episode_runtime: number;
   genres: string[];
-  tmdb_status: string | null;
+  tmdb_status?: string | null;
   watched_episodes: number;
   remaining_episodes: number;
   progress_percent: number;
@@ -33,7 +37,85 @@ type ProgressRow = {
   updated_at: string;
 };
 
-function toProgress(row: ProgressRow): SeriesProgress {
+type SeriesMetaRow = {
+  id: string;
+  tmdb_status: string | null;
+  aired_episodes: number | null;
+  number_of_episodes: number | null;
+  seasons_meta: Array<{
+    season_number?: number;
+    episode_count?: number;
+    air_date?: string | null;
+  }> | null;
+};
+
+function computeAiringFromMeta(
+  rowAired: number | undefined,
+  meta: SeriesMetaRow | undefined
+): { airedEpisodes: number; hasUnairedSeason: boolean; tmdbStatus: string | null } {
+  const today = new Date().toISOString().slice(0, 10);
+  const seasons = Array.isArray(meta?.seasons_meta)
+    ? meta.seasons_meta.filter((season) => (season.season_number ?? 0) > 0)
+    : [];
+  const rawStatus = meta?.tmdb_status?.trim().toLowerCase() ?? "";
+  const finished =
+    rawStatus === "ended" || rawStatus === "canceled" || rawStatus === "cancelled";
+
+  const hasDatedPastSeason = seasons.some(
+    (season) => Boolean(season.air_date) && (season.air_date as string) <= today
+  );
+
+  const hasUnairedSeason =
+    seasons.some((season) => Boolean(season.air_date) && (season.air_date as string) > today) ||
+    (!finished &&
+      (seasons.some((season) => (season.episode_count ?? 0) === 0) ||
+        (hasDatedPastSeason && seasons.some((season) => !season.air_date))));
+
+  const premieredEpisodes = seasons
+    .filter(
+      (season) =>
+        Boolean(season.air_date) &&
+        (season.air_date as string) <= today &&
+        (season.episode_count ?? 0) > 0
+    )
+    .reduce((sum, season) => sum + (season.episode_count ?? 0), 0);
+
+  const rawAired = rowAired ?? meta?.aired_episodes ?? 0;
+  let airedEpisodes = rawAired;
+
+  if (hasUnairedSeason && premieredEpisodes > 0) {
+    airedEpisodes = rawAired > 0 ? Math.min(rawAired, premieredEpisodes) : premieredEpisodes;
+  } else if (rawAired === 0 && premieredEpisodes > 0) {
+    airedEpisodes = premieredEpisodes;
+  }
+
+  return {
+    airedEpisodes,
+    hasUnairedSeason,
+    tmdbStatus: meta?.tmdb_status ?? null,
+  };
+}
+
+function toProgress(row: ProgressRow, meta?: SeriesMetaRow): SeriesProgress {
+  const { airedEpisodes, hasUnairedSeason, tmdbStatus: metaStatus } = computeAiringFromMeta(
+    row.aired_episodes,
+    meta
+  );
+  const tmdbStatus = row.tmdb_status ?? metaStatus;
+  const effectiveTotal = effectiveEpisodeTotal({
+    airedEpisodes,
+    numberOfEpisodes: row.number_of_episodes,
+    tmdbStatus,
+    hasUnairedSeason,
+  });
+  const watched = row.watched_episodes;
+  const progressPercent =
+    effectiveTotal > 0
+      ? Math.min(Math.round((watched / effectiveTotal) * 1000) / 10, 100)
+      : Number(row.progress_percent);
+  const remainingEpisodes =
+    effectiveTotal > 0 ? Math.max(effectiveTotal - watched, 0) : row.remaining_episodes;
+
   return {
     seriesId: row.series_id,
     tmdbId: row.tmdb_id,
@@ -46,16 +128,35 @@ function toProgress(row: ProgressRow): SeriesProgress {
     rewatchCount: row.rewatch_count,
     numberOfSeasons: row.number_of_seasons,
     numberOfEpisodes: row.number_of_episodes,
-    airedEpisodes: row.aired_episodes ?? 0,
+    airedEpisodes,
     episodeRuntime: row.episode_runtime ?? 0,
     genres: row.genres ?? [],
-    tmdbStatus: row.tmdb_status ?? null,
-    watchedEpisodes: row.watched_episodes,
-    remainingEpisodes: row.remaining_episodes,
-    progressPercent: Number(row.progress_percent),
+    tmdbStatus,
+    hasUnairedSeason,
+    watchedEpisodes: watched,
+    remainingEpisodes,
+    progressPercent,
     userRating: row.user_rating === null ? null : Number(row.user_rating),
     updatedAt: row.updated_at,
   };
+}
+
+async function fetchSeriesMetaMap(seriesIds: string[]): Promise<Map<string, SeriesMetaRow>> {
+  const map = new Map<string, SeriesMetaRow>();
+  if (seriesIds.length === 0) {
+    return map;
+  }
+
+  const { data } = await supabase
+    .from("series")
+    .select("id, tmdb_status, aired_episodes, number_of_episodes, seasons_meta")
+    .in("id", seriesIds);
+
+  for (const row of (data ?? []) as unknown as SeriesMetaRow[]) {
+    map.set(row.id, row);
+  }
+
+  return map;
 }
 
 async function currentUserId(): Promise<string> {
@@ -88,7 +189,10 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       throw new AppError("unknown", error.message, error);
     }
 
-    return (data as unknown as ProgressRow[]).map(toProgress);
+    const rows = (data ?? []) as unknown as ProgressRow[];
+    const metaMap = await fetchSeriesMetaMap(rows.map((row) => row.series_id));
+
+    return rows.map((row) => toProgress(row, metaMap.get(row.series_id)));
   }
 
   async getSeriesProgress(seriesId: string): Promise<SeriesProgress | null> {
@@ -105,7 +209,14 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       throw new AppError("unknown", error.message, error);
     }
 
-    return data ? toProgress(data as unknown as ProgressRow) : null;
+    if (!data) {
+      return null;
+    }
+
+    const row = data as unknown as ProgressRow;
+    const metaMap = await fetchSeriesMetaMap([row.series_id]);
+
+    return toProgress(row, metaMap.get(row.series_id));
   }
 
   async getStatus(seriesId: string): Promise<UserSeriesStatus | null> {
@@ -383,16 +494,46 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       throw new AppError("unknown", error.message, error);
     }
 
-    return (data ?? []).map((row) => ({
-      seriesId: row.series_id,
-      tmdbId: row.tmdb_id,
-      name: row.name,
-      posterPath: row.poster_path,
-      watchedEpisodes: row.watched_episodes,
-      numberOfEpisodes: row.number_of_episodes,
-      progressPercent: Number(row.progress_percent),
-      lastWatchedAt: row.last_watched_at,
-    }));
+    const rows = data ?? [];
+    const metaMap = await fetchSeriesMetaMap(rows.map((row) => row.series_id));
+    const items: ContinueWatchingItem[] = [];
+
+    for (const row of rows) {
+      const meta = metaMap.get(row.series_id);
+      const { airedEpisodes, hasUnairedSeason, tmdbStatus } = computeAiringFromMeta(
+        undefined,
+        meta
+      );
+
+      if (airedEpisodes > 0 && row.watched_episodes >= airedEpisodes) {
+        continue;
+      }
+
+      const effectiveTotal = effectiveEpisodeTotal({
+        airedEpisodes,
+        numberOfEpisodes: row.number_of_episodes,
+        tmdbStatus,
+        hasUnairedSeason,
+      });
+
+      const progressPercent =
+        effectiveTotal > 0
+          ? Math.min(Math.round((row.watched_episodes / effectiveTotal) * 1000) / 10, 100)
+          : Number(row.progress_percent);
+
+      items.push({
+        seriesId: row.series_id,
+        tmdbId: row.tmdb_id,
+        name: row.name,
+        posterPath: row.poster_path,
+        watchedEpisodes: row.watched_episodes,
+        numberOfEpisodes: effectiveTotal,
+        progressPercent,
+        lastWatchedAt: row.last_watched_at,
+      });
+    }
+
+    return items;
   }
 
   async getUpNext(limit = 20): Promise<UpNextItem[]> {
@@ -402,17 +543,32 @@ export class SupabaseTrackingRepository implements ITrackingRepository {
       throw new AppError("unknown", error.message, error);
     }
 
-    return (data ?? []).map((row) => ({
-      seriesId: row.series_id,
-      tmdbId: row.tmdb_id,
-      name: row.name,
-      posterPath: row.poster_path,
-      nextSeason: row.next_season,
-      nextEpisode: row.next_episode,
-      watchedEpisodes: row.watched_episodes,
-      airedEpisodes: row.aired_episodes,
-      numberOfEpisodes: row.number_of_episodes,
-      lastWatchedAt: row.last_watched_at,
-    }));
+    const rows = data ?? [];
+    const metaMap = await fetchSeriesMetaMap(rows.map((row) => row.series_id));
+    const items: UpNextItem[] = [];
+
+    for (const row of rows) {
+      const meta = metaMap.get(row.series_id);
+      const { airedEpisodes } = computeAiringFromMeta(row.aired_episodes, meta);
+
+      if (airedEpisodes > 0 && row.watched_episodes >= airedEpisodes) {
+        continue;
+      }
+
+      items.push({
+        seriesId: row.series_id,
+        tmdbId: row.tmdb_id,
+        name: row.name,
+        posterPath: row.poster_path,
+        nextSeason: row.next_season,
+        nextEpisode: row.next_episode,
+        watchedEpisodes: row.watched_episodes,
+        airedEpisodes,
+        numberOfEpisodes: row.number_of_episodes,
+        lastWatchedAt: row.last_watched_at,
+      });
+    }
+
+    return items;
   }
 }

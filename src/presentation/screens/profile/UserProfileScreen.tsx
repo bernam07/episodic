@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { ComparisonSheet } from "@/presentation/components/social/ComparisonSheet";
-import { SERIES_STATUS_LABELS, SERIES_STATUSES } from "@/domain/entities/SeriesStatus";
+import {
+  DISPLAY_SERIES_STATUS_LABELS,
+  DISPLAY_SERIES_STATUSES,
+  resolveDisplayStatus,
+} from "@/domain/entities/SeriesStatus";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { ListsSection } from "@/presentation/components/lists/ListsSection";
@@ -60,9 +64,9 @@ export function UserProfileScreen() {
     return <Navigate to="/profile" replace />;
   }
 
-  const counts = SERIES_STATUSES.map((status) => ({
+  const counts = DISPLAY_SERIES_STATUSES.map((status) => ({
     status,
-    count: (library ?? []).filter((item) => item.status === status).length,
+    count: (library ?? []).filter((item) => resolveDisplayStatus(item) === status).length,
   }));
 
   const tabs: { id: UserTab; label: string }[] = [
@@ -234,7 +238,7 @@ export function UserProfileScreen() {
                 <span className="text-[0.75rem] text-mist-500">
                   {counts
                     .filter((entry) => entry.count > 0)
-                    .map((entry) => `${entry.count} ${SERIES_STATUS_LABELS[entry.status].toLowerCase()}`)
+                    .map((entry) => `${entry.count} ${DISPLAY_SERIES_STATUS_LABELS[entry.status].toLowerCase()}`)
                     .join(" · ")}
                 </span>
               </div>
@@ -255,7 +259,7 @@ export function UserProfileScreen() {
                       tmdbId={item.tmdbId}
                       name={item.seriesName}
                       posterPath={item.posterPath}
-                      status={item.status}
+                      status={resolveDisplayStatus(item)}
                       tmdbStatus={item.tmdbStatus}
                       rating={item.rating}
                     />

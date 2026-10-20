@@ -6,6 +6,8 @@ import type { SeriesProgress } from "@/domain/entities/Progress";
 import type { SeriesDetail } from "@/domain/entities/Series";
 import {
   isContinuingSeries,
+  resolveDisplayStatus,
+  type DisplaySeriesStatus,
   type SeriesStatus,
   type UserSeriesStatus,
 } from "@/domain/entities/SeriesStatus";
@@ -34,13 +36,13 @@ export function useMyRatings(): Map<number, number> {
   }, [data]);
 }
 
-export function useMyLibraryStatus(): Map<number, SeriesStatus> {
+export function useMyLibraryStatus(): Map<number, DisplaySeriesStatus> {
   const { data } = useLibrary();
 
   return useMemo(() => {
-    const map = new Map<number, SeriesStatus>();
+    const map = new Map<number, DisplaySeriesStatus>();
     for (const item of data ?? []) {
-      map.set(item.tmdbId, item.status);
+      map.set(item.tmdbId, resolveDisplayStatus(item));
     }
     return map;
   }, [data]);
@@ -52,7 +54,8 @@ export function useMyWatched(): Set<number> {
   return useMemo(() => {
     const set = new Set<number>();
     for (const item of data ?? []) {
-      if (item.status === "watched") {
+      const displayStatus = resolveDisplayStatus(item);
+      if (displayStatus === "watched" || displayStatus === "up_to_date") {
         set.add(item.tmdbId);
       }
     }
@@ -368,8 +371,10 @@ export function useSyncSeriesDetailProgress(
     void (async () => {
       try {
         await container.repositories.series.cacheSeries(detail, aired);
-        if (tracking.status === "watched" && aired > watchedEpisodes) {
+        if (tracking.status === "watched" && aired > 0 && watchedEpisodes < aired) {
           await container.repositories.tracking.setStatus(seriesId, "watching");
+        } else if (tracking.status === "watching" && aired > 0 && watchedEpisodes >= aired) {
+          await container.repositories.tracking.setStatus(seriesId, "watched");
         }
         if (!cancelled) {
           invalidate(seriesId);
@@ -400,7 +405,11 @@ export function useSyncContinuingSeries() {
         (item.status === "watched" || item.status === "watching") &&
         !syncedContinuingTmdbIds.has(item.tmdbId) &&
         (isContinuingSeries(item.tmdbStatus) ||
+          item.hasUnairedSeason ||
           !item.tmdbStatus ||
+          (item.status === "watching" &&
+            item.airedEpisodes > 0 &&
+            item.watchedEpisodes >= item.airedEpisodes) ||
           (item.status === "watched" && item.airedEpisodes > item.watchedEpisodes))
     );
 
@@ -419,7 +428,7 @@ export function useSyncContinuingSeries() {
           const detail = await container.usecases.getSeriesDetail.execute(item.tmdbId);
           const freshAired = airedEpisodeCount(detail);
           const needsCacheUpdate =
-            freshAired > item.airedEpisodes ||
+            freshAired !== item.airedEpisodes ||
             detail.numberOfEpisodes !== item.numberOfEpisodes ||
             detail.tmdbStatus !== item.tmdbStatus;
 
@@ -428,9 +437,16 @@ export function useSyncContinuingSeries() {
             changed = true;
           }
 
-          const targetAired = Math.max(freshAired, item.airedEpisodes);
-          if (item.status === "watched" && targetAired > item.watchedEpisodes) {
+          const targetAired = freshAired > 0 ? freshAired : item.airedEpisodes;
+          if (item.status === "watched" && targetAired > 0 && item.watchedEpisodes < targetAired) {
             await container.repositories.tracking.setStatus(item.seriesId, "watching");
+            changed = true;
+          } else if (
+            item.status === "watching" &&
+            targetAired > 0 &&
+            item.watchedEpisodes >= targetAired
+          ) {
+            await container.repositories.tracking.setStatus(item.seriesId, "watched");
             changed = true;
           }
         } catch {

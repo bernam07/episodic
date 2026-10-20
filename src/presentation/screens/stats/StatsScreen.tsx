@@ -3,7 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { backdropUrl } from "@/data/tmdb/images";
 import { computeLibraryInsights, type GenreCount } from "@/domain/entities/LibraryInsights";
 import type { RatingSummary } from "@/domain/entities/RatingSummary";
-import { SERIES_STATUS_LABELS, SERIES_STATUSES, type SeriesStatus } from "@/domain/entities/SeriesStatus";
+import {
+  DISPLAY_SERIES_STATUS_LABELS,
+  DISPLAY_SERIES_STATUSES,
+  type DisplaySeriesStatus,
+} from "@/domain/entities/SeriesStatus";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { StatsShareSheet } from "@/presentation/components/stats/StatsShareSheet";
 import {
@@ -16,8 +20,9 @@ import { useLibrary, useWatchStreak } from "@/presentation/hooks/useTracking";
 import { useI18n } from "@/presentation/i18n/I18nProvider";
 import { plural, pluralize } from "@/presentation/utils/plural";
 
-const STATUS_COLORS: Record<SeriesStatus, string> = {
+const STATUS_COLORS: Record<DisplaySeriesStatus, string> = {
   watching: "bg-accent-500",
+  up_to_date: "bg-[#38bdf8]",
   want_to_watch: "bg-[#ff9f0a]",
   watched: "bg-[#30d158]",
   abandoned: "bg-danger-500",
@@ -27,12 +32,12 @@ function Breakdown({
   statusCounts,
   total,
 }: {
-  statusCounts: Record<SeriesStatus, number>;
+  statusCounts: Record<DisplaySeriesStatus, number>;
   total: number;
 }) {
   if (total === 0) return null;
 
-  const segments = SERIES_STATUSES.filter((status) => statusCounts[status] > 0);
+  const segments = DISPLAY_SERIES_STATUSES.filter((status) => statusCounts[status] > 0);
 
   return (
     <section className="mt-8">
@@ -53,7 +58,7 @@ function Breakdown({
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3.5">
-          {SERIES_STATUSES.map((status) => (
+          {DISPLAY_SERIES_STATUSES.map((status) => (
             <Link
               key={status}
               to={`/library?status=${status}`}
@@ -65,7 +70,7 @@ function Breakdown({
                   {statusCounts[status]}
                 </span>
                 <span className="mt-1 block truncate text-[0.75rem] text-mist-500">
-                  {SERIES_STATUS_LABELS[status]}
+                  {DISPLAY_SERIES_STATUS_LABELS[status]}
                 </span>
               </span>
               <span className="shrink-0 text-[0.75rem] tabular-nums text-mist-500">

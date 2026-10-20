@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { backdropUrl } from "@/data/tmdb/images";
-import { airedEpisodeCount } from "@/domain/entities/Airing";
+import { airedEpisodeCount, hasUpcomingSeason } from "@/domain/entities/Airing";
 import type { Episode } from "@/domain/entities/Episode";
 import { releaseYear } from "@/domain/entities/Series";
 import {
@@ -127,7 +127,17 @@ export function SeriesDetailScreen() {
   const watched = watchedIds ?? new Set<number>();
   const totalWatched = seasonProgress?.reduce((sum, season) => sum + season.watchedEpisodes, 0) ?? 0;
   const airedEpisodes = airedEpisodeCount(detail);
+  const hasUnaired = hasUpcomingSeason(detail.seasonsMeta, detail.tmdbStatus);
   const isFavorite = tracking?.isFavorite ?? false;
+
+  const statusExtra = {
+    hasUnairedSeason: hasUnaired,
+    airedEpisodes,
+    numberOfEpisodes: detail.numberOfEpisodes,
+    inProduction: detail.inProduction,
+    hasNextEpisode: Boolean(detail.nextEpisodeToAir),
+    watchedEpisodes: totalWatched,
+  };
 
   async function handleStatusChange(status: SeriesStatus) {
     setPendingStatus(status);
@@ -136,7 +146,13 @@ export function SeriesDetailScreen() {
       await setStatus.mutateAsync(status);
       toast.success(
         t("statusUpdatedToast", {
-          status: formatSeriesStatusLabel(status, detail?.tmdbStatus, t("upToDate")),
+          status: formatSeriesStatusLabel(status, detail?.tmdbStatus, t("upToDate"), {
+            hasUnairedSeason: hasUnaired,
+            airedEpisodes,
+            numberOfEpisodes: detail?.numberOfEpisodes,
+            inProduction: detail?.inProduction,
+            hasNextEpisode: Boolean(detail?.nextEpisodeToAir),
+          }),
         })
       );
       setStatusSheetOpen(false);
@@ -332,7 +348,12 @@ export function SeriesDetailScreen() {
             ) : null}
             <span className="truncate">
               {tracking
-                ? formatSeriesStatusLabel(tracking.status, detail.tmdbStatus, t("upToDate"))
+                ? formatSeriesStatusLabel(
+                    tracking.status,
+                    detail.tmdbStatus,
+                    t("upToDate"),
+                    statusExtra
+                  )
                 : t("addToLibrary")}
             </span>
           </Button>
@@ -479,6 +500,7 @@ export function SeriesDetailScreen() {
           airedEpisodes={airedEpisodes}
           watchedEpisodes={totalWatched}
           tmdbStatus={detail.tmdbStatus}
+          hasUnairedSeason={hasUnaired}
           onChange={handleStatusChange}
           onRemove={seriesId ? handleRemove : undefined}
         />

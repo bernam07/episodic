@@ -1,4 +1,4 @@
-import type { SeriesDetail } from "./Series";
+import type { SeasonMeta, SeriesDetail } from "./Series";
 import type { SeriesStatus } from "./SeriesStatus";
 
 export type EpisodeStub = {
@@ -44,20 +44,74 @@ export function hasContinuation(tmdbStatus: string | null | undefined): boolean 
   return status === "returning" || status === "in_production" || status === "planned";
 }
 
+export function hasUpcomingSeason(
+  seasonsMeta: Pick<SeasonMeta, "seasonNumber" | "airDate" | "episodeCount">[],
+  tmdbStatus?: string | null
+): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  const regular = seasonsMeta.filter((season) => season.seasonNumber > 0);
+  const finished = isFinished({ tmdbStatus: tmdbStatus ?? null });
+
+  if (regular.some((season) => Boolean(season.airDate) && (season.airDate as string) > today)) {
+    return true;
+  }
+
+  if (finished) {
+    return false;
+  }
+
+  if (regular.some((season) => season.episodeCount === 0)) {
+    return true;
+  }
+
+  const hasDatedPastSeason = regular.some(
+    (season) => Boolean(season.airDate) && (season.airDate as string) <= today
+  );
+
+  if (hasDatedPastSeason && regular.some((season) => !season.airDate)) {
+    return true;
+  }
+
+  return false;
+}
+
 export function airedEpisodeCount(
   detail: Pick<SeriesDetail, "seasonsMeta" | "numberOfEpisodes" | "lastEpisodeToAir" | "tmdbStatus">
 ): number {
+  const today = new Date().toISOString().slice(0, 10);
   const last = detail.lastEpisodeToAir;
 
-  if (!last) {
-    return isFinished(detail) ? detail.numberOfEpisodes : 0;
+  if (last) {
+    const priorSeasons = detail.seasonsMeta
+      .filter(
+        (season) =>
+          season.seasonNumber > 0 &&
+          season.seasonNumber < last.seasonNumber &&
+          (!season.airDate || season.airDate <= today)
+      )
+      .reduce((sum, season) => sum + season.episodeCount, 0);
+
+    const computed = priorSeasons + last.episodeNumber;
+    return detail.numberOfEpisodes > 0 ? Math.min(computed, detail.numberOfEpisodes) : computed;
   }
 
-  const priorSeasons = detail.seasonsMeta
-    .filter((season) => season.seasonNumber < last.seasonNumber)
+  const premieredEpisodes = detail.seasonsMeta
+    .filter(
+      (season) =>
+        season.seasonNumber > 0 &&
+        season.airDate !== null &&
+        season.airDate <= today &&
+        season.episodeCount > 0
+    )
     .reduce((sum, season) => sum + season.episodeCount, 0);
 
-  return Math.min(priorSeasons + last.episodeNumber, detail.numberOfEpisodes);
+  if (premieredEpisodes > 0) {
+    return detail.numberOfEpisodes > 0
+      ? Math.min(premieredEpisodes, detail.numberOfEpisodes)
+      : premieredEpisodes;
+  }
+
+  return isFinished(detail) ? detail.numberOfEpisodes : 0;
 }
 
 export type WatchState =
@@ -75,6 +129,11 @@ export function describeWatchState(
 ): WatchState {
   const aired = airedEpisodeCount(detail);
   const total = detail.numberOfEpisodes;
+  const continuing =
+    !isFinished(detail) ||
+    detail.inProduction ||
+    Boolean(detail.nextEpisodeToAir) ||
+    hasUpcomingSeason(detail.seasonsMeta, detail.tmdbStatus);
 
   if (status === "abandoned") {
     return { kind: "abandoned", watchedEpisodes, totalEpisodes: total };
@@ -84,7 +143,7 @@ export function describeWatchState(
     return { kind: "untracked", airedEpisodes: aired, totalEpisodes: total };
   }
 
-  if (total > 0 && watchedEpisodes >= total && isFinished(detail)) {
+  if (total > 0 && watchedEpisodes >= total && !continuing) {
     return { kind: "completed" };
   }
 

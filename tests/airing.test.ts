@@ -3,10 +3,12 @@ import {
   airedEpisodeCount,
   airingStatus,
   describeWatchState,
+  hasUpcomingSeason,
   isFinished,
 } from "@/domain/entities/Airing";
 import type { EpisodeStub } from "@/domain/entities/Airing";
 import type { SeriesDetail } from "@/domain/entities/Series";
+import { resolveDisplayStatus } from "@/domain/entities/SeriesStatus";
 
 function stub(seasonNumber: number, episodeNumber: number): EpisodeStub {
   return { tmdbEpisodeId: 1, seasonNumber, episodeNumber, name: "x", airDate: "2024-01-01" };
@@ -99,6 +101,23 @@ describe("airedEpisodeCount", () => {
   it("never exceeds the total episode count", () => {
     expect(airedEpisodeCount(series({ numberOfEpisodes: 12, lastEpisodeToAir: stub(2, 10) }))).toBe(12);
   });
+
+  it("excludes confirmed future seasons when computing aired episodes", () => {
+    expect(
+      airedEpisodeCount(
+        series({
+          tmdbStatus: "Returning Series",
+          numberOfSeasons: 2,
+          numberOfEpisodes: 20,
+          lastEpisodeToAir: stub(1, 10),
+          seasonsMeta: [
+            { seasonNumber: 1, episodeCount: 10, name: "S1", airDate: "2025-07-11", posterPath: null },
+            { seasonNumber: 2, episodeCount: 10, name: "S2", airDate: "2099-01-01", posterPath: null },
+          ],
+        })
+      )
+    ).toBe(10);
+  });
 });
 
 describe("describeWatchState", () => {
@@ -152,5 +171,45 @@ describe("describeWatchState", () => {
     expect(
       describeWatchState(series({ tmdbStatus: "Ended", lastEpisodeToAir: stub(2, 10) }), 19, "watching").kind
     ).toBe("behind");
+  });
+});
+
+describe("resolveDisplayStatus and upcoming seasons", () => {
+  it("detects upcoming confirmed seasons by future air date or zero episodes", () => {
+    expect(
+      hasUpcomingSeason(
+        [
+          { seasonNumber: 1, episodeCount: 10, airDate: "2025-07-11" },
+          { seasonNumber: 2, episodeCount: 0, airDate: null },
+        ],
+        "Returning Series"
+      )
+    ).toBe(true);
+  });
+
+  it("resolves a watching series with all aired episodes watched and an unaired season as up_to_date", () => {
+    expect(
+      resolveDisplayStatus({
+        status: "watching",
+        tmdbStatus: "Returning Series",
+        hasUnairedSeason: true,
+        watchedEpisodes: 10,
+        airedEpisodes: 10,
+        numberOfEpisodes: 20,
+      })
+    ).toBe("up_to_date");
+  });
+
+  it("resolves an ended series with all episodes watched as watched", () => {
+    expect(
+      resolveDisplayStatus({
+        status: "watched",
+        tmdbStatus: "Ended",
+        hasUnairedSeason: false,
+        watchedEpisodes: 20,
+        airedEpisodes: 20,
+        numberOfEpisodes: 20,
+      })
+    ).toBe("watched");
   });
 });

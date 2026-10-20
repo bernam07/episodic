@@ -4,6 +4,7 @@ import { backdropUrl } from "@/data/tmdb/images";
 import { computeLibraryInsights } from "@/domain/entities/LibraryInsights";
 import { computeLibraryStats } from "@/domain/entities/LibraryStats";
 import type { SeriesProgress } from "@/domain/entities/Progress";
+import { resolveDisplayStatus } from "@/domain/entities/SeriesStatus";
 import { ListsSection } from "@/presentation/components/lists/ListsSection";
 import { ReviewList } from "@/presentation/components/reviews/ReviewList";
 import { RatingBadge, SeriesCard } from "@/presentation/components/series/SeriesCard";
@@ -613,7 +614,8 @@ function RecentlyWatchedGrid() {
             tmdbId={item.tmdbId}
             name={item.name}
             posterPath={item.posterPath}
-            status={item.status}
+            status={resolveDisplayStatus(item)}
+            tmdbStatus={item.tmdbStatus}
             rating={item.userRating}
             progressPercent={item.progressPercent}
           />

@@ -1,13 +1,16 @@
 import type { SeriesProgress } from "./Progress";
 import { summarizeRatings, type RatingSummary } from "./RatingSummary";
-import type { SeriesStatus } from "./SeriesStatus";
+import { resolveDisplayStatus, type DisplaySeriesStatus } from "./SeriesStatus";
 
 export type GenreCount = { genre: string; count: number };
 
 type InsightsInput = Pick<
   SeriesProgress,
   "status" | "watchedEpisodes" | "episodeRuntime" | "isFavorite" | "rewatchCount" | "genres" | "userRating"
->;
+> &
+  Partial<
+    Pick<SeriesProgress, "tmdbStatus" | "hasUnairedSeason" | "airedEpisodes" | "numberOfEpisodes">
+  >;
 
 export type LibraryInsights<T extends InsightsInput = SeriesProgress> = {
   seriesTracked: number;
@@ -16,15 +19,16 @@ export type LibraryInsights<T extends InsightsInput = SeriesProgress> = {
   finished: number;
   favorites: number;
   rewatches: number;
-  statusCounts: Record<SeriesStatus, number>;
+  statusCounts: Record<DisplaySeriesStatus, number>;
   topGenres: GenreCount[];
   ratings: RatingSummary;
   mostWatched: T | null;
 };
 
 export function computeLibraryInsights<T extends InsightsInput>(items: T[]): LibraryInsights<T> {
-  const statusCounts: Record<SeriesStatus, number> = {
+  const statusCounts: Record<DisplaySeriesStatus, number> = {
     watching: 0,
+    up_to_date: 0,
     want_to_watch: 0,
     watched: 0,
     abandoned: 0,
@@ -39,7 +43,8 @@ export function computeLibraryInsights<T extends InsightsInput>(items: T[]): Lib
   let mostWatched: T | null = null;
 
   for (const item of items) {
-    statusCounts[item.status] += 1;
+    const displayStatus = resolveDisplayStatus(item);
+    statusCounts[displayStatus] += 1;
     episodesWatched += item.watchedEpisodes;
     watchTimeMinutes += item.watchedEpisodes * item.episodeRuntime;
     if (item.isFavorite) favorites += 1;
@@ -67,7 +72,7 @@ export function computeLibraryInsights<T extends InsightsInput>(items: T[]): Lib
     seriesTracked: items.length,
     episodesWatched,
     watchTimeMinutes,
-    finished: statusCounts.watched,
+    finished: statusCounts.watched + statusCounts.up_to_date,
     favorites,
     rewatches,
     statusCounts,

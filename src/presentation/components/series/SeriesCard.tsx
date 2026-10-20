@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
+import type { DisplaySeriesStatus, SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
 import { SeriesPoster } from "./SeriesPoster";
 import { StatusBadge } from "./StatusBadge";
@@ -18,17 +18,23 @@ export function WatchedBadge() {
   );
 }
 
-const IN_LIBRARY_STYLES: Record<SeriesStatus, string> = {
+const IN_LIBRARY_STYLES: Record<DisplaySeriesStatus, string> = {
   watching: "text-accent-400",
+  up_to_date: "text-[#38bdf8]",
   want_to_watch: "text-star-500",
   watched: "text-[#30d158]",
   abandoned: "text-danger-500",
 };
 
-const IN_LIBRARY_GLYPHS: Record<SeriesStatus, ReactNode> = {
+const IN_LIBRARY_GLYPHS: Record<DisplaySeriesStatus, ReactNode> = {
   watching: (
     <svg viewBox="0 0 24 24" fill="currentColor" className="size-3">
       <path d="M8 5v14l11-7z" />
+    </svg>
+  ),
+  up_to_date: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="size-3.5">
+      <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   want_to_watch: (
@@ -48,7 +54,7 @@ const IN_LIBRARY_GLYPHS: Record<SeriesStatus, ReactNode> = {
   ),
 };
 
-export function InLibraryBadge({ status }: { status: SeriesStatus }) {
+export function InLibraryBadge({ status }: { status: SeriesStatus | DisplaySeriesStatus }) {
   return (
     <span
       className={`absolute top-2 left-2 flex size-6 items-center justify-center rounded-[7px] border border-white/20 bg-black/65 backdrop-blur-md ${IN_LIBRARY_STYLES[status]}`}
@@ -77,11 +83,11 @@ type SeriesCardProps = {
   year?: string | null;
   progressPercent?: number;
   caption?: string;
-  status?: SeriesStatus;
+  status?: SeriesStatus | DisplaySeriesStatus;
   tmdbStatus?: string | null;
   rating?: number | null;
   watched?: boolean;
-  libraryStatus?: SeriesStatus | null;
+  libraryStatus?: SeriesStatus | DisplaySeriesStatus | null;
 };
 
 export function SeriesCard({
