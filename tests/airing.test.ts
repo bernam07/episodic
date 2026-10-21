@@ -8,7 +8,7 @@ import {
 } from "@/domain/entities/Airing";
 import type { EpisodeStub } from "@/domain/entities/Airing";
 import type { SeriesDetail } from "@/domain/entities/Series";
-import { resolveDisplayStatus } from "@/domain/entities/SeriesStatus";
+import { formatSeriesStatusLabel, resolveDisplayStatus } from "@/domain/entities/SeriesStatus";
 
 function stub(seasonNumber: number, episodeNumber: number): EpisodeStub {
   return { tmdbEpisodeId: 1, seasonNumber, episodeNumber, name: "x", airDate: "2024-01-01" };
@@ -211,5 +211,20 @@ describe("resolveDisplayStatus and upcoming seasons", () => {
         numberOfEpisodes: 20,
       })
     ).toBe("watched");
+  });
+
+  it("formats watched option label as Up to Date for continuing series and Watched for ended series", () => {
+    expect(
+      formatSeriesStatusLabel("watched", "Returning Series", "Up to Date", {
+        airedEpisodes: 10,
+        hasUnairedSeason: true,
+      })
+    ).toBe("Up to Date");
+    expect(
+      formatSeriesStatusLabel("watched", "Ended", "Up to Date", {
+        airedEpisodes: 20,
+        hasUnairedSeason: false,
+      })
+    ).toBe("Watched");
   });
 });

@@ -122,15 +122,19 @@ export function formatSeriesStatusLabel(
   if (status === "up_to_date") {
     return upToDateLabel;
   }
-  const resolved = resolveDisplayStatus({
-    status,
-    tmdbStatus,
-    ...extra,
-  });
-  if (resolved === "up_to_date") {
-    return upToDateLabel;
+  const continuing = isSeriesContinuing({ tmdbStatus, ...extra });
+  if (status === "watched") {
+    return continuing ? upToDateLabel : SERIES_STATUS_LABELS.watched;
   }
-  return DISPLAY_SERIES_STATUS_LABELS[resolved];
+  if (
+    status === "watching" &&
+    extra?.watchedEpisodes !== undefined &&
+    (extra.airedEpisodes ?? 0) > 0 &&
+    extra.watchedEpisodes >= (extra.airedEpisodes ?? 0)
+  ) {
+    return continuing ? upToDateLabel : SERIES_STATUS_LABELS.watched;
+  }
+  return SERIES_STATUS_LABELS[status];
 }
 
 export type UserSeriesStatus = {

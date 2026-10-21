@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import {
-  formatSeriesStatusLabel,
+  isSeriesContinuing,
   SERIES_STATUSES,
   type SeriesStatus,
 } from "@/domain/entities/SeriesStatus";
@@ -62,12 +62,24 @@ export function StatusPicker({
   hasUnairedSeason,
 }: StatusPickerProps) {
   const { t } = useI18n();
+  const continuing = isSeriesContinuing({
+    tmdbStatus,
+    hasUnairedSeason,
+    airedEpisodes,
+  });
   const isCaughtUp =
     value === "watching" &&
     airedEpisodes !== undefined &&
     airedEpisodes > 0 &&
     watchedEpisodes >= airedEpisodes;
   const effectiveValue: SeriesStatus | null = isCaughtUp ? "watched" : value;
+
+  const statusLabels: Record<SeriesStatus, string> = {
+    watching: t("watching"),
+    want_to_watch: t("wantToWatch"),
+    watched: continuing ? t("upToDate") : t("watched"),
+    abandoned: t("abandoned"),
+  };
 
   return (
     <div className="flex flex-col gap-2 pt-2">
@@ -81,10 +93,7 @@ export function StatusPicker({
           : status === "watched" && airedEpisodes !== undefined && airedEpisodes > 0
             ? `Marks all ${airedEpisodes} aired episodes as seen`
             : DESCRIPTIONS[status];
-        const label = formatSeriesStatusLabel(status, tmdbStatus, t("upToDate"), {
-          hasUnairedSeason,
-          airedEpisodes,
-        });
+        const label = statusLabels[status];
 
         return (
           <button

@@ -6,6 +6,8 @@ import type { Episode } from "@/domain/entities/Episode";
 import { releaseYear } from "@/domain/entities/Series";
 import {
   formatSeriesStatusLabel,
+  resolveDisplayStatus,
+  type DisplaySeriesStatus,
   type SeriesStatus,
 } from "@/domain/entities/SeriesStatus";
 import { ActorDetailSheet } from "@/presentation/components/actors/ActorDetailSheet";
@@ -21,7 +23,6 @@ import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
 import { SeriesStateCard } from "@/presentation/components/series/SeriesStateCard";
 import { ShareCardSheet } from "@/presentation/components/series/ShareCardSheet";
 import { StatusPicker } from "@/presentation/components/series/StatusPicker";
-import { Button } from "@/presentation/components/ui/Button";
 import { RatingInput } from "@/presentation/components/ui/Rating";
 import { Sheet } from "@/presentation/components/ui/Sheet";
 import { FullScreenSpinner } from "@/presentation/components/ui/Spinner";
@@ -44,6 +45,14 @@ import {
   useToggleSeason,
   useWatchedEpisodes,
 } from "@/presentation/hooks/useTracking";
+
+const STATUS_DOT_COLOR: Record<DisplaySeriesStatus, string> = {
+  watching: "bg-accent-500",
+  up_to_date: "bg-[#38bdf8]",
+  want_to_watch: "bg-[#ffd60a]",
+  watched: "bg-[#30d158]",
+  abandoned: "bg-danger-500",
+};
 
 function BackButton() {
   const navigate = useNavigate();
@@ -130,13 +139,25 @@ export function SeriesDetailScreen() {
   const hasUnaired = hasUpcomingSeason(detail.seasonsMeta, detail.tmdbStatus);
   const isFavorite = tracking?.isFavorite ?? false;
 
-  const statusExtra = {
-    hasUnairedSeason: hasUnaired,
-    airedEpisodes,
-    numberOfEpisodes: detail.numberOfEpisodes,
-    inProduction: detail.inProduction,
-    hasNextEpisode: Boolean(detail.nextEpisodeToAir),
-    watchedEpisodes: totalWatched,
+  const displayStatus: DisplaySeriesStatus | null = tracking
+    ? resolveDisplayStatus({
+        status: tracking.status,
+        tmdbStatus: detail.tmdbStatus,
+        hasUnairedSeason: hasUnaired,
+        airedEpisodes,
+        numberOfEpisodes: detail.numberOfEpisodes,
+        inProduction: detail.inProduction,
+        hasNextEpisode: Boolean(detail.nextEpisodeToAir),
+        watchedEpisodes: totalWatched,
+      })
+    : null;
+
+  const displayStatusLabels: Record<DisplaySeriesStatus, string> = {
+    watching: t("watching"),
+    up_to_date: t("upToDate"),
+    want_to_watch: t("wantToWatch"),
+    watched: t("watched"),
+    abandoned: t("abandoned"),
   };
 
   async function handleStatusChange(status: SeriesStatus) {
@@ -322,51 +343,55 @@ export function SeriesDetailScreen() {
           {t("watchTrailer")}
         </a>
 
-        <div className="mt-2.5 grid grid-cols-3 gap-2.5">
+        <button
+          type="button"
+          disabled={setStatus.isPending}
+          onClick={() => setStatusSheetOpen(true)}
+          className="tap-none mt-2.5 flex min-h-[46px] w-full items-center justify-between gap-3 rounded-[12px] border border-white/[0.1] bg-ink-850 px-4 text-[0.9375rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80 disabled:opacity-50"
+        >
+          <span className="flex min-w-0 items-center gap-2.5">
+            {displayStatus ? (
+              <span className={`size-2.5 shrink-0 rounded-full ${STATUS_DOT_COLOR[displayStatus]}`} />
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-4 shrink-0 text-accent-400">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+              </svg>
+            )}
+            <span className="truncate">
+              {displayStatus ? displayStatusLabels[displayStatus] : t("addToLibrary")}
+            </span>
+          </span>
+
+          <span className="flex shrink-0 items-center gap-1.5 text-[0.75rem] font-medium text-mist-400">
+            <span>{tracking ? t("changeStatus") : ""}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 text-mist-400">
+              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </button>
+
+        <div className="mt-2.5 grid grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={() => setAddToListOpen(true)}
             aria-label="Add to list"
-            className="tap-none flex min-h-[44px] items-center justify-center gap-1.5 rounded-[12px] border border-white/[0.08] bg-ink-850 px-3 text-[0.8125rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80"
+            className="tap-none flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-ink-850 px-4 text-[0.875rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 text-mist-300">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 shrink-0 text-mist-300">
               <path d="M12 5v14M5 12h14" strokeLinecap="round" />
             </svg>
-            <span className="truncate">My List</span>
+            <span>My List</span>
           </button>
-
-          <Button
-            variant="secondary"
-            className="min-h-[44px] px-3 text-[0.8125rem]"
-            loading={setStatus.isPending}
-            onClick={() => setStatusSheetOpen(true)}
-          >
-            {tracking ? (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4 shrink-0 text-[#30d158]">
-                <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            ) : null}
-            <span className="truncate">
-              {tracking
-                ? formatSeriesStatusLabel(
-                    tracking.status,
-                    detail.tmdbStatus,
-                    t("upToDate"),
-                    statusExtra
-                  )
-                : t("addToLibrary")}
-            </span>
-          </Button>
 
           <button
             type="button"
             onClick={() => (seriesId ? setReviewSheetOpen(true) : setStatusSheetOpen(true))}
-            className="tap-none flex min-h-[44px] items-center justify-center gap-1.5 rounded-[12px] border border-white/[0.08] bg-ink-850 px-3 text-[0.8125rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80"
+            className="tap-none flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-ink-850 px-4 text-[0.875rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80"
           >
             <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 shrink-0 text-star-500">
               <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
             </svg>
-            <span className="truncate">
+            <span>
               {tracking?.rating ? `${tracking.rating.toFixed(1)} / 5` : "Rate"}
             </span>
           </button>
