@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import { useQueries } from "@tanstack/react-query";
 import { hasAired, type Episode, type Season } from "@/domain/entities/Episode";
 import type { SeriesDetail } from "@/domain/entities/Series";
+import { resolveDisplayStatus } from "@/domain/entities/SeriesStatus";
 import { posterUrl } from "@/data/tmdb/images";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useLibrary, useToggleEpisode } from "@/presentation/hooks/useTracking";
 import { queryKeys } from "@/presentation/hooks/queryKeys";
 import { container } from "@/presentation/di/container";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 
 type View = "week" | "month";
@@ -27,7 +29,12 @@ function iso(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function windowFor(view: View, offset: number): { start: string; end: string; label: string } {
+function windowFor(
+  view: View,
+  offset: number,
+  locale: string,
+  thisWeekLabel: string
+): { start: string; end: string; label: string } {
   const now = new Date();
 
   if (view === "week") {
@@ -39,9 +46,9 @@ function windowFor(view: View, offset: number): { start: string; end: string; la
 
     const label =
       offset === 0
-        ? "This week"
-        : `${monday.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${sunday.toLocaleDateString(
-            "en-US",
+        ? thisWeekLabel
+        : `${monday.toLocaleDateString(locale, { month: "short", day: "numeric" })} – ${sunday.toLocaleDateString(
+            locale,
             { month: "short", day: "numeric" }
           )}`;
 
@@ -53,24 +60,30 @@ function windowFor(view: View, offset: number): { start: string; end: string; la
   return {
     start: iso(first),
     end: iso(last),
-    label: first.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+    label: first.toLocaleDateString(locale, { month: "long", year: "numeric" }),
   };
 }
 
-function formatDay(dateStr: string): string {
+function formatDay(
+  dateStr: string,
+  locale: string,
+  todayLabel: string,
+  tomorrowLabel: string
+): string {
   const date = new Date(dateStr + "T00:00:00");
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
 
-  if (date.getTime() === today.getTime()) return "Today";
-  if (date.getTime() === tomorrow.getTime()) return "Tomorrow";
+  if (date.getTime() === today.getTime()) return todayLabel;
+  if (date.getTime() === tomorrow.getTime()) return tomorrowLabel;
 
-  return date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+  return date.toLocaleDateString(locale, { weekday: "long", month: "short", day: "numeric" });
 }
 
 function CalendarEntry({ item, watched }: { item: AiringEntry; watched: boolean }) {
+  const { t } = useI18n();
   const toggle = useToggleEpisode(item.seriesId);
   const poster = posterUrl(item.posterPath, "w154");
 
@@ -117,7 +130,7 @@ function CalendarEntry({ item, watched }: { item: AiringEntry; watched: boolean 
         </button>
       ) : (
         <span className="shrink-0 rounded-full bg-ink-800 px-2.5 py-1 text-[0.6875rem] font-medium text-mist-500">
-          Upcoming
+          {t("upcoming")}
         </span>
       )}
     </div>
@@ -125,12 +138,22 @@ function CalendarEntry({ item, watched }: { item: AiringEntry; watched: boolean 
 }
 
 export function CalendarScreen() {
+  const { language, t } = useI18n();
+  const locale = language === "pt" ? "pt-PT" : "en-US";
   const [view, setView] = useState<View>("week");
   const [offset, setOffset] = useState(0);
   const { data: library, isLoading: libraryLoading } = useLibrary();
 
   const activeSeries = useMemo(
-    () => (library ?? []).filter((item) => item.status === "watching" || item.status === "want_to_watch"),
+    () =>
+      (library ?? []).filter((item) => {
+        const display = resolveDisplayStatus(item);
+        return (
+          display === "watching" ||
+          display === "up_to_date" ||
+          display === "want_to_watch"
+        );
+      }),
     [library]
   );
 
@@ -196,7 +219,7 @@ export function CalendarScreen() {
   const hasError =
     detailQueries.some((q) => q.isError) || seasonQueries.some((q) => q.isError);
 
-  const { start, end, label } = windowFor(view, offset);
+  const { start, end, label } = windowFor(view, offset, locale, t("thisWeekLabel"));
 
   const grouped = useMemo(() => {
     const result: AiringEntry[] = [];
@@ -235,10 +258,10 @@ export function CalendarScreen() {
   return (
     <>
       <ScreenHeader
-        title="Calendar"
+        title={t("calendar")}
         subtitle={
           !isLoading && grouped.total > 0
-            ? `${grouped.total} ${grouped.total === 1 ? "episode" : "episodes"}`
+            ? `${grouped.total} ${t("episodes")}`
             : undefined
         }
       />
@@ -257,7 +280,7 @@ export function CalendarScreen() {
                     : "text-mist-400 active:text-mist-200"
                 }`}
               >
-                {value === "week" ? "Week" : "Month"}
+                {value === "week" ? t("week") : t("month")}
               </button>
             ))}
           </div>
@@ -269,7 +292,7 @@ export function CalendarScreen() {
                 onClick={() => setOffset(0)}
                 className="tap-none mr-0.5 rounded-full border border-white/10 bg-ink-850 px-3 py-1.5 text-[0.75rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-75"
               >
-                Today
+                {t("today")}
               </button>
             ) : null}
             <button
@@ -295,7 +318,7 @@ export function CalendarScreen() {
           </div>
         </div>
 
-        <p className="mt-2.5 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">{label}</p>
+        <p className="mt-2.5 text-[1.0625rem] font-bold tracking-[-0.015em] text-white capitalize">{label}</p>
       </div>
 
       {isLoading ? (
@@ -311,17 +334,23 @@ export function CalendarScreen() {
         </div>
       ) : grouped.total === 0 ? (
         <div className="px-5 pt-10 text-center">
-          <p className="text-[1.0625rem] font-semibold text-white">Nothing airing in {view === "week" ? "this week" : "this period"}</p>
+          <p className="text-[1.0625rem] font-semibold text-white">
+            {language === "pt"
+              ? "Sem estreias neste período"
+              : `Nothing airing in ${view === "week" ? "this week" : "this period"}`}
+          </p>
           <p className="mt-1 text-[0.875rem] text-mist-500">
-            Episodes from your Watching and Want to Watch series show up here.
+            {language === "pt"
+              ? "Os próximos episódios das tuas séries aparecem aqui."
+              : "Episodes from your Watching, Up to Date and Want to Watch series show up here."}
           </p>
         </div>
       ) : (
         <div className="space-y-6 px-5 pt-3">
           {grouped.days.map(([date, items]) => (
             <section key={date}>
-              <h2 className="mb-2.5 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
-                {formatDay(date)}
+              <h2 className="mb-2.5 text-[1.0625rem] font-bold tracking-[-0.015em] text-white capitalize">
+                {formatDay(date, locale, t("today"), t("tomorrow"))}
               </h2>
               <div className="space-y-2">
                 {items.map((item) => (

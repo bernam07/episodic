@@ -15,11 +15,17 @@ export type Genre = {
   name: string;
 };
 
+export type DiscoverSort = "popularity.desc" | "vote_average.desc" | "first_air_date.desc";
+
 export interface ITmdbRepository {
   search(query: string, page?: number): Promise<SearchResult>;
   trending(page?: number): Promise<SearchResult>;
   getGenres(): Promise<Genre[]>;
-  discoverByGenre(genreId: number | null, page?: number): Promise<SearchResult>;
+  discoverByGenre(
+    genreId: number | null,
+    page?: number,
+    sort?: DiscoverSort
+  ): Promise<SearchResult>;
   getRecommendations(tmdbId: number, page?: number): Promise<SearchResult>;
   getSeriesDetail(tmdbId: number): Promise<SeriesDetail>;
   getSeason(tmdbId: number, seasonNumber: number): Promise<Season>;

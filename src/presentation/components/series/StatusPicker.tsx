@@ -18,13 +18,6 @@ type StatusPickerProps = {
   hasUnairedSeason?: boolean;
 };
 
-const DESCRIPTIONS: Record<SeriesStatus, string> = {
-  want_to_watch: "Save it for later",
-  watching: "Track episodes as you go",
-  watched: "Marks every aired episode as seen",
-  abandoned: "Stopped watching, keeps your progress",
-};
-
 const ICONS: Record<SeriesStatus, ReactNode> = {
   want_to_watch: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
@@ -81,6 +74,13 @@ export function StatusPicker({
     abandoned: t("abandoned"),
   };
 
+  const defaultDescriptions: Record<SeriesStatus, string> = {
+    want_to_watch: t("statusDescWantToWatch"),
+    watching: t("statusDescWatching"),
+    watched: t("statusDescWatched"),
+    abandoned: t("statusDescAbandoned"),
+  };
+
   return (
     <div className="flex flex-col gap-2 pt-2">
       {SERIES_STATUSES.map((status) => {
@@ -89,10 +89,10 @@ export function StatusPicker({
 
         const resetsProgress = status === "want_to_watch" && watchedEpisodes > 0;
         const description = resetsProgress
-          ? `Resets your ${watchedEpisodes} watched ${watchedEpisodes === 1 ? "episode" : "episodes"}`
+          ? t("statusDescResetProgress", { count: watchedEpisodes })
           : status === "watched" && airedEpisodes !== undefined && airedEpisodes > 0
-            ? `Marks all ${airedEpisodes} aired episodes as seen`
-            : DESCRIPTIONS[status];
+            ? t("statusDescMarksAllAired", { count: airedEpisodes })
+            : defaultDescriptions[status];
         const label = statusLabels[status];
 
         return (
@@ -144,7 +144,7 @@ export function StatusPicker({
           onClick={onRemove}
           className="tap-none mt-1 min-h-[48px] rounded-[14px] text-[0.9375rem] font-normal text-danger-500 active:opacity-70 disabled:opacity-50"
         >
-          Remove from library
+          {t("removeFromLibrary")}
         </button>
       ) : null}
     </div>

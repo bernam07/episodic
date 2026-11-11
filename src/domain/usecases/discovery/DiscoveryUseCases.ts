@@ -3,7 +3,12 @@ import type { Season } from "@/domain/entities/Episode";
 import type { PersonDetail } from "@/domain/entities/Person";
 import type { SeriesDetail } from "@/domain/entities/Series";
 import type { WatchProviders } from "@/domain/entities/WatchProviders";
-import type { Genre, ITmdbRepository, SearchResult } from "@/domain/repositories/ITmdbRepository";
+import type {
+  DiscoverSort,
+  Genre,
+  ITmdbRepository,
+  SearchResult,
+} from "@/domain/repositories/ITmdbRepository";
 
 const MIN_QUERY_LENGTH = 2;
 
@@ -40,8 +45,12 @@ export class GetGenres {
 export class DiscoverByGenre {
   constructor(private readonly tmdb: ITmdbRepository) {}
 
-  async execute(genreId: number | null, page = 1): Promise<SearchResult> {
-    return this.tmdb.discoverByGenre(genreId, page);
+  async execute(
+    genreId: number | null,
+    page = 1,
+    sort: DiscoverSort = "popularity.desc"
+  ): Promise<SearchResult> {
+    return this.tmdb.discoverByGenre(genreId, page, sort);
   }
 }
 

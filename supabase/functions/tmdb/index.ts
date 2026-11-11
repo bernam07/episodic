@@ -114,6 +114,17 @@ function mapSeriesDetail(item: Record<string, unknown>) {
     .filter((path): path is string => Boolean(path))
     .slice(0, 6);
 
+  type TmdbVideo = { site?: string; type?: string; official?: boolean; key?: string };
+  const videos = (((item.videos as { results?: TmdbVideo[] } | undefined)?.results) ?? []).filter(
+    (v) => v.site === "YouTube" && Boolean(v.key)
+  );
+  const trailer =
+    videos.find((v) => v.type === "Trailer" && v.official) ??
+    videos.find((v) => v.type === "Trailer") ??
+    videos.find((v) => v.type === "Teaser") ??
+    videos[0] ??
+    null;
+
   let airedEpisodes: number;
   if (last) {
     const priorSeasons = seasons
@@ -144,6 +155,7 @@ function mapSeriesDetail(item: Record<string, unknown>) {
     seasons_meta: seasons,
     episode_run_time: ((item.episode_run_time as number[]) ?? []).filter((n) => n > 0),
     backdrops,
+    trailer_key: trailer?.key ?? null,
   };
 }
 
@@ -233,7 +245,7 @@ async function handleRecommendations(tmdbId: string, url: URL) {
 
 async function handleSeriesDetail(tmdbId: string) {
   const data = await tmdbFetch(`/tv/${tmdbId}`, {
-    append_to_response: "images",
+    append_to_response: "images,videos",
     include_image_language: "en,null",
   });
   return json(mapSeriesDetail(data), 200, 3600);
@@ -262,7 +274,7 @@ async function handlePersonDetail(personId: string) {
     .sort((a, b) => ((b.vote_count as number) ?? 0) - ((a.vote_count as number) ?? 0))
     .filter(
       (item, index, arr) =>
-        arr.findIndex((other) => other.id === item.id) === index,
+        arr.findIndex((other) => other.id === item.id) === index
     )
     .slice(0, 40)
     .map((item) => ({
@@ -286,7 +298,7 @@ async function handlePersonDetail(personId: string) {
       known_for: knownFor,
     },
     200,
-    86400,
+    86400
   );
 }
 

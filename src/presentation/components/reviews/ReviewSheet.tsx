@@ -4,6 +4,7 @@ import type { Review } from "@/domain/entities/Review";
 import { Button } from "@/presentation/components/ui/Button";
 import { Sheet } from "@/presentation/components/ui/Sheet";
 import { useSubmitReview } from "@/presentation/hooks/useReviews";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
 
 type ReviewSheetProps = {
   open: boolean;
@@ -26,6 +27,7 @@ function ReviewForm({
   seriesName: string;
   existing: Review | null;
 }) {
+  const { t } = useI18n();
   const [body, setBody] = useState(existing?.body ?? "");
   const [spoilers, setSpoilers] = useState(existing?.containsSpoilers ?? false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ function ReviewForm({
       <textarea
         value={body}
         onChange={(event) => setBody(event.target.value.slice(0, MAX_BODY))}
-        placeholder="What did you think?"
+        placeholder={t("reviewPlaceholder")}
         rows={5}
         className="w-full resize-none rounded-xl border border-ink-700 bg-ink-850 px-4 py-3 text-[15px] text-mist-100 placeholder:text-mist-500 focus:border-accent-500 focus:outline-none"
       />
@@ -59,6 +61,7 @@ function ReviewForm({
         <button
           type="button"
           onClick={() => setSpoilers(!spoilers)}
+          aria-pressed={spoilers}
           className="tap-none flex min-h-[44px] items-center gap-2 text-[13px] text-mist-400 active:text-mist-200"
         >
           <span
@@ -70,7 +73,7 @@ function ReviewForm({
               <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          Contains spoilers
+          {t("containsSpoilers")}
         </button>
         <span className="text-[11px] tabular-nums text-mist-500">
           {body.length}/{MAX_BODY}
@@ -90,15 +93,17 @@ function ReviewForm({
         loading={submit.isPending}
         onClick={handleSubmit}
       >
-        {existing?.body ? "Update Review" : "Post Review"}
+        {existing?.body ? t("updateReview") : t("postReview")}
       </Button>
     </>
   );
 }
 
 export function ReviewSheet({ open, onClose, seriesId, seriesName, existing }: ReviewSheetProps) {
+  const { t } = useI18n();
+
   return (
-    <Sheet open={open} onClose={onClose} title={existing?.body ? "Edit Review" : "Write a Review"}>
+    <Sheet open={open} onClose={onClose} title={existing?.body ? t("editReview") : t("writeReview")}>
       {open ? (
         <ReviewForm
           onClose={onClose}

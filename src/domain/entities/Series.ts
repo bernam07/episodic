@@ -30,6 +30,7 @@ export type SeriesDetail = SeriesSummary & {
   seasonsMeta: SeasonMeta[];
   episodeRunTime: number[];
   backdrops: string[];
+  trailerKey?: string | null;
 };
 
 export function releaseYear(series: Pick<SeriesSummary, "firstAirDate">): string | null {

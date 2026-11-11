@@ -2,15 +2,20 @@ import { Link } from "react-router-dom";
 import type { UpNextItem } from "@/domain/entities/Progress";
 import { RatingBadge } from "@/presentation/components/series/SeriesCard";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
+import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
 import { RailSkeleton } from "@/presentation/components/ui/Skeleton";
 import { useI18n } from "@/presentation/i18n/I18nProvider";
 import { useMarkUpNext, useMyRatings, useUpNext } from "@/presentation/hooks/useTracking";
 
 function UpNextCard({ item, rating }: { item: UpNextItem; rating: number | null }) {
+  const { t } = useI18n();
   const mark = useMarkUpNext();
+  const total = item.airedEpisodes > 0 ? item.airedEpisodes : item.numberOfEpisodes;
+  const percent = total > 0 ? Math.min(Math.round((item.watchedEpisodes / total) * 1000) / 10, 100) : 0;
+  const left = Math.max(total - item.watchedEpisodes, 0);
 
   return (
-    <div className="w-[132px] shrink-0">
+    <div className="w-[138px] shrink-0">
       <Link to={`/series/${item.tmdbId}`} className="tap-none block active:opacity-75">
         <div className="relative">
           <SeriesPoster path={item.posterPath} alt={item.name} />
@@ -18,10 +23,18 @@ function UpNextCard({ item, rating }: { item: UpNextItem; rating: number | null 
         </div>
         <p className="mt-2 truncate text-[0.8125rem] font-semibold tracking-[-0.01em] text-white">{item.name}</p>
       </Link>
-      <div className="mt-1 flex items-center justify-between gap-2">
-        <span className="text-[0.75rem] font-medium tabular-nums text-mist-400">
-          S{item.nextSeason} · E{item.nextEpisode}
-        </span>
+      {total > 0 ? <ProgressBar value={percent} className="mt-1.5" /> : null}
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <span className="block text-[0.75rem] font-semibold tabular-nums text-accent-400">
+            S{item.nextSeason} · E{item.nextEpisode}
+          </span>
+          {left > 0 ? (
+            <span className="block truncate text-[0.6875rem] tabular-nums text-mist-500">
+              {t("episodesLeft", { count: left })}
+            </span>
+          ) : null}
+        </div>
         <button
           type="button"
           disabled={mark.isPending}

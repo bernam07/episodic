@@ -4,7 +4,6 @@ import { backdropUrl } from "@/data/tmdb/images";
 import { computeLibraryInsights, type GenreCount } from "@/domain/entities/LibraryInsights";
 import type { RatingSummary } from "@/domain/entities/RatingSummary";
 import {
-  DISPLAY_SERIES_STATUS_LABELS,
   DISPLAY_SERIES_STATUSES,
   type DisplaySeriesStatus,
 } from "@/domain/entities/SeriesStatus";
@@ -18,7 +17,7 @@ import {
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { useLibrary, useWatchStreak } from "@/presentation/hooks/useTracking";
 import { useI18n } from "@/presentation/i18n/I18nProvider";
-import { plural, pluralize } from "@/presentation/utils/plural";
+import { plural } from "@/presentation/utils/plural";
 
 const STATUS_COLORS: Record<DisplaySeriesStatus, string> = {
   watching: "bg-accent-500",
@@ -35,13 +34,23 @@ function Breakdown({
   statusCounts: Record<DisplaySeriesStatus, number>;
   total: number;
 }) {
+  const { t } = useI18n();
   if (total === 0) return null;
 
   const segments = DISPLAY_SERIES_STATUSES.filter((status) => statusCounts[status] > 0);
+  const statusLabels: Record<DisplaySeriesStatus, string> = {
+    watching: t("watching"),
+    up_to_date: t("upToDate"),
+    want_to_watch: t("wantToWatch"),
+    watched: t("watched"),
+    abandoned: t("abandoned"),
+  };
 
   return (
     <section className="mt-8">
-      <SectionHeading hint={plural(total, "series", "series")}>Library breakdown</SectionHeading>
+      <SectionHeading hint={`${total} ${t("series").toLowerCase()}`}>
+        {t("libraryBreakdown")}
+      </SectionHeading>
 
       <div className="mx-5 rounded-[14px] border border-white/[0.07] bg-ink-850 p-4">
         <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full">
@@ -70,7 +79,7 @@ function Breakdown({
                   {statusCounts[status]}
                 </span>
                 <span className="mt-1 block truncate text-[0.75rem] text-mist-500">
-                  {DISPLAY_SERIES_STATUS_LABELS[status]}
+                  {statusLabels[status]}
                 </span>
               </span>
               <span className="shrink-0 text-[0.75rem] tabular-nums text-mist-500">
@@ -85,12 +94,13 @@ function Breakdown({
 }
 
 function Genres({ genres }: { genres: GenreCount[] }) {
+  const { t } = useI18n();
   if (genres.length === 0) return null;
   const max = genres[0].count;
 
   return (
     <section className="mt-8">
-      <SectionHeading hint="series per genre">Top genres</SectionHeading>
+      <SectionHeading>{t("topGenres")}</SectionHeading>
       <div className="mx-5 space-y-3.5 rounded-[14px] border border-white/[0.07] bg-ink-850 p-4">
         {genres.map((entry, index) => (
           <div key={entry.genre} className="flex items-center gap-3">
@@ -115,6 +125,7 @@ function Genres({ genres }: { genres: GenreCount[] }) {
 }
 
 function Ratings({ ratings }: { ratings: RatingSummary }) {
+  const { t } = useI18n();
   if (ratings.total === 0) return null;
 
   const max = Math.max(...ratings.buckets.map((bucket) => bucket.count), 1);
@@ -123,7 +134,7 @@ function Ratings({ ratings }: { ratings: RatingSummary }) {
   return (
     <section className="mt-8">
       <SectionHeading hint={`avg ${ratings.average?.toFixed(1)} ★`}>
-        Your ratings
+        {t("ratingDistribution")}
       </SectionHeading>
 
       <div className="mx-5 rounded-[14px] border border-white/[0.07] bg-ink-850 p-4">
@@ -173,9 +184,8 @@ function Ratings({ ratings }: { ratings: RatingSummary }) {
         </div>
 
         <p className="mt-3 text-[0.8125rem] text-mist-400">
-          Most often you go with{" "}
           <span className="font-semibold text-white">{mode.rating} ★</span> ·{" "}
-          {plural(ratings.total, "rating", "ratings")} total
+          {plural(ratings.total, "rating", "ratings")}
         </p>
       </div>
     </section>
@@ -211,7 +221,7 @@ export function StatsScreen() {
           <button
             type="button"
             onClick={() => setShareOpen(true)}
-            aria-label="Share your Watch DNA"
+            aria-label={t("shareWatchDna")}
             className="tap-none ml-auto flex size-9 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-70"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
@@ -243,7 +253,7 @@ export function StatsScreen() {
           <section className="px-5">
             <div className="relative overflow-hidden rounded-[20px] border border-white/[0.07] bg-ink-850 px-6 pt-6 pb-5">
               <p className="relative text-[0.8125rem] font-semibold text-mist-500">
-                Total watch time
+                {t("totalWatchTime")}
               </p>
               <Duration
                 minutes={insights.watchTimeMinutes}
@@ -251,9 +261,9 @@ export function StatsScreen() {
               />
 
               <div className="relative mt-6 grid grid-cols-4 gap-2 border-t border-white/[0.08] pt-4">
-                <InlineStat value={insights.episodesWatched} label="episodes" />
-                <InlineStat value={insights.seriesTracked} label="series" />
-                <InlineStat value={insights.finished} label="finished" />
+                <InlineStat value={insights.episodesWatched} label={t("episodes").toLowerCase()} />
+                <InlineStat value={insights.seriesTracked} label={t("series").toLowerCase()} />
+                <InlineStat value={insights.finished} label={t("finishedLabel")} />
                 <InlineStat value={`${completionRate}%`} label={t("completionRate")} />
               </div>
             </div>
@@ -275,17 +285,17 @@ export function StatsScreen() {
                   <>
                     <p className="text-[1.125rem] leading-none font-bold text-white">
                       <span className="text-[#ff9f0a]">{streak}</span>{" "}
-                      {pluralize(streak, "day", "days")} streak
+                      {t("dayStreak")}
                     </p>
                     <p className="mt-1.5 text-[0.75rem] text-mist-500">
-                      Days in a row you checked off an episode, one by one.
+                      {t("streakHint")}
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-[0.9375rem] font-semibold text-white">No active streak</p>
+                    <p className="text-[0.9375rem] font-semibold text-white">{t("noActiveStreak")}</p>
                     <p className="mt-1 text-[0.75rem] text-mist-500">
-                      Check off an episode one by one to start one — bulk actions don’t count.
+                      {t("noStreakHint")}
                     </p>
                   </>
                 )}
@@ -301,7 +311,7 @@ export function StatsScreen() {
 
           {insights.mostWatched ? (
             <section className="mt-8">
-              <SectionHeading>Most watched</SectionHeading>
+              <SectionHeading>{t("mostWatched")}</SectionHeading>
               <div className="px-5">
                 <Link
                   to={`/series/${insights.mostWatched.tmdbId}`}
@@ -327,16 +337,14 @@ export function StatsScreen() {
                         {insights.mostWatched.name}
                       </p>
                       <p className="mt-1 text-[0.8125rem] text-mist-300">
-                        {plural(insights.mostWatched.watchedEpisodes, "episode", "episodes")} watched
+                        {insights.mostWatched.watchedEpisodes} {t("episodes").toLowerCase()}
                       </p>
                       {insights.mostWatched.episodeRuntime > 0 ? (
                         <p className="mt-0.5 text-[0.75rem] text-mist-500">
-                          that is{" "}
                           <Duration
                             minutes={insights.mostWatched.watchedEpisodes * insights.mostWatched.episodeRuntime}
                             className="font-semibold text-mist-400"
-                          />{" "}
-                          of your life
+                          />
                         </p>
                       ) : null}
                     </div>
@@ -357,7 +365,7 @@ export function StatsScreen() {
                 </svg>
                 <div>
                   <p className="text-[1.125rem] leading-none font-bold tabular-nums text-white">{insights.favorites}</p>
-                  <p className="mt-1 text-[0.75rem] font-medium text-mist-500">favorites</p>
+                  <p className="mt-1 text-[0.75rem] font-medium text-mist-500">{t("favorites").toLowerCase()}</p>
                 </div>
               </Link>
               <Link
@@ -376,7 +384,7 @@ export function StatsScreen() {
                 </svg>
                 <div>
                   <p className="text-[1.125rem] leading-none font-bold tabular-nums text-white">{insights.rewatches}</p>
-                  <p className="mt-1 text-[0.75rem] font-medium text-mist-500">rewatches</p>
+                  <p className="mt-1 text-[0.75rem] font-medium text-mist-500">{t("rewatched").toLowerCase()}</p>
                 </div>
               </Link>
             </div>

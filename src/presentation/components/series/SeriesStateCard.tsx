@@ -9,15 +9,16 @@ import {
 import type { SeriesDetail } from "@/domain/entities/Series";
 import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
 import { ProgressBar } from "@/presentation/components/ui/ProgressBar";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
+import type { TranslationKey } from "@/presentation/i18n/translations";
 import { formatDate } from "@/presentation/utils/date";
-import { plural } from "@/presentation/utils/plural";
 
-const AIRING_LABELS: Record<ReturnType<typeof airingStatus>, string> = {
-  ended: "Ended",
-  returning: "Returning series",
-  in_production: "In production",
-  planned: "Planned",
-  unknown: "Status unknown",
+const AIRING_KEYS: Record<ReturnType<typeof airingStatus>, TranslationKey> = {
+  ended: "stateEnded",
+  returning: "stateReturning",
+  in_production: "stateInProduction",
+  planned: "statePlanned",
+  unknown: "stateUnknown",
 };
 
 type Copy = {
@@ -26,7 +27,11 @@ type Copy = {
   tone: "neutral" | "positive" | "action";
 };
 
-function toCopy(state: WatchState, detail: SeriesDetail): Copy {
+function toCopy(
+  state: WatchState,
+  detail: SeriesDetail,
+  t: (key: TranslationKey, vars?: Record<string, string | number>) => string
+): Copy {
   const today = new Date().toISOString().slice(0, 10);
   const upcomingSeason = detail.seasonsMeta.find(
     (season) =>
@@ -37,25 +42,35 @@ function toCopy(state: WatchState, detail: SeriesDetail): Copy {
   switch (state.kind) {
     case "untracked":
       return {
-        headline: AIRING_LABELS[airingStatus(detail)],
+        headline: t(AIRING_KEYS[airingStatus(detail)]),
         detail:
           state.totalEpisodes > 0
-            ? `${plural(state.totalEpisodes, "episode")} across ${plural(detail.numberOfSeasons, "season")}`
+            ? `${state.totalEpisodes} ${
+                state.totalEpisodes === 1 ? t("episode").toLowerCase() : t("episodes").toLowerCase()
+              } · ${detail.numberOfSeasons} ${
+                detail.numberOfSeasons === 1 ? t("season").toLowerCase() : t("seasons").toLowerCase()
+              }`
             : null,
         tone: "neutral",
       };
 
     case "not_started":
       return {
-        headline: "Not started",
-        detail: state.airedEpisodes > 0 ? `${plural(state.airedEpisodes, "episode")} ready to watch` : null,
+        headline: t("stateNotStarted"),
+        detail:
+          state.airedEpisodes > 0
+            ? t("stateReadyToWatch", { count: state.airedEpisodes })
+            : null,
         tone: "action",
       };
 
     case "behind":
       return {
-        headline: `${plural(state.behind, "episode")} behind`,
-        detail: `You've seen ${state.watchedEpisodes} of ${state.airedEpisodes} aired`,
+        headline: t("stateBehind", { count: state.behind }),
+        detail: t("stateSeenOfAired", {
+          watched: state.watchedEpisodes,
+          aired: state.airedEpisodes,
+        }),
         tone: "action",
       };
 
@@ -65,8 +80,11 @@ function toCopy(state: WatchState, detail: SeriesDetail): Copy {
 
       if (next && nextDate) {
         return {
-          headline: "You're up to date",
-          detail: `Next: S${next.seasonNumber}E${next.episodeNumber} on ${nextDate}`,
+          headline: t("stateUpToDate"),
+          detail: t("stateNextEpisodeOn", {
+            code: `S${next.seasonNumber}E${next.episodeNumber}`,
+            date: nextDate,
+          }),
           tone: "positive",
         };
       }
@@ -74,41 +92,44 @@ function toCopy(state: WatchState, detail: SeriesDetail): Copy {
       const seasonDate = formatDate(upcomingSeason?.airDate ?? null);
       if (upcomingSeason && seasonDate) {
         return {
-          headline: "You're up to date",
-          detail: `${upcomingSeason.name} premieres on ${seasonDate}`,
+          headline: t("stateUpToDate"),
+          detail: t("stateSeasonPremieresOn", {
+            season: upcomingSeason.name,
+            date: seasonDate,
+          }),
           tone: "positive",
         };
       }
 
       if (state.unairedEpisodes > 0 || detail.inProduction || Boolean(upcomingSeason)) {
         return {
-          headline: "You're up to date",
-          detail: "More episodes are still coming",
+          headline: t("stateUpToDate"),
+          detail: t("stateMoreEpisodesComing"),
           tone: "positive",
         };
       }
 
       return {
-        headline: "You're up to date",
-        detail: "Caught up on everything aired so far",
+        headline: t("stateUpToDate"),
+        detail: t("stateCaughtUpAll"),
         tone: "positive",
       };
     }
 
     case "completed":
       return {
-        headline: "You finished this series",
-        detail: "Every episode watched, and there are no more coming",
+        headline: t("stateFinished"),
+        detail: t("stateFinishedDetail"),
         tone: "positive",
       };
 
     case "abandoned":
       return {
-        headline: "Abandoned",
+        headline: t("abandoned"),
         detail:
           state.watchedEpisodes > 0
-            ? `Stopped after ${plural(state.watchedEpisodes, "episode")}`
-            : "Never started",
+            ? t("stateStoppedAfter", { count: state.watchedEpisodes })
+            : t("stateNeverStarted"),
         tone: "neutral",
       };
   }
@@ -127,8 +148,9 @@ type SeriesStateCardProps = {
 };
 
 export function SeriesStateCard({ detail, watchedEpisodes, status }: SeriesStateCardProps) {
+  const { t } = useI18n();
   const state = describeWatchState(detail, watchedEpisodes, status);
-  const copy = toCopy(state, detail);
+  const copy = toCopy(state, detail, t);
   const tracked = status !== null;
   const aired = airedEpisodeCount(detail);
   const continuing =
@@ -149,17 +171,19 @@ export function SeriesStateCard({ detail, watchedEpisodes, status }: SeriesState
           {copy.detail ? <p className="mt-0.5 text-[0.8125rem] text-mist-400">{copy.detail}</p> : null}
         </div>
         <span className="shrink-0 rounded-full border border-white/[0.07] bg-ink-800 px-2.5 py-1 text-[0.6875rem] font-semibold text-mist-300">
-          {AIRING_LABELS[airingStatus(detail)]}
+          {t(AIRING_KEYS[airingStatus(detail)])}
         </span>
       </div>
 
       {tracked && targetTotal > 0 ? (
         <div className="mt-3.5">
           <div className="mb-1.5 flex items-baseline justify-between">
-            <span className="text-[0.75rem] font-medium text-mist-500">Progress</span>
+            <span className="text-[0.75rem] font-medium text-mist-500">{t("progressLabel")}</span>
             <span className="text-[0.75rem] tabular-nums text-mist-500">
               {watchedEpisodes}/{targetTotal}{" "}
-              {continuing && detail.numberOfEpisodes > targetTotal ? "aired episodes" : "episodes"}
+              {continuing && detail.numberOfEpisodes > targetTotal
+                ? t("airedEpisodesLabel")
+                : t("episodes").toLowerCase()}
             </span>
           </div>
           <ProgressBar value={percent} showLabel />

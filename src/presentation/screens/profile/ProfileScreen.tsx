@@ -28,7 +28,7 @@ import {
   useToggleFavorite,
   useWatchStreak,
 } from "@/presentation/hooks/useTracking";
-import { pluralize } from "@/presentation/utils/plural";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
 
 type ProfileTab = "overview" | "watchlist" | "reviews" | "lists" | "diary";
 
@@ -68,6 +68,7 @@ function Header({
   activeTab: ProfileTab;
   onSelectTab: (tab: ProfileTab) => void;
 }) {
+  const { t } = useI18n();
   const { profile, user } = useAuth();
   const { data: summary } = useProfileSummary(profile?.username ?? null);
   const { data: library } = useLibrary();
@@ -88,11 +89,11 @@ function Header({
   const seriesCount = summary?.seriesCount ?? library?.length ?? 0;
 
   const tabs: { id: ProfileTab; label: string }[] = [
-    { id: "overview", label: "Overview" },
-    { id: "watchlist", label: "Watchlist" },
-    { id: "reviews", label: "Reviews" },
-    { id: "lists", label: "Lists" },
-    { id: "diary", label: "Activity" },
+    { id: "overview", label: t("overviewTab") },
+    { id: "watchlist", label: t("watchlistTab") },
+    { id: "reviews", label: t("reviews") },
+    { id: "lists", label: t("listsTab") },
+    { id: "diary", label: t("activityTab") },
   ];
 
   return (
@@ -106,7 +107,7 @@ function Header({
           <button
             type="button"
             onClick={() => setEditOpen(true)}
-            aria-label="Change profile banner"
+            aria-label={t("cover")}
             className="ios-material tap-none inline-flex h-8 items-center gap-1.5 rounded-full border border-white/15 px-3 text-[0.75rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-75"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
@@ -116,19 +117,19 @@ function Header({
               />
               <circle cx="12" cy="12.5" r="3" />
             </svg>
-            <span>Cover</span>
+            <span>{t("cover")}</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenSettings}
-            aria-label="Settings"
+            aria-label={t("settings")}
             className="ios-material tap-none flex size-9 items-center justify-center rounded-full border border-white/10 text-white transition-opacity active:opacity-70 hover:bg-ink-800"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
               <circle cx="12" cy="12" r="3" />
               <path
-                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -150,7 +151,7 @@ function Header({
             <button
               type="button"
               onClick={() => setEditOpen(true)}
-              aria-label="Edit profile"
+              aria-label={t("editProfile")}
               className="tap-none flex min-h-[36px] items-center gap-1.5 rounded-[10px] bg-accent-500 px-4 text-[0.8125rem] font-bold text-white shadow-[0_2px_10px_rgba(239,51,64,0.3)] transition-opacity hover:bg-accent-400 active:opacity-80"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
@@ -160,14 +161,14 @@ function Header({
                   strokeLinejoin="round"
                 />
               </svg>
-              Edit Profile
+              {t("editProfile")}
             </button>
           </div>
         </div>
 
         <div className="mt-3">
           <h1 className="truncate text-[1.375rem] font-extrabold tracking-[-0.025em] text-white">
-            {profile?.displayName || profile?.username || "Profile"}
+            {profile?.displayName || profile?.username || t("profile")}
           </h1>
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[0.8125rem] text-mist-500">
             {profile ? <span>@{profile.username}</span> : null}
@@ -187,7 +188,7 @@ function Header({
         <div className="mt-4 flex items-center divide-x divide-white/[0.12] text-[0.8125rem]">
           <div className="pr-4">
             <strong className="font-bold tabular-nums text-white">{seriesCount}</strong>{" "}
-            <span className="text-mist-400">Series</span>
+            <span className="text-mist-400">{t("series")}</span>
           </div>
           {summary ? (
             <>
@@ -197,7 +198,7 @@ function Header({
                 className="tap-none px-4 text-mist-400 hover:text-white"
               >
                 <strong className="font-bold tabular-nums text-white">{summary.followingCount}</strong>{" "}
-                Following
+                {t("following")}
               </button>
               <button
                 type="button"
@@ -205,7 +206,7 @@ function Header({
                 className="tap-none pl-4 text-mist-400 hover:text-white"
               >
                 <strong className="font-bold tabular-nums text-white">{summary.followersCount}</strong>{" "}
-                {pluralize(summary.followersCount, "Follower", "Followers")}
+                {summary.followersCount === 1 ? t("follower") : t("followers")}
               </button>
             </>
           ) : null}
@@ -245,6 +246,7 @@ function Header({
 }
 
 function TasteProfileAndStats() {
+  const { t } = useI18n();
   const { data, isLoading } = useLibrary();
   const { data: streak } = useWatchStreak();
 
@@ -269,7 +271,9 @@ function TasteProfileAndStats() {
   return (
     <section className="mt-5 px-5">
       <div className="mb-2.5 flex items-center justify-between">
-        <h2 className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">Taste Profile</h2>
+        <h2 className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
+          {t("tasteProfile")}
+        </h2>
         <div className="flex items-center gap-3">
           {streak && streak > 0 ? (
             <span className="flex items-center gap-1 text-[0.8125rem] font-bold text-[#ff9f0a]" title={`${streak}-day check-in streak`}>
@@ -283,7 +287,7 @@ function TasteProfileAndStats() {
             to="/stats"
             className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-3 py-1 text-[0.75rem] font-semibold text-mist-200 transition-colors hover:bg-ink-800 hover:text-white active:opacity-70"
           >
-            All stats
+            {t("allStats")}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
               <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -324,7 +328,7 @@ function TasteProfileAndStats() {
 
         <div className="rounded-[12px] border border-white/[0.06] bg-ink-900 px-4 py-3.5">
           <div className="flex items-baseline justify-between gap-3">
-            <p className="text-[0.8125rem] font-semibold text-mist-400">Episodes watched</p>
+            <p className="text-[0.8125rem] font-semibold text-mist-400">{t("episodesWatched")}</p>
             <p className="text-[1.625rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums text-white">
               {stats.episodesWatched}
             </p>
@@ -334,11 +338,11 @@ function TasteProfileAndStats() {
               watchTimeMinutes > 0 ? "grid-cols-4" : "grid-cols-3"
             }`}
           >
-            <InlineStat value={stats.seriesTracked} label="series" />
-            <InlineStat value={stats.finished} label="finished" />
-            <InlineStat value={stats.averageRating ?? "—"} label="avg rating" />
+            <InlineStat value={stats.seriesTracked} label={t("series").toLowerCase()} />
+            <InlineStat value={stats.finished} label={t("finishedLabel")} />
+            <InlineStat value={stats.averageRating ?? "—"} label={t("avgRatingLabel")} />
             {watchTimeMinutes > 0 ? (
-              <InlineStat value={<Duration minutes={watchTimeMinutes} />} label="watched" />
+              <InlineStat value={<Duration minutes={watchTimeMinutes} />} label={t("watchedLabel")} />
             ) : null}
           </div>
         </div>
@@ -471,6 +475,7 @@ function FavoriteItemCard({
 }
 
 function Favorites() {
+  const { t } = useI18n();
   const { data } = useLibrary();
   const { data: ownReviews } = useOwnReviews();
   const setPinned = useSetFavoritePinned();
@@ -520,7 +525,7 @@ function Favorites() {
           <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 text-accent-500">
             <path d="M12 21.23l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
           </svg>
-          <span>Favorites</span>
+          <span>{t("favorites")}</span>
           <span className="text-[0.875rem] font-normal text-mist-500">{favorites.length}</span>
         </h2>
 
@@ -534,14 +539,14 @@ function Favorites() {
                 : "border border-white/10 bg-ink-850 text-mist-200 hover:bg-ink-800 hover:text-white"
             }`}
           >
-            {organizing ? "Done" : "Organize"}
+            {organizing ? t("done") : t("organize")}
           </button>
           {favorites.length > 6 ? (
             <Link
               to="/library?view=favorites"
               className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-3 py-1 text-[0.75rem] font-semibold text-mist-200 transition-colors hover:bg-ink-800 hover:text-white"
             >
-              See all
+              {t("seeAll")}
             </Link>
           ) : null}
         </div>
@@ -583,6 +588,7 @@ function Favorites() {
 }
 
 function RecentlyWatchedGrid() {
+  const { t } = useI18n();
   const { data } = useLibrary();
   const recent = useMemo(() => {
     if (!data || data.length === 0) return [];
@@ -596,12 +602,14 @@ function RecentlyWatchedGrid() {
   return (
     <section className="mt-7 px-5">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">Recently Watched</h2>
+        <h2 className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
+          {t("recentlyWatched")}
+        </h2>
         <Link
           to="/library"
           className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-3 py-1 text-[0.75rem] font-semibold text-mist-200 transition-colors hover:bg-ink-800 hover:text-white active:opacity-70"
         >
-          See all
+          {t("seeAll")}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
             <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -626,13 +634,14 @@ function RecentlyWatchedGrid() {
 }
 
 function OwnReviews() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { data, isLoading } = useOwnReviews();
 
   return (
     <section className="mt-7 px-5">
       <h2 className="mb-1 flex items-baseline gap-2 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
-        <span>Your Reviews</span>
+        <span>{t("yourReviews")}</span>
         {data && data.length > 0 ? <span className="text-[0.875rem] font-normal text-mist-500">{data.length}</span> : null}
       </h2>
 
@@ -645,7 +654,7 @@ function OwnReviews() {
           reviews={data ?? []}
           currentUserId={user?.id}
           showSeries
-          emptyMessage="You have not reviewed anything yet."
+          emptyMessage={t("noReviewsYet")}
         />
       )}
     </section>

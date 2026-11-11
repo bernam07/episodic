@@ -63,6 +63,16 @@ export function SeasonAccordion({
   const nextUnwatched =
     data?.episodes.find((ep) => hasAired(ep) && !watchedIds.has(ep.tmdbEpisodeId)) ?? null;
 
+  const episodesUpToDetail =
+    data && detailEpisode
+      ? data.episodes.filter(
+          (ep) => hasAired(ep) && ep.episodeNumber <= detailEpisode.episodeNumber
+        )
+      : [];
+  const unwatchedUpToDetail = episodesUpToDetail.filter(
+    (ep) => !watchedIds.has(ep.tmdbEpisodeId)
+  ).length;
+
   useEffect(() => {
     if (data && nextRef.current && !didScrollRef.current) {
       didScrollRef.current = true;
@@ -211,11 +221,20 @@ export function SeasonAccordion({
         episode={detailEpisode}
         watched={detailEpisode ? watchedIds.has(detailEpisode.tmdbEpisodeId) : false}
         canTrack={canTrack}
+        unwatchedPriorCount={unwatchedUpToDetail}
         onToggle={(watched) => {
           if (detailEpisode) {
             onToggleEpisode(detailEpisode, watched);
           }
         }}
+        onMarkUpToHere={
+          detailEpisode && detailEpisode.episodeNumber > 1 && unwatchedUpToDetail > 1
+            ? () => {
+                onToggleSeason(season.seasonNumber, episodesUpToDetail, true);
+                setDetailEpisode(null);
+              }
+            : undefined
+        }
         onClose={() => setDetailEpisode(null)}
       />
     </div>

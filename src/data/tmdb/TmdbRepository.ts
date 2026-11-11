@@ -5,7 +5,12 @@ import type { Episode, Season } from "@/domain/entities/Episode";
 import type { PersonDetail } from "@/domain/entities/Person";
 import type { SeriesDetail, SeriesSummary } from "@/domain/entities/Series";
 import type { WatchProviders } from "@/domain/entities/WatchProviders";
-import type { Genre, ITmdbRepository, SearchResult } from "@/domain/repositories/ITmdbRepository";
+import type {
+  DiscoverSort,
+  Genre,
+  ITmdbRepository,
+  SearchResult,
+} from "@/domain/repositories/ITmdbRepository";
 import { supabase } from "../supabase/client";
 
 type RawSummary = {
@@ -44,6 +49,7 @@ type RawDetail = RawSummary & {
   }[];
   episode_run_time: number[];
   backdrops?: string[];
+  trailer_key?: string | null;
 };
 
 type RawEpisode = {
@@ -119,6 +125,7 @@ function toDetail(raw: RawDetail): SeriesDetail {
     })),
     episodeRunTime: raw.episode_run_time ?? [],
     backdrops: raw.backdrops ?? [],
+    trailerKey: raw.trailer_key ?? null,
   };
 }
 
@@ -170,9 +177,16 @@ export class TmdbRepository implements ITmdbRepository {
     return raw.genres ?? [];
   }
 
-  async discoverByGenre(genreId: number | null, page = 1): Promise<SearchResult> {
-    const query = genreId === null ? `discover?page=${page}` : `discover?genre=${genreId}&page=${page}`;
-    const raw = await this.invoke<RawSearch>(query);
+  async discoverByGenre(
+    genreId: number | null,
+    page = 1,
+    sort: DiscoverSort = "popularity.desc"
+  ): Promise<SearchResult> {
+    const params = new URLSearchParams({ page: String(page), sort });
+    if (genreId !== null) {
+      params.set("genre", String(genreId));
+    }
+    const raw = await this.invoke<RawSearch>(`discover?${params.toString()}`);
 
     return { page: raw.page, totalPages: raw.total_pages, results: raw.results.map(toSummary) };
   }

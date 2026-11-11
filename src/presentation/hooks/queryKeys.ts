@@ -1,9 +1,11 @@
 import type { SeriesStatus } from "@/domain/entities/SeriesStatus";
+import type { DiscoverSort } from "@/domain/repositories/ITmdbRepository";
 
 export const queryKeys = {
   trending: ["trending"] as const,
   trendingInfinite: ["trending", "infinite"] as const,
-  discover: (genreId: number | null) => ["discover", genreId ?? "all"] as const,
+  discover: (genreId: number | null, sort: DiscoverSort = "popularity.desc") =>
+    ["discover", genreId ?? "all", sort] as const,
   genres: ["genres"] as const,
   recommendations: (tmdbId: number | null) => ["recommendations", tmdbId] as const,
   search: (query: string) => ["search", query] as const,

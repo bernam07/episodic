@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import type { Season } from "@/domain/entities/Episode";
 import type { SeriesDetail } from "@/domain/entities/Series";
+import { resolveDisplayStatus } from "@/domain/entities/SeriesStatus";
 import { container } from "@/presentation/di/container";
 import { queryKeys } from "@/presentation/hooks/queryKeys";
 import { SeriesPoster } from "@/presentation/components/series/SeriesPoster";
@@ -16,19 +17,25 @@ function isoDay(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function airLabel(dateStr: string): string {
+function airLabel(
+  dateStr: string,
+  locale: string,
+  todayLabel: string,
+  tomorrowLabel: string
+): string {
   const date = new Date(dateStr + "T00:00:00");
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-  if (date.getTime() === today.getTime()) return "Today";
-  if (date.getTime() === tomorrow.getTime()) return "Tomorrow";
-  return date.toLocaleDateString("en-US", { weekday: "short" });
+  if (date.getTime() === today.getTime()) return todayLabel;
+  if (date.getTime() === tomorrow.getTime()) return tomorrowLabel;
+  return date.toLocaleDateString(locale, { weekday: "short" });
 }
 
 export function ThisWeekRail() {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
+  const locale = language === "pt" ? "pt-PT" : "en-US";
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
 
@@ -49,7 +56,11 @@ export function ThisWeekRail() {
 
   const { data: library } = useLibrary();
   const watching = useMemo(
-    () => (library ?? []).filter((item) => item.status === "watching"),
+    () =>
+      (library ?? []).filter((item) => {
+        const display = resolveDisplayStatus(item);
+        return display === "watching" || display === "up_to_date";
+      }),
     [library]
   );
 
@@ -219,7 +230,9 @@ export function ThisWeekRail() {
             <p className="mt-0.5 text-[0.75rem] font-medium text-accent-400">
               S{item.season} · E{item.episode}
             </p>
-            <p className="text-[0.75rem] text-mist-500">{airLabel(item.airDate)}</p>
+            <p className="text-[0.75rem] capitalize text-mist-500">
+              {airLabel(item.airDate, locale, t("today"), t("tomorrow"))}
+            </p>
           </Link>
         ))}
       </div>

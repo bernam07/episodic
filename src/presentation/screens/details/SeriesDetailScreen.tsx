@@ -82,6 +82,7 @@ export function SeriesDetailScreen() {
   const [reviewSheetOpen, setReviewSheetOpen] = useState(false);
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [trailerOpen, setTrailerOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<SeriesStatus | null>(null);
   const [selectedActor, setSelectedActor] = useState<{ id: number; name: string } | null>(null);
 
@@ -138,6 +139,9 @@ export function SeriesDetailScreen() {
   const airedEpisodes = airedEpisodeCount(detail);
   const hasUnaired = hasUpcomingSeason(detail.seasonsMeta, detail.tmdbStatus);
   const isFavorite = tracking?.isFavorite ?? false;
+  const fallbackTrailerUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+    detail.name + " official trailer"
+  )}`;
 
   const displayStatus: DisplaySeriesStatus | null = tracking
     ? resolveDisplayStatus({
@@ -330,18 +334,32 @@ export function SeriesDetailScreen() {
       </div>
 
       <div className="px-5 pt-5">
-        <a
-          href={`https://www.youtube.com/results?search_query=${encodeURIComponent(detail.name + " official trailer")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={t("watchTrailer")}
-          className="tap-none flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[12px] bg-accent-500 px-5 text-[0.9375rem] font-bold text-white shadow-[0_4px_16px_rgba(239,51,64,0.32)] transition-all hover:bg-accent-400 active:opacity-85"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="size-4">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-          {t("watchTrailer")}
-        </a>
+        {detail.trailerKey ? (
+          <button
+            type="button"
+            onClick={() => setTrailerOpen(true)}
+            aria-label={t("watchTrailer")}
+            className="tap-none flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[12px] bg-accent-500 px-5 text-[0.9375rem] font-bold text-white shadow-[0_4px_16px_rgba(239,51,64,0.32)] transition-all hover:bg-accent-400 active:opacity-85"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-4">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            {t("watchTrailer")}
+          </button>
+        ) : (
+          <a
+            href={fallbackTrailerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t("watchTrailer")}
+            className="tap-none flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[12px] bg-accent-500 px-5 text-[0.9375rem] font-bold text-white shadow-[0_4px_16px_rgba(239,51,64,0.32)] transition-all hover:bg-accent-400 active:opacity-85"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-4">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            {t("watchTrailer")}
+          </a>
+        )}
 
         <button
           type="button"
@@ -374,13 +392,13 @@ export function SeriesDetailScreen() {
           <button
             type="button"
             onClick={() => setAddToListOpen(true)}
-            aria-label="Add to list"
+            aria-label={t("myList")}
             className="tap-none flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-ink-850 px-4 text-[0.875rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 shrink-0 text-mist-300">
               <path d="M12 5v14M5 12h14" strokeLinecap="round" />
             </svg>
-            <span>My List</span>
+            <span>{t("myList")}</span>
           </button>
 
           <button
@@ -392,7 +410,7 @@ export function SeriesDetailScreen() {
               <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
             </svg>
             <span>
-              {tracking?.rating ? `${tracking.rating.toFixed(1)} / 5` : "Rate"}
+              {tracking?.rating ? `${tracking.rating.toFixed(1)} / 5` : t("rate")}
             </span>
           </button>
         </div>
@@ -477,7 +495,7 @@ export function SeriesDetailScreen() {
           <h2 className="mb-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">{t("seasons")}</h2>
           {!seriesId ? (
             <p className="py-3 text-[0.875rem] text-mist-500">
-              Add this series to your library to start checking off episodes.
+              {t("addSeriesPrompt")}
             </p>
           ) : null}
           <div>
@@ -506,12 +524,43 @@ export function SeriesDetailScreen() {
           <ReviewList
             reviews={reviews ?? []}
             currentUserId={user?.id}
-            emptyMessage="No reviews yet. Be the first."
+            emptyMessage={t("noReviewsYet")}
           />
         </section>
       </div>
 
       <MoreLikeThisRail tmdbId={tmdbId} />
+
+      {detail.trailerKey ? (
+        <Sheet
+          open={trailerOpen}
+          onClose={() => setTrailerOpen(false)}
+          title={`${detail.name} — ${t("watchTrailer")}`}
+        >
+          <div className="aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-black">
+            {trailerOpen ? (
+              <iframe
+                title={`${detail.name} trailer`}
+                src={`https://www.youtube-nocookie.com/embed/${detail.trailerKey}?autoplay=1&rel=0`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="size-full border-0"
+              />
+            ) : null}
+          </div>
+          <a
+            href={`https://www.youtube.com/watch?v=${detail.trailerKey}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="tap-none mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-[12px] border border-white/10 bg-ink-850 py-2.5 text-[0.8125rem] font-semibold text-mist-200 transition-colors hover:bg-ink-800 hover:text-white"
+          >
+            <span>{t("openOnYoutube")}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+              <path d="M7 17L17 7M7 7h10v10" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </a>
+        </Sheet>
+      ) : null}
 
       <Sheet
         open={statusSheetOpen}

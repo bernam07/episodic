@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { releaseYear } from "@/domain/entities/Series";
+import type { DiscoverSort } from "@/domain/repositories/ITmdbRepository";
 import { Avatar } from "@/presentation/components/social/Avatar";
 import { FollowButton } from "@/presentation/components/social/FollowButton";
 import { SeriesCard } from "@/presentation/components/series/SeriesCard";
@@ -12,7 +13,6 @@ import { useInfiniteScroll } from "@/presentation/hooks/useInfiniteScroll";
 import { useSearchProfiles } from "@/presentation/hooks/useSocial";
 import { useI18n } from "@/presentation/i18n/I18nProvider";
 import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
-import { pluralize } from "@/presentation/utils/plural";
 
 type Tab = "series" | "users";
 
@@ -57,6 +57,7 @@ function GenreRecommendations({
 }) {
   const { t } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [sort, setSort] = useState<DiscoverSort>("popularity.desc");
   const genreParam = searchParams.get("genre");
   const genreId = genreParam ? Number(genreParam) : null;
   const ratings = useMyRatings();
@@ -64,7 +65,7 @@ function GenreRecommendations({
   const libraryStatus = useMyLibraryStatus();
   const { data: genres, isLoading: genresLoading } = useGenres();
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useInfiniteDiscover(genreId);
+    useInfiniteDiscover(genreId, sort);
 
   const sentinelRef = useInfiniteScroll({
     hasNextPage: !!hasNextPage,
@@ -82,6 +83,12 @@ function GenreRecommendations({
     seen.add(item.tmdbId);
     return true;
   });
+
+  const sortOptions: { value: DiscoverSort; label: string }[] = [
+    { value: "popularity.desc", label: t("popular") },
+    { value: "vote_average.desc", label: t("topRated") },
+    { value: "first_air_date.desc", label: t("newest") },
+  ];
 
   if (genresLoading) {
     return (
@@ -125,7 +132,7 @@ function GenreRecommendations({
         </div>
       ) : null}
 
-      <div className="no-scrollbar mb-5 flex gap-2 overflow-x-auto px-5 pt-2">
+      <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto px-5 pt-2">
         <button
           type="button"
           onClick={() => setSearchParams({}, { replace: true })}
@@ -135,7 +142,7 @@ function GenreRecommendations({
               : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:bg-ink-800 hover:text-white"
           }`}
         >
-          {t("popular")}
+          {t("all")}
         </button>
         {(genres ?? []).map((genre) => (
           <button
@@ -153,9 +160,31 @@ function GenreRecommendations({
         ))}
       </div>
 
-      <h2 className="mb-3 px-5 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
-        {active ? active.name : t("recommendedForYou")}
-      </h2>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-5">
+        <h2 className="text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
+          {active ? active.name : t("recommendedForYou")}
+        </h2>
+
+        <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-ink-850 p-0.5">
+          {sortOptions.map((option) => {
+            const activeSort = sort === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setSort(option.value)}
+                className={`tap-none rounded-full px-2.5 py-1 text-[0.75rem] font-semibold transition-colors ${
+                  activeSort
+                    ? "bg-ink-700 text-white"
+                    : "text-mist-400 hover:text-white"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {isLoading ? (
         <PosterGridSkeleton count={12} />
@@ -188,12 +217,13 @@ function GenreRecommendations({
 }
 
 function UserResults({ query }: { query: string }) {
+  const { t } = useI18n();
   const { data, isFetching } = useSearchProfiles(query);
 
   if (query.trim().length < 2) {
     return (
       <p className="px-5 pt-8 text-center text-[0.9375rem] text-mist-500">
-        Search for people by username to follow them.
+        {t("searchPeoplePlaceholder")}
       </p>
     );
   }
@@ -208,7 +238,9 @@ function UserResults({ query }: { query: string }) {
 
   if (!data || data.length === 0) {
     return (
-      <p className="px-5 pt-8 text-center text-[0.9375rem] text-mist-500">No one found for “{query}”.</p>
+      <p className="px-5 pt-8 text-center text-[0.9375rem] text-mist-500">
+        {t("noResultsFor")} “{query}”.
+      </p>
     );
   }
 
@@ -231,8 +263,8 @@ function UserResults({ query }: { query: string }) {
                   {profile.displayName || profile.username}
                 </p>
                 <p className="truncate text-[0.8125rem] text-mist-500">
-                  @{profile.username} · {profile.seriesCount} series · {profile.followersCount}{" "}
-                  {pluralize(profile.followersCount, "follower")}
+                  @{profile.username} · {profile.seriesCount} {t("series").toLowerCase()} · {profile.followersCount}{" "}
+                  {profile.followersCount === 1 ? t("follower").toLowerCase() : t("followers").toLowerCase()}
                 </p>
               </div>
               <FollowButton userId={profile.id} isFollowing={profile.isFollowing} />

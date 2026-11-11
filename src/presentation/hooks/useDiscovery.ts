@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { preferredRegion } from "@/domain/entities/WatchProviders";
-import type { SearchResult } from "@/domain/repositories/ITmdbRepository";
+import type { DiscoverSort, SearchResult } from "@/domain/repositories/ITmdbRepository";
 import { container } from "@/presentation/di/container";
 import { queryKeys } from "./queryKeys";
 
@@ -16,10 +16,14 @@ export function useTrending() {
   });
 }
 
-export function useInfiniteDiscover(genreId: number | null) {
+export function useInfiniteDiscover(
+  genreId: number | null,
+  sort: DiscoverSort = "popularity.desc"
+) {
   return useInfiniteQuery({
-    queryKey: queryKeys.discover(genreId),
-    queryFn: ({ pageParam }) => container.usecases.discoverByGenre.execute(genreId, pageParam),
+    queryKey: queryKeys.discover(genreId, sort),
+    queryFn: ({ pageParam }) =>
+      container.usecases.discoverByGenre.execute(genreId, pageParam, sort),
     initialPageParam: 1,
     getNextPageParam: nextPageParam,
     staleTime: 1000 * 60 * 30,
