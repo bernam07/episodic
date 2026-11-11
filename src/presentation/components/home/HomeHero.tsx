@@ -9,7 +9,17 @@ export function HomeHero({ series }: { series: SeriesSummary }) {
   const year = releaseYear(series);
 
   return (
-    <Link to={`/series/${series.tmdbId}`} className="group tap-none relative block overflow-hidden active:opacity-95">
+    <Link to={`/series/${series.tmdbId}`} className="group tap-none relative block active:opacity-95">
+      <div className="ambient-cinema-glow pointer-events-none absolute -inset-x-4 -top-4 -bottom-10 -z-10 opacity-90 blur-2xl" />
+      {backdrop ? (
+        <img
+          src={backdrop}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-4 -bottom-6 h-48 w-[calc(100%-2rem)] -z-10 object-cover opacity-35 blur-3xl saturate-150"
+        />
+      ) : null}
+
       <div className="relative h-[280px] w-full overflow-hidden bg-ink-900 md:h-[380px] md:rounded-[20px] md:ring-1 md:ring-white/10 md:ring-inset md:shadow-2xl md:shadow-black/70">
         {backdrop ? (
           <img

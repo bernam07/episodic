@@ -387,14 +387,30 @@ function FavoriteItemCard({
 }) {
   const toggleFav = useToggleFavorite(item.seriesId);
   const pinned = rank !== null;
+  const podiumRing =
+    rank === 0
+      ? "ring-2 ring-accent-500/80 shadow-[0_8px_24px_-4px_rgba(239,51,64,0.38)] rounded-[12px]"
+      : rank === 1
+        ? "ring-1 ring-[#38bdf8]/60 shadow-[0_6px_18px_-4px_rgba(56,189,248,0.24)] rounded-[12px]"
+        : rank === 2
+          ? "ring-1 ring-[#f59e0b]/55 shadow-[0_6px_18px_-4px_rgba(245,158,11,0.22)] rounded-[12px]"
+          : "";
+  const podiumBadgeClass =
+    rank === 0
+      ? "border-accent-400/60 bg-accent-500 text-white"
+      : rank === 1
+        ? "border-[#38bdf8]/50 bg-[#0b1926]/90 text-[#38bdf8]"
+        : "border-[#f59e0b]/50 bg-[#231808]/90 text-[#fbbf24]";
 
   return (
     <div className="relative">
       <Link to={`/series/${item.tmdbId}`} className="tap-none group block active:opacity-75">
-        <div className="relative">
+        <div className={`relative ${podiumRing}`}>
           <SeriesPoster path={item.posterPath} alt={item.name} />
           {pinned ? (
-            <span className="ios-material absolute top-2 left-2 flex h-5 min-w-5 items-center justify-center rounded-[6px] border border-white/20 px-1.5 text-[0.6875rem] font-extrabold tabular-nums text-white shadow-sm">
+            <span
+              className={`absolute top-2 left-2 flex h-5 min-w-5 items-center justify-center rounded-[6px] border px-1.5 text-[0.6875rem] font-extrabold tabular-nums shadow-md ${podiumBadgeClass}`}
+            >
               #{rank + 1}
             </span>
           ) : null}
@@ -553,36 +569,92 @@ function Favorites() {
       </div>
 
       {organizing ? (
-        <p className="mb-3 text-[0.75rem] text-mist-400">
-          Pin up to 3 series to showcase at the top of your Favorites and reorder them.
-        </p>
-      ) : null}
+        <>
+          <p className="mb-3 text-[0.75rem] text-mist-400">
+            Pin up to 3 series to showcase at the top of your Favorites and reorder them.
+          </p>
+          <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
+            {favorites.map((item) => {
+              const rank = pinnedIndex.has(item.seriesId) ? (pinnedIndex.get(item.seriesId) ?? null) : null;
+              return (
+                <FavoriteItemCard
+                  key={item.seriesId}
+                  item={item}
+                  rank={rank}
+                  organizing={organizing}
+                  hasReview={reviewedSeriesIds.has(item.seriesId)}
+                  canPinMore={pinnedCount < 3}
+                  pinPending={setPinned.isPending}
+                  reorderPending={reorder.isPending}
+                  onTogglePin={() =>
+                    setPinned.mutate({ seriesId: item.seriesId, pinned: rank === null })
+                  }
+                  onMove={
+                    rank !== null && pinnedCount > 1
+                      ? (direction) => move(rank, direction)
+                      : undefined
+                  }
+                />
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <>
+          {pinnedList.length > 0 ? (
+            <div className="mb-4 rounded-[18px] border border-white/[0.08] bg-gradient-to-b from-accent-500/[0.08] via-ink-850/95 to-ink-900 p-3.5">
+              <div className="mb-2.5 flex items-center justify-between">
+                <span className="text-[0.6875rem] font-extrabold tracking-[0.06em] text-accent-400 uppercase">
+                  {t("top3Showcase")}
+                </span>
+                <span className="text-[0.6875rem] font-semibold tabular-nums text-mist-500">
+                  {pinnedList.length}/3
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {pinnedList.slice(0, 3).map((item, idx) => (
+                  <FavoriteItemCard
+                    key={item.seriesId}
+                    item={item}
+                    rank={idx}
+                    organizing={false}
+                    hasReview={reviewedSeriesIds.has(item.seriesId)}
+                    canPinMore={pinnedCount < 3}
+                    pinPending={setPinned.isPending}
+                    reorderPending={reorder.isPending}
+                    onTogglePin={() =>
+                      setPinned.mutate({ seriesId: item.seriesId, pinned: false })
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
 
-      <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
-        {(organizing ? favorites : favorites.slice(0, 6)).map((item) => {
-          const rank = pinnedIndex.has(item.seriesId) ? (pinnedIndex.get(item.seriesId) ?? null) : null;
-          return (
-            <FavoriteItemCard
-              key={item.seriesId}
-              item={item}
-              rank={rank}
-              organizing={organizing}
-              hasReview={reviewedSeriesIds.has(item.seriesId)}
-              canPinMore={pinnedCount < 3}
-              pinPending={setPinned.isPending}
-              reorderPending={reorder.isPending}
-              onTogglePin={() =>
-                setPinned.mutate({ seriesId: item.seriesId, pinned: rank === null })
-              }
-              onMove={
-                rank !== null && pinnedCount > 1
-                  ? (direction) => move(rank, direction)
-                  : undefined
-              }
-            />
-          );
-        })}
-      </div>
+          {favorites.filter((item) => !item.favoritePinnedAt).length > 0 ? (
+            <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
+              {favorites
+                .filter((item) => !item.favoritePinnedAt)
+                .slice(0, pinnedList.length > 0 ? 6 : 6)
+                .map((item) => (
+                  <FavoriteItemCard
+                    key={item.seriesId}
+                    item={item}
+                    rank={null}
+                    organizing={false}
+                    hasReview={reviewedSeriesIds.has(item.seriesId)}
+                    canPinMore={pinnedCount < 3}
+                    pinPending={setPinned.isPending}
+                    reorderPending={reorder.isPending}
+                    onTogglePin={() =>
+                      setPinned.mutate({ seriesId: item.seriesId, pinned: true })
+                    }
+                  />
+                ))}
+            </div>
+          ) : null}
+        </>
+      )}
     </section>
   );
 }

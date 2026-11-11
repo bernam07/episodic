@@ -219,6 +219,16 @@ export function SeriesDetailScreen() {
   return (
     <>
       <div className="relative">
+        <div className="ambient-cinema-glow pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px]" />
+        {backdrop ? (
+          <img
+            src={backdrop}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-12 -z-10 h-[420px] w-full object-cover opacity-30 blur-3xl saturate-150"
+          />
+        ) : null}
+
         <div className="relative h-[320px] w-full overflow-hidden bg-ink-900 md:h-[400px]">
           {backdrop ? (
             <img src={backdrop} alt="" className="size-full object-cover opacity-75" />

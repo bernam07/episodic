@@ -99,6 +99,15 @@
   box-shadow: 0 2px 10px rgb(239 51 64 / 0.24);
 }
 
+@utility ambient-cinema-glow {
+  background: radial-gradient(
+    circle at 50% 18% var(--in-oklab),
+    rgb(239 51 64 / 0.24) 0%,
+    rgb(56 189 248 / 0.08) 44%,
+    transparent 75%
+  );
+}
+
 @keyframes grow-x {
   from {
     transform: scaleX(0);
