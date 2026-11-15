@@ -15,7 +15,7 @@ import { DiarySection } from "@/presentation/components/social/DiarySection";
 import { EditProfileSheet } from "@/presentation/components/social/EditProfileSheet";
 import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
 import { SettingsSheet } from "@/presentation/components/social/SettingsSheet";
-import { Duration, InlineStat } from "@/presentation/components/stats/StatsPrimitives";
+import { Duration } from "@/presentation/components/stats/StatsPrimitives";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { Spinner } from "@/presentation/components/ui/Spinner";
 import { useAuth } from "@/presentation/hooks/useAuth";
@@ -30,34 +30,10 @@ import {
 } from "@/presentation/hooks/useTracking";
 import { useI18n } from "@/presentation/i18n/I18nProvider";
 
-type ProfileTab = "overview" | "watchlist" | "reviews" | "lists" | "diary";
+type ProfileTab = "overview" | "lists" | "diary" | "reviews";
 
-const GENRE_BAR_COLORS = ["bg-accent-500", "bg-[#3b82f6]", "bg-[#f59e0b]"];
-const GENRE_ICON_COLORS = ["text-accent-400", "text-[#60a5fa]", "text-[#fbbf24]"];
-
-function GenreSvgIcon({ index }: { index: number }) {
-  const color = GENRE_ICON_COLORS[index % GENRE_ICON_COLORS.length];
-  if (index === 0) {
-    return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`size-3.5 shrink-0 ${color}`}>
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  if (index === 1) {
-    return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`size-3.5 shrink-0 ${color}`}>
-        <rect x="2" y="3" width="20" height="14" rx="2" />
-        <path d="M8 21h8M12 17v4" strokeLinecap="round" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`size-3.5 shrink-0 ${color}`}>
-      <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V5z" />
-    </svg>
-  );
-}
+const GENRE_BAR_COLORS = ["bg-accent-500", "bg-[#38bdf8]", "bg-[#f59e0b]"];
+const GENRE_DOT_COLORS = ["bg-accent-500", "bg-[#38bdf8]", "bg-[#f59e0b]"];
 
 function Header({
   onOpenSettings,
@@ -90,15 +66,14 @@ function Header({
 
   const tabs: { id: ProfileTab; label: string }[] = [
     { id: "overview", label: t("overviewTab") },
-    { id: "watchlist", label: t("watchlistTab") },
-    { id: "reviews", label: t("reviews") },
     { id: "lists", label: t("listsTab") },
     { id: "diary", label: t("activityTab") },
+    { id: "reviews", label: t("reviews") },
   ];
 
   return (
     <header className="border-b border-white/[0.08]">
-      <div className="relative h-[156px] w-full overflow-hidden bg-gradient-to-br from-accent-600/25 via-ink-900 to-ink-950 md:h-[188px]">
+      <div className="relative h-[148px] w-full overflow-hidden bg-gradient-to-br from-accent-600/25 via-ink-900 to-ink-950 md:h-[176px]">
         {bannerUrl ? (
           <img src={bannerUrl} alt="" className="size-full object-cover opacity-65" />
         ) : null}
@@ -152,29 +127,22 @@ function Header({
               type="button"
               onClick={() => setEditOpen(true)}
               aria-label={t("editProfile")}
-              className="tap-none flex min-h-[36px] items-center gap-1.5 rounded-[10px] bg-accent-500 px-4 text-[0.8125rem] font-bold text-white shadow-[0_2px_10px_rgba(239,51,64,0.3)] transition-opacity hover:bg-accent-400 active:opacity-80"
+              className="tap-none flex min-h-[34px] items-center gap-1.5 rounded-[10px] border border-white/15 bg-ink-850 px-3.5 text-[0.75rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
-                <path
-                  d="M4 20l4.3-.9L19.6 7.8a1.5 1.5 0 0 0 0-2.1l-1.3-1.3a1.5 1.5 0 0 0-2.1 0L4.9 15.7z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
               {t("editProfile")}
             </button>
           </div>
         </div>
 
         <div className="mt-3">
-          <h1 className="truncate text-[1.375rem] font-extrabold tracking-[-0.025em] text-white">
+          <h1 className="truncate text-[1.3125rem] font-extrabold tracking-[-0.025em] text-white">
             {profile?.displayName || profile?.username || t("profile")}
           </h1>
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[0.8125rem] text-mist-500">
             {profile ? <span>@{profile.username}</span> : null}
             {user?.email ? (
               <>
-                <span>•</span>
+                <span>·</span>
                 <span className="truncate">{user.email}</span>
               </>
             ) : null}
@@ -182,10 +150,10 @@ function Header({
         </div>
 
         {profile?.bio ? (
-          <p className="mt-2.5 text-[0.875rem] leading-relaxed whitespace-pre-wrap text-mist-300">{profile.bio}</p>
+          <p className="mt-2 text-[0.875rem] leading-relaxed whitespace-pre-wrap text-mist-300">{profile.bio}</p>
         ) : null}
 
-        <div className="mt-4 flex items-center divide-x divide-white/[0.12] text-[0.8125rem]">
+        <div className="mt-3.5 flex items-center divide-x divide-white/[0.1] text-[0.8125rem]">
           <div className="pr-4">
             <strong className="font-bold tabular-nums text-white">{seriesCount}</strong>{" "}
             <span className="text-mist-400">{t("series")}</span>
@@ -253,7 +221,7 @@ function TasteProfileAndStats() {
   if (isLoading) {
     return (
       <section className="mt-5 px-5">
-        <Skeleton className="h-44 w-full rounded-[18px]" />
+        <Skeleton className="h-32 w-full rounded-[16px]" />
       </section>
     );
   }
@@ -262,7 +230,7 @@ function TasteProfileAndStats() {
   const stats = computeLibraryStats(library);
   const insights = computeLibraryInsights(library);
   const topThreeGenres = insights.topGenres.slice(0, 3);
-  const maxGenreCount = topThreeGenres[0]?.count ?? 1;
+  const totalTopGenres = topThreeGenres.reduce((sum, entry) => sum + entry.count, 0) || 1;
   const watchTimeMinutes = library.reduce(
     (total, item) => total + item.watchedEpisodes * item.episodeRuntime,
     0
@@ -270,82 +238,86 @@ function TasteProfileAndStats() {
 
   return (
     <section className="mt-5 px-5">
-      <div className="mb-2.5 flex items-center justify-between">
-        <h2 className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
-          {t("tasteProfile")}
-        </h2>
-        <div className="flex items-center gap-3">
-          {streak && streak > 0 ? (
-            <span className="flex items-center gap-1 text-[0.8125rem] font-bold text-[#ff9f0a]" title={`${streak}-day check-in streak`}>
-              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5">
-                <path d="M12 2c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1 0-2-1-3 2 1 4 4 4 8a8 8 0 0 1-16 0c0-3 2-5 3-7 1 2 2 2 3 1 0-2-1-3-1-5z" />
-              </svg>
-              {streak}
-            </span>
-          ) : null}
-          <Link
-            to="/stats"
-            className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-3 py-1 text-[0.75rem] font-semibold text-mist-200 transition-colors hover:bg-ink-800 hover:text-white active:opacity-70"
-          >
-            {t("allStats")}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
-              <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Link>
-        </div>
-      </div>
-
-      <div className="rounded-[18px] border border-white/[0.08] bg-ink-850 p-3.5">
-        {topThreeGenres.length > 0 ? (
-          <div className="mb-3 grid grid-cols-3 gap-2">
-            {topThreeGenres.map((entry, idx) => {
-              const pct = Math.min(Math.round((entry.count / Math.max(maxGenreCount, 1)) * 100), 100);
-              return (
-                <div
-                  key={entry.genre}
-                  className="min-w-0 rounded-[12px] border border-white/[0.06] bg-ink-900 p-2.5 sm:p-3"
-                >
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <GenreSvgIcon index={idx} />
-                    <span className="min-w-0 truncate text-[0.75rem] font-semibold text-mist-200">
-                      {entry.genre}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-[1.125rem] leading-none font-extrabold tabular-nums text-white">
-                    {pct}%
-                  </p>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
-                    <div
-                      className={`bar-grow-x h-full rounded-full ${GENRE_BAR_COLORS[idx % GENRE_BAR_COLORS.length]}`}
-                      style={{ width: `${Math.max(pct, 8)}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
-
-        <div className="rounded-[12px] border border-white/[0.06] bg-ink-900 px-4 py-3.5">
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="text-[0.8125rem] font-semibold text-mist-400">{t("episodesWatched")}</p>
-            <p className="text-[1.625rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums text-white">
+      <div className="rounded-[16px] border border-white/[0.08] bg-ink-850 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-[1.5rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums text-white">
               {stats.episodesWatched}
-            </p>
-          </div>
-          <div
-            className={`mt-3 grid gap-2 border-t border-white/[0.06] pt-3 ${
-              watchTimeMinutes > 0 ? "grid-cols-4" : "grid-cols-3"
-            }`}
-          >
-            <InlineStat value={stats.seriesTracked} label={t("series").toLowerCase()} />
-            <InlineStat value={stats.finished} label={t("finishedLabel")} />
-            <InlineStat value={stats.averageRating ?? "—"} label={t("avgRatingLabel")} />
+            </span>
+            <span className="text-[0.8125rem] text-mist-400">
+              {t("episodesWatched").toLowerCase()}
+            </span>
             {watchTimeMinutes > 0 ? (
-              <InlineStat value={<Duration minutes={watchTimeMinutes} />} label={t("watchedLabel")} />
+              <span className="text-[0.8125rem] text-mist-500">
+                · <Duration minutes={watchTimeMinutes} className="font-semibold text-mist-300" />
+              </span>
             ) : null}
           </div>
+
+          <div className="flex items-center gap-2.5">
+            {streak && streak > 0 ? (
+              <span className="flex items-center gap-1 text-[0.75rem] font-bold text-[#ff9f0a]">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5">
+                  <path d="M12 2c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1 0-2-1-3 2 1 4 4 4 8a8 8 0 0 1-16 0c0-3 2-5 3-7 1 2 2 2 3 1 0-2-1-3-1-5z" />
+                </svg>
+                {streak}
+              </span>
+            ) : null}
+            <Link
+              to="/stats"
+              className="tap-none inline-flex items-center gap-1 text-[0.75rem] font-semibold text-accent-400 hover:text-accent-300"
+            >
+              <span>{t("stats")}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
+                <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          </div>
         </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.75rem] text-mist-400">
+          <span>
+            <strong className="font-semibold tabular-nums text-white">{stats.seriesTracked}</strong> {t("series").toLowerCase()}
+          </span>
+          <span>
+            <strong className="font-semibold tabular-nums text-white">{stats.finished}</strong> {t("finishedLabel")}
+          </span>
+          {stats.averageRating ? (
+            <span>
+              <strong className="font-semibold tabular-nums text-star-500">★ {stats.averageRating}</strong> {t("avgRatingLabel")}
+            </span>
+          ) : null}
+        </div>
+
+        {topThreeGenres.length > 0 ? (
+          <div className="mt-3.5 border-t border-white/[0.06] pt-3">
+            <div className="flex h-1.5 w-full gap-0.5 overflow-hidden rounded-full bg-white/[0.08]">
+              {topThreeGenres.map((entry, idx) => {
+                const share = Math.round((entry.count / totalTopGenres) * 100);
+                return (
+                  <div
+                    key={entry.genre}
+                    className={`bar-grow-x h-full ${GENRE_BAR_COLORS[idx % GENRE_BAR_COLORS.length]}`}
+                    style={{ width: `${Math.max(share, 10)}%` }}
+                  />
+                );
+              })}
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[0.75rem] text-mist-300">
+              {topThreeGenres.map((entry, idx) => {
+                const share = Math.round((entry.count / totalTopGenres) * 100);
+                return (
+                  <span key={entry.genre} className="inline-flex items-center gap-1.5">
+                    <span className={`size-2 rounded-full ${GENRE_DOT_COLORS[idx % GENRE_DOT_COLORS.length]}`} />
+                    <span className="truncate font-medium">{entry.genre}</span>
+                    <span className="tabular-nums text-mist-500">{share}%</span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -389,11 +361,11 @@ function FavoriteItemCard({
   const pinned = rank !== null;
   const podiumRing =
     rank === 0
-      ? "ring-2 ring-accent-500/80 shadow-[0_8px_24px_-4px_rgba(239,51,64,0.38)] rounded-[12px]"
+      ? "ring-2 ring-accent-500/80 shadow-[0_6px_20px_-4px_rgba(239,51,64,0.34)] rounded-[12px]"
       : rank === 1
-        ? "ring-1 ring-[#38bdf8]/60 shadow-[0_6px_18px_-4px_rgba(56,189,248,0.24)] rounded-[12px]"
+        ? "ring-1 ring-[#38bdf8]/60 rounded-[12px]"
         : rank === 2
-          ? "ring-1 ring-[#f59e0b]/55 shadow-[0_6px_18px_-4px_rgba(245,158,11,0.22)] rounded-[12px]"
+          ? "ring-1 ring-[#f59e0b]/55 rounded-[12px]"
           : "";
   const podiumBadgeClass =
     rank === 0
@@ -535,12 +507,9 @@ function Favorites() {
   if (favorites.length === 0) return null;
 
   return (
-    <section className="mt-7 px-5">
+    <section className="mt-6 px-5">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="flex items-center gap-1.5 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
-          <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 text-accent-500">
-            <path d="M12 21.23l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
-          </svg>
+        <h2 className="flex items-baseline gap-2 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
           <span>{t("favorites")}</span>
           <span className="text-[0.875rem] font-normal text-mist-500">{favorites.length}</span>
         </h2>
@@ -569,92 +538,36 @@ function Favorites() {
       </div>
 
       {organizing ? (
-        <>
-          <p className="mb-3 text-[0.75rem] text-mist-400">
-            Pin up to 3 series to showcase at the top of your Favorites and reorder them.
-          </p>
-          <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
-            {favorites.map((item) => {
-              const rank = pinnedIndex.has(item.seriesId) ? (pinnedIndex.get(item.seriesId) ?? null) : null;
-              return (
-                <FavoriteItemCard
-                  key={item.seriesId}
-                  item={item}
-                  rank={rank}
-                  organizing={organizing}
-                  hasReview={reviewedSeriesIds.has(item.seriesId)}
-                  canPinMore={pinnedCount < 3}
-                  pinPending={setPinned.isPending}
-                  reorderPending={reorder.isPending}
-                  onTogglePin={() =>
-                    setPinned.mutate({ seriesId: item.seriesId, pinned: rank === null })
-                  }
-                  onMove={
-                    rank !== null && pinnedCount > 1
-                      ? (direction) => move(rank, direction)
-                      : undefined
-                  }
-                />
-              );
-            })}
-          </div>
-        </>
-      ) : (
-        <>
-          {pinnedList.length > 0 ? (
-            <div className="mb-4 rounded-[18px] border border-white/[0.08] bg-gradient-to-b from-accent-500/[0.08] via-ink-850/95 to-ink-900 p-3.5">
-              <div className="mb-2.5 flex items-center justify-between">
-                <span className="text-[0.6875rem] font-extrabold tracking-[0.06em] text-accent-400 uppercase">
-                  {t("top3Showcase")}
-                </span>
-                <span className="text-[0.6875rem] font-semibold tabular-nums text-mist-500">
-                  {pinnedList.length}/3
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                {pinnedList.slice(0, 3).map((item, idx) => (
-                  <FavoriteItemCard
-                    key={item.seriesId}
-                    item={item}
-                    rank={idx}
-                    organizing={false}
-                    hasReview={reviewedSeriesIds.has(item.seriesId)}
-                    canPinMore={pinnedCount < 3}
-                    pinPending={setPinned.isPending}
-                    reorderPending={reorder.isPending}
-                    onTogglePin={() =>
-                      setPinned.mutate({ seriesId: item.seriesId, pinned: false })
-                    }
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null}
+        <p className="mb-3 text-[0.75rem] text-mist-400">
+          Pin up to 3 series to showcase at the top of your Favorites and reorder them.
+        </p>
+      ) : null}
 
-          {favorites.filter((item) => !item.favoritePinnedAt).length > 0 ? (
-            <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
-              {favorites
-                .filter((item) => !item.favoritePinnedAt)
-                .slice(0, pinnedList.length > 0 ? 6 : 6)
-                .map((item) => (
-                  <FavoriteItemCard
-                    key={item.seriesId}
-                    item={item}
-                    rank={null}
-                    organizing={false}
-                    hasReview={reviewedSeriesIds.has(item.seriesId)}
-                    canPinMore={pinnedCount < 3}
-                    pinPending={setPinned.isPending}
-                    reorderPending={reorder.isPending}
-                    onTogglePin={() =>
-                      setPinned.mutate({ seriesId: item.seriesId, pinned: true })
-                    }
-                  />
-                ))}
-            </div>
-          ) : null}
-        </>
-      )}
+      <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
+        {(organizing ? favorites : favorites.slice(0, 6)).map((item) => {
+          const rank = pinnedIndex.has(item.seriesId) ? (pinnedIndex.get(item.seriesId) ?? null) : null;
+          return (
+            <FavoriteItemCard
+              key={item.seriesId}
+              item={item}
+              rank={rank}
+              organizing={organizing}
+              hasReview={reviewedSeriesIds.has(item.seriesId)}
+              canPinMore={pinnedCount < 3}
+              pinPending={setPinned.isPending}
+              reorderPending={reorder.isPending}
+              onTogglePin={() =>
+                setPinned.mutate({ seriesId: item.seriesId, pinned: rank === null })
+              }
+              onMove={
+                rank !== null && pinnedCount > 1
+                  ? (direction) => move(rank, direction)
+                  : undefined
+              }
+            />
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -679,7 +592,7 @@ function RecentlyWatchedGrid() {
         </h2>
         <Link
           to="/library"
-          className="tap-none inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-850 px-3 py-1 text-[0.75rem] font-semibold text-mist-200 transition-colors hover:bg-ink-800 hover:text-white active:opacity-70"
+          className="tap-none inline-flex items-center gap-1 text-[0.75rem] font-semibold text-mist-400 hover:text-white"
         >
           {t("seeAll")}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
@@ -711,7 +624,7 @@ function OwnReviews() {
   const { data, isLoading } = useOwnReviews();
 
   return (
-    <section className="mt-7 px-5">
+    <section className="mt-5 px-5">
       <h2 className="mb-1 flex items-baseline gap-2 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
         <span>{t("yourReviews")}</span>
         {data && data.length > 0 ? <span className="text-[0.875rem] font-normal text-mist-500">{data.length}</span> : null}
@@ -752,24 +665,14 @@ export function ProfileScreen() {
           <TasteProfileAndStats />
           <Favorites />
           <RecentlyWatchedGrid />
-          <ListsSection userId={user?.id ?? null} isOwn />
-          <DiarySection userId={user?.id ?? null} />
-          <OwnReviews />
         </>
       ) : null}
-
-      {activeTab === "watchlist" ? (
-        <>
-          <Favorites />
-          <RecentlyWatchedGrid />
-        </>
-      ) : null}
-
-      {activeTab === "reviews" ? <OwnReviews /> : null}
 
       {activeTab === "lists" ? <ListsSection userId={user?.id ?? null} isOwn /> : null}
 
       {activeTab === "diary" ? <DiarySection userId={user?.id ?? null} /> : null}
+
+      {activeTab === "reviews" ? <OwnReviews /> : null}
 
       <div className="h-6" />
 

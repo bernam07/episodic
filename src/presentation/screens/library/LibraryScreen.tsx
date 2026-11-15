@@ -15,7 +15,6 @@ import { PosterGridSkeleton } from "@/presentation/components/ui/Skeleton";
 import { useLibrary } from "@/presentation/hooks/useTracking";
 import { useI18n } from "@/presentation/i18n/I18nProvider";
 import { useToast } from "@/presentation/providers/ToastProvider";
-import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 
 type Filter = DisplaySeriesStatus | "all";
 type ViewMode = "grid" | "list";
@@ -112,7 +111,7 @@ export function LibraryScreen() {
         ? `Rated ${ratingParam} ★`
         : t("sortRating")
       : view === "favorites"
-        ? "Favorites"
+        ? t("favorites")
         : t("rewatched");
 
   const [viewMode, setViewModeState] = useState<ViewMode>(() => {
@@ -128,6 +127,7 @@ export function LibraryScreen() {
   const navigate = useNavigate();
   const [sort, setSort] = useState<SortKey>("recent");
   const [search, setSearch] = useState("");
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   const filterLabels: Record<Filter, string> = {
     all: t("all"),
@@ -198,11 +198,9 @@ export function LibraryScreen() {
       const q = search.trim().toLowerCase();
       result = result.filter((item) => item.name.toLowerCase().includes(q));
     }
-    if (filter !== "all" || focused) {
-      result = [...result].sort(SORT_FNS[sort]);
-    }
+    result = [...result].sort(SORT_FNS[sort]);
     return result;
-  }, [data, filter, view, ratingParam, focused, genreParam, search, sort]);
+  }, [data, filter, view, ratingParam, genreParam, search, sort]);
 
   function setFilter(next: Filter) {
     const params: Record<string, string> = {};
@@ -222,169 +220,199 @@ export function LibraryScreen() {
     setSearchParams({}, { replace: true });
   }
 
+  const hasActiveFilters = Boolean(search.trim()) || Boolean(genreParam) || sort !== "recent";
+
   return (
     <>
-      <ScreenHeader
-        title={t("library")}
-        subtitle={data && data.length > 0 ? `${data.length} ${t("series")}` : undefined}
-      />
-
-      <div className="ios-material sticky top-0 z-20 px-5 pt-2.5 pb-2">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              className="pointer-events-none absolute top-1/2 left-3.5 size-[17px] -translate-y-1/2 text-mist-500"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
-            </svg>
-            <input
-              type="search"
-              inputMode="search"
-              autoCapitalize="none"
-              autoCorrect="off"
-              placeholder={t("searchLibraryPlaceholder")}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="w-full rounded-[12px] border border-white/[0.08] bg-ink-850 py-2.5 pr-4 pl-10 text-[0.9375rem] text-white placeholder:text-mist-500 transition-colors focus:border-accent-500 focus:bg-ink-800 focus:outline-none"
-            />
+      <div className="ios-material sticky top-0 z-20 border-b border-white/[0.08] pt-[calc(env(safe-area-inset-top)+0.625rem)]">
+        <div className="flex items-center justify-between gap-3 px-5 pb-2.5">
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-[1.375rem] font-extrabold tracking-[-0.025em] text-white">
+              {t("library")}
+            </h1>
+            {data && data.length > 0 ? (
+              <span className="text-[0.8125rem] font-semibold tabular-nums text-mist-500">
+                {data.length}
+              </span>
+            ) : null}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-            aria-label={viewMode === "grid" ? t("listView") : t("gridView")}
-            title={viewMode === "grid" ? t("listView") : t("gridView")}
-            className="tap-none flex size-[42px] shrink-0 items-center justify-center rounded-[12px] border border-white/[0.08] bg-ink-850 text-white transition-opacity active:opacity-70 hover:bg-ink-800"
-          >
-            {viewMode === "grid" ? (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
-                <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" />
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setToolsOpen((open) => !open)}
+              aria-expanded={toolsOpen}
+              className={`tap-none relative inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-[0.75rem] font-semibold transition-colors ${
+                toolsOpen || hasActiveFilters
+                  ? "border-accent-500/40 bg-accent-500/15 text-white"
+                  : "border-white/[0.08] bg-ink-850 text-mist-200 hover:bg-ink-800 hover:text-white"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-accent-400">
+                <path d="M4 6h16M7 12h10M10 18h4" strokeLinecap="round" />
               </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
-                <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+              <span>{t("filtersAndSort")}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+              aria-label={viewMode === "grid" ? t("listView") : t("gridView")}
+              title={viewMode === "grid" ? t("listView") : t("gridView")}
+              className="tap-none flex size-9 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-ink-850 text-white transition-opacity active:opacity-70 hover:bg-ink-800"
+            >
+              {viewMode === "grid" ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                  <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                  <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                  <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                </svg>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={surpriseMe}
+              disabled={!data || data.length === 0}
+              aria-label={t("surpriseMe")}
+              title={t("surpriseMe")}
+              className="tap-none flex size-9 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-ink-850 text-white transition-opacity active:opacity-70 hover:bg-ink-800 disabled:opacity-40"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                <rect x="3" y="3" width="18" height="18" rx="4" />
+                <circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="8.5" cy="15.5" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="15.5" cy="15.5" r="1.2" fill="currentColor" stroke="none" />
               </svg>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={surpriseMe}
-            disabled={!data || data.length === 0}
-            aria-label={t("surpriseMe")}
-            title={t("surpriseMe")}
-            className="tap-none flex size-[42px] shrink-0 items-center justify-center rounded-[12px] border border-white/[0.08] bg-ink-850 text-white transition-opacity active:opacity-70 hover:bg-ink-800 disabled:opacity-40"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[19px]">
-              <rect x="3" y="3" width="18" height="18" rx="4" />
-              <circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
-              <circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
-              <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
-              <circle cx="8.5" cy="15.5" r="1.2" fill="currentColor" stroke="none" />
-              <circle cx="15.5" cy="15.5" r="1.2" fill="currentColor" stroke="none" />
-            </svg>
-          </button>
+            </button>
+          </div>
         </div>
-      </div>
 
-      {focused ? (
-        <div className="ios-material sticky top-[56px] z-20 border-b border-white/[0.08] px-5 pb-3.5">
-          <button
-            type="button"
-            onClick={clearView}
-            className="tap-none inline-flex items-center gap-1.5 rounded-full bg-accent-500/15 px-3.5 py-1.5 text-[0.8125rem] font-semibold text-accent-400 transition-opacity active:opacity-70"
-          >
-            {focusLabel}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
-              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-      ) : (
-        <div className="ios-material no-scrollbar sticky top-[56px] z-20 flex gap-6 overflow-x-auto border-b border-white/[0.08] px-5">
-          {FILTERS.map((value) => {
-            const active = filter === value;
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setFilter(value)}
-                className={`tap-none relative flex shrink-0 items-center gap-1.5 py-2.5 text-[0.875rem] font-semibold transition-colors ${
-                  active ? "text-white" : "text-mist-500 hover:text-mist-300"
-                }`}
+        {toolsOpen || hasActiveFilters ? (
+          <div className="space-y-2.5 border-t border-white/[0.06] bg-ink-900/90 px-5 py-3">
+            <div className="relative">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-mist-500"
               >
-                {filterLabels[value]}
-                <span
-                  className={`text-[0.75rem] tabular-nums ${
-                    active ? "text-mist-300" : "text-mist-500"
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
+              </svg>
+              <input
+                type="search"
+                inputMode="search"
+                autoCapitalize="none"
+                autoCorrect="off"
+                placeholder={t("searchLibraryPlaceholder")}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="w-full rounded-[10px] border border-white/[0.08] bg-ink-950 py-2 pr-4 pl-9 text-[0.875rem] text-white placeholder:text-mist-500 focus:border-accent-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[0.75rem] font-medium text-mist-500">{t("sortBy")}</span>
+              <div className="flex flex-wrap gap-1">
+                {(Object.keys(sortLabels) as SortKey[]).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSort(key)}
+                    className={`tap-none rounded-full px-2.5 py-1 text-[0.75rem] font-semibold transition-colors ${
+                      sort === key ? "bg-white text-black" : "bg-ink-850 text-mist-400 hover:text-white"
+                    }`}
+                  >
+                    {sortLabels[key]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {!focused && allGenres.length > 0 ? (
+              <div className="no-scrollbar flex gap-1.5 overflow-x-auto pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setGenre(null)}
+                  className={`tap-none shrink-0 rounded-full px-3 py-1 text-[0.75rem] font-semibold transition-colors ${
+                    !genreParam
+                      ? "bg-accent-500 text-white"
+                      : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:text-white"
                   }`}
                 >
-                  {counts[value]}
-                </span>
-                {active ? (
-                  <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-white" />
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      )}
+                  {t("allGenres")}
+                </button>
+                {allGenres.map((genre) => (
+                  <button
+                    key={genre}
+                    type="button"
+                    onClick={() => setGenre(genreParam === genre ? null : genre)}
+                    className={`tap-none shrink-0 rounded-full px-3 py-1 text-[0.75rem] font-semibold transition-colors ${
+                      genreParam === genre
+                        ? "bg-accent-500 text-white"
+                        : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:text-white"
+                    }`}
+                  >
+                    {genre}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
-      {!focused && allGenres.length > 0 ? (
-        <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 pt-3 pb-4">
-          <button
-            type="button"
-            onClick={() => setGenre(null)}
-            className={`tap-none shrink-0 rounded-full px-3.5 py-1.5 text-[0.75rem] font-semibold transition-colors ${
-              !genreParam
-                ? "bg-accent-500 text-white"
-                : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:bg-ink-800 hover:text-white"
-            }`}
-          >
-            {t("allGenres")}
-          </button>
-          {allGenres.map((genre) => (
+        {focused ? (
+          <div className="px-5 pb-3">
             <button
-              key={genre}
               type="button"
-              onClick={() => setGenre(genreParam === genre ? null : genre)}
-              className={`tap-none shrink-0 rounded-full px-3.5 py-1.5 text-[0.75rem] font-semibold transition-colors ${
-                genreParam === genre
-                  ? "bg-accent-500 text-white"
-                  : "border border-white/[0.07] bg-ink-850 text-mist-300 hover:bg-ink-800 hover:text-white"
-              }`}
+              onClick={clearView}
+              className="tap-none inline-flex items-center gap-1.5 rounded-full bg-accent-500/15 px-3.5 py-1.5 text-[0.8125rem] font-semibold text-accent-400 transition-opacity active:opacity-70"
             >
-              {genre}
+              {focusLabel}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              </svg>
             </button>
-          ))}
-        </div>
-      ) : null}
-
-      {(focused || filter !== "all") && visible.length > 1 ? (
-        <div className="flex items-center gap-1.5 px-5 pt-2 pb-4">
-          <span className="mr-1 text-[0.75rem] text-mist-500">{t("sortBy")}</span>
-          {(Object.keys(sortLabels) as SortKey[]).map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setSort(key)}
-              className={`tap-none rounded-full px-2.5 py-1 text-[0.75rem] font-medium transition-colors ${
-                sort === key ? "bg-white text-black" : "bg-ink-850 text-mist-400 active:bg-ink-700"
-              }`}
-            >
-              {sortLabels[key]}
-            </button>
-          ))}
-        </div>
-      ) : null}
+          </div>
+        ) : (
+          <div className="no-scrollbar flex gap-6 overflow-x-auto px-5">
+            {FILTERS.map((value) => {
+              const active = filter === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setFilter(value)}
+                  className={`tap-none relative flex shrink-0 items-center gap-1.5 py-2.5 text-[0.875rem] font-semibold transition-colors ${
+                    active ? "text-white" : "text-mist-500 hover:text-mist-300"
+                  }`}
+                >
+                  {filterLabels[value]}
+                  <span
+                    className={`text-[0.75rem] tabular-nums ${
+                      active ? "text-mist-300" : "text-mist-500"
+                    }`}
+                  >
+                    {counts[value]}
+                  </span>
+                  {active ? (
+                    <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-white" />
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {isLoading ? <PosterGridSkeleton count={12} /> : null}
 
@@ -403,18 +431,18 @@ export function LibraryScreen() {
 
       {!isLoading && (data?.length ?? 0) > 0 && visible.length === 0 ? (
         <p className="px-5 pt-8 text-center text-[0.9375rem] text-mist-500">
-          Nothing in {focused ? focusLabel : filterLabels[filter]} yet.
+          {t("noResultsFor")} {focused ? focusLabel : filterLabels[filter]}.
         </p>
       ) : null}
 
       {visible.length > 0 && filter === "all" && !focused ? (
-        <div className="space-y-7 px-5 pt-3">
+        <div className="space-y-7 px-5 pt-4">
           {DISPLAY_SERIES_STATUSES.map((status) => {
             const group = visible.filter((item) => resolveDisplayStatus(item) === status);
             if (group.length === 0) return null;
             return (
               <section key={status}>
-                <h2 className="mb-3 flex items-baseline gap-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
+                <h2 className="mb-3 flex items-baseline gap-2 text-[1.125rem] font-bold tracking-[-0.015em] text-white">
                   <span>{filterLabels[status]}</span>
                   <span className="text-[0.875rem] font-normal text-mist-500">{group.length}</span>
                 </h2>
@@ -448,7 +476,7 @@ export function LibraryScreen() {
       ) : null}
 
       {visible.length > 0 && (filter !== "all" || focused) ? (
-        <div className="px-5 pt-3">
+        <div className="px-5 pt-4">
           {viewMode === "grid" ? (
             <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
               {visible.map((item) => (

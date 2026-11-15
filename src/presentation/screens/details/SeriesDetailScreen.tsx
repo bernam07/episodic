@@ -46,6 +46,8 @@ import {
   useWatchedEpisodes,
 } from "@/presentation/hooks/useTracking";
 
+type DetailTab = "episodes" | "about" | "reviews";
+
 const STATUS_DOT_COLOR: Record<DisplaySeriesStatus, string> = {
   watching: "bg-accent-500",
   up_to_date: "bg-[#38bdf8]",
@@ -78,11 +80,14 @@ export function SeriesDetailScreen() {
   const tmdbId = Number(params.tmdbId);
   const { user } = useAuth();
 
+  const [activeTab, setActiveTab] = useState<DetailTab>("episodes");
   const [statusSheetOpen, setStatusSheetOpen] = useState(false);
   const [reviewSheetOpen, setReviewSheetOpen] = useState(false);
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
+  const [ratingDrawerOpen, setRatingDrawerOpen] = useState(false);
+  const [rewatchDrawerOpen, setRewatchDrawerOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<SeriesStatus | null>(null);
   const [selectedActor, setSelectedActor] = useState<{ id: number; name: string } | null>(null);
 
@@ -137,8 +142,10 @@ export function SeriesDetailScreen() {
   const watched = watchedIds ?? new Set<number>();
   const totalWatched = seasonProgress?.reduce((sum, season) => sum + season.watchedEpisodes, 0) ?? 0;
   const airedEpisodes = airedEpisodeCount(detail);
+  const targetTotal = airedEpisodes > 0 ? airedEpisodes : detail.numberOfEpisodes;
   const hasUnaired = hasUpcomingSeason(detail.seasonsMeta, detail.tmdbStatus);
   const isFavorite = tracking?.isFavorite ?? false;
+  const rewatchCount = tracking?.rewatchCount ?? 0;
   const fallbackTrailerUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     detail.name + " official trailer"
   )}`;
@@ -216,20 +223,29 @@ export function SeriesDetailScreen() {
     toggleSeason.mutate({ seasonNumber, episodes, watched: next });
   }
 
+  const metaParts: string[] = [];
+  if (year) metaParts.push(String(year));
+  metaParts.push(
+    `${detail.numberOfSeasons} ${detail.numberOfSeasons === 1 ? t("season").toLowerCase() : t("seasons").toLowerCase()}`
+  );
+  if (detail.genres.length > 0) {
+    metaParts.push(detail.genres.slice(0, 2).join(", "));
+  }
+
   return (
     <>
       <div className="relative">
-        <div className="ambient-cinema-glow pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px]" />
+        <div className="ambient-cinema-glow pointer-events-none absolute inset-x-0 top-0 -z-10 h-[440px]" />
         {backdrop ? (
           <img
             src={backdrop}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-12 -z-10 h-[420px] w-full object-cover opacity-30 blur-3xl saturate-150"
+            className="pointer-events-none absolute inset-x-0 top-8 -z-10 h-[360px] w-full object-cover opacity-30 blur-3xl saturate-150"
           />
         ) : null}
 
-        <div className="relative h-[320px] w-full overflow-hidden bg-ink-900 md:h-[400px]">
+        <div className="relative h-[248px] w-full overflow-hidden bg-ink-900 md:h-[320px]">
           {backdrop ? (
             <img src={backdrop} alt="" className="size-full object-cover opacity-75" />
           ) : null}
@@ -281,54 +297,16 @@ export function SeriesDetailScreen() {
           </div>
         </div>
 
-        <div className="relative -mt-32 flex items-end gap-4 px-5">
-          <SeriesPoster path={detail.posterPath} alt={detail.name} className="w-[108px] shrink-0 shadow-2xl shadow-black/90" />
-          <div className="min-w-0 flex-1 pb-1">
-            <h1 className="text-[1.5rem] leading-[1.15] font-extrabold tracking-[-0.025em] text-white">
-              {detail.name}
-              {year ? <span className="font-semibold text-mist-300"> ({year})</span> : null}
-            </h1>
-
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[0.75rem] font-semibold text-mist-300">
-              <span className="rounded-[4px] bg-[#f5c518] px-1.5 py-0.5 text-[0.6875rem] font-black tracking-[0.02em] text-black">
-                TMDB
-              </span>
-              {detail.voteAverage && detail.voteAverage > 0 ? (
-                <span className="font-bold tabular-nums text-white">
-                  {detail.voteAverage.toFixed(1)} <span className="font-normal text-mist-400">/ 10</span>
-                </span>
-              ) : null}
-              <span>•</span>
-              <span>
-                {detail.numberOfSeasons} {detail.numberOfSeasons === 1 ? t("season") : t("seasons")}
-              </span>
-              {year ? (
-                <>
-                  <span>•</span>
-                  <span>{year}</span>
-                </>
-              ) : null}
-            </div>
-
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[0.75rem] text-mist-400">
-              {detail.tmdbStatus ? (
-                <span className="rounded-[6px] border border-white/20 px-2 py-0.5 text-[0.6875rem] font-semibold text-mist-200">
-                  {detail.tmdbStatus}
-                </span>
-              ) : null}
-              {detail.genres.length > 0 ? (
-                <span className="truncate font-medium text-mist-300">
-                  {detail.genres.slice(0, 3).join(" • ")}
-                </span>
-              ) : null}
-            </div>
-
+        <div className="relative -mt-24 flex items-end gap-4 px-5">
+          <SeriesPoster
+            path={detail.posterPath}
+            alt={detail.name}
+            className="w-[88px] shrink-0 shadow-2xl shadow-black/90 sm:w-[100px]"
+          />
+          <div className="min-w-0 flex-1 pb-0.5">
             {nextAir ? (
-              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent-500/15 px-2.5 py-1 text-[0.6875rem] font-semibold text-accent-400">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+              <div className="mb-1.5 inline-flex items-center gap-1.5 text-[0.75rem] font-semibold text-[#38bdf8]">
+                <span className="size-1.5 rounded-full bg-[#38bdf8]" />
                 <span>
                   S{nextAir.seasonNumber}E{nextAir.episodeNumber} ·{" "}
                   {nextAir.days === 0
@@ -338,95 +316,167 @@ export function SeriesDetailScreen() {
                       : t("airsInDays", { days: nextAir.days })}
                 </span>
               </div>
+            ) : detail.tmdbStatus ? (
+              <div className="mb-1 inline-flex items-center gap-1.5 text-[0.75rem] font-medium text-mist-400">
+                <span className="size-1.5 rounded-full bg-mist-500" />
+                <span>{detail.tmdbStatus}</span>
+              </div>
             ) : null}
+
+            <h1 className="text-[1.375rem] leading-[1.15] font-extrabold tracking-[-0.025em] text-white sm:text-[1.5rem]">
+              {detail.name}
+            </h1>
+
+            <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[0.75rem] text-mist-400">
+              <span>{metaParts.join(" · ")}</span>
+              {detail.voteAverage && detail.voteAverage > 0 ? (
+                <span className="font-semibold tabular-nums text-white">
+                  · <span className="text-star-500">★</span> {detail.voteAverage.toFixed(1)}
+                </span>
+              ) : null}
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="px-5 pt-5">
-        {detail.trailerKey ? (
+      <div className="px-5 pt-4">
+        <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setTrailerOpen(true)}
-            aria-label={t("watchTrailer")}
-            className="tap-none flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[12px] bg-accent-500 px-5 text-[0.9375rem] font-bold text-white shadow-[0_4px_16px_rgba(239,51,64,0.32)] transition-all hover:bg-accent-400 active:opacity-85"
+            disabled={setStatus.isPending}
+            onClick={() => setStatusSheetOpen(true)}
+            className="tap-none flex min-h-[44px] flex-1 items-center justify-between gap-2.5 rounded-[12px] border border-white/[0.1] bg-ink-850 px-3.5 text-[0.875rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80 disabled:opacity-50"
           >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="size-4">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-            {t("watchTrailer")}
-          </button>
-        ) : (
-          <a
-            href={fallbackTrailerUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={t("watchTrailer")}
-            className="tap-none flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[12px] bg-accent-500 px-5 text-[0.9375rem] font-bold text-white shadow-[0_4px_16px_rgba(239,51,64,0.32)] transition-all hover:bg-accent-400 active:opacity-85"
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="size-4">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-            {t("watchTrailer")}
-          </a>
-        )}
-
-        <button
-          type="button"
-          disabled={setStatus.isPending}
-          onClick={() => setStatusSheetOpen(true)}
-          className="tap-none mt-2.5 flex min-h-[46px] w-full items-center justify-between gap-3 rounded-[12px] border border-white/[0.1] bg-ink-850 px-4 text-[0.9375rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80 disabled:opacity-50"
-        >
-          <span className="flex min-w-0 items-center gap-2.5">
-            {displayStatus ? (
-              <span className={`size-2.5 shrink-0 rounded-full ${STATUS_DOT_COLOR[displayStatus]}`} />
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-4 shrink-0 text-accent-400">
-                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-              </svg>
-            )}
-            <span className="truncate">
-              {displayStatus ? displayStatusLabels[displayStatus] : t("addToLibrary")}
+            <span className="flex min-w-0 items-center gap-2">
+              {displayStatus ? (
+                <span className={`size-2 shrink-0 rounded-full ${STATUS_DOT_COLOR[displayStatus]}`} />
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-4 shrink-0 text-accent-400">
+                  <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                </svg>
+              )}
+              <span className="truncate">
+                {displayStatus ? displayStatusLabels[displayStatus] : t("addToLibrary")}
+              </span>
+              {tracking && targetTotal > 0 ? (
+                <span className="shrink-0 text-[0.75rem] font-normal tabular-nums text-mist-500">
+                  · {totalWatched}/{targetTotal}
+                </span>
+              ) : null}
             </span>
-          </span>
 
-          <span className="flex shrink-0 items-center gap-1.5 text-[0.75rem] font-medium text-mist-400">
-            <span>{tracking ? t("changeStatus") : ""}</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 text-mist-400">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 shrink-0 text-mist-400">
               <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </span>
-        </button>
+          </button>
 
-        <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+          {detail.trailerKey ? (
+            <button
+              type="button"
+              onClick={() => setTrailerOpen(true)}
+              aria-label={t("watchTrailer")}
+              className="glow-accent-sm tap-none flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 rounded-[12px] bg-accent-500 px-4 text-[0.8125rem] font-bold text-white transition-all hover:bg-accent-400 active:opacity-85"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              <span>Trailer</span>
+            </button>
+          ) : (
+            <a
+              href={fallbackTrailerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t("watchTrailer")}
+              className="glow-accent-sm tap-none flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 rounded-[12px] bg-accent-500 px-4 text-[0.8125rem] font-bold text-white transition-all hover:bg-accent-400 active:opacity-85"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              <span>Trailer</span>
+            </a>
+          )}
+        </div>
+
+        <div className="mt-2.5 grid grid-cols-4 divide-x divide-white/[0.06] rounded-[12px] border border-white/[0.07] bg-ink-900/90 py-2">
           <button
             type="button"
-            onClick={() => setAddToListOpen(true)}
-            aria-label={t("myList")}
-            className="tap-none flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-ink-850 px-4 text-[0.875rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80"
+            aria-expanded={ratingDrawerOpen}
+            onClick={() => {
+              if (!seriesId) {
+                setStatusSheetOpen(true);
+                return;
+              }
+              setRatingDrawerOpen((open) => !open);
+              setRewatchDrawerOpen(false);
+            }}
+            className="tap-none flex flex-col items-center justify-center gap-0.5 py-0.5 text-center transition-opacity active:opacity-70"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 shrink-0 text-mist-300">
-              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-            </svg>
-            <span>{t("myList")}</span>
+            <span className="flex items-center gap-1 text-[0.8125rem] font-bold tabular-nums text-white">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 text-star-500">
+                <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
+              </svg>
+              {tracking?.rating ? tracking.rating.toFixed(1) : "—"}
+            </span>
+            <span className="text-[0.6875rem] font-medium text-mist-500">{t("rate")}</span>
           </button>
 
           <button
             type="button"
             onClick={() => (seriesId ? setReviewSheetOpen(true) : setStatusSheetOpen(true))}
-            className="tap-none flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-ink-850 px-4 text-[0.875rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80"
+            className="tap-none flex flex-col items-center justify-center gap-0.5 py-0.5 text-center transition-opacity active:opacity-70"
           >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 shrink-0 text-star-500">
-              <path d="M12 1.5l3.09 6.26L22 8.64l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 13.64 2 8.64l6.91-1.01L12 1.5z" />
-            </svg>
-            <span>
-              {tracking?.rating ? `${tracking.rating.toFixed(1)} / 5` : t("rate")}
+            <span className="relative flex h-[19px] items-center justify-center text-mist-200">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                <path d="M4 6h16M4 12h16M4 18h10" strokeLinecap="round" />
+              </svg>
+              {ownReview?.body ? (
+                <span className=" -top-0.5 -right-1.5 absolute size-1.5 rounded-full bg-accent-500" />
+              ) : null}
             </span>
+            <span className="text-[0.6875rem] font-medium text-mist-500">{t("reviews")}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAddToListOpen(true)}
+            className="tap-none flex flex-col items-center justify-center gap-0.5 py-0.5 text-center transition-opacity active:opacity-70"
+          >
+            <span className="flex h-[19px] items-center justify-center text-mist-200">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+              </svg>
+            </span>
+            <span className="text-[0.6875rem] font-medium text-mist-500">{t("myList")}</span>
+          </button>
+
+          <button
+            type="button"
+            aria-expanded={rewatchDrawerOpen}
+            disabled={bumpRewatch.isPending}
+            onClick={() => {
+              if (!tracking) {
+                setStatusSheetOpen(true);
+                return;
+              }
+              if (rewatchCount === 0) {
+                handleBumpRewatch(1);
+              } else {
+                setRewatchDrawerOpen((open) => !open);
+                setRatingDrawerOpen(false);
+              }
+            }}
+            className="tap-none flex flex-col items-center justify-center gap-0.5 py-0.5 text-center transition-opacity active:opacity-70 disabled:opacity-50"
+          >
+            <span className="text-[0.8125rem] font-bold tabular-nums text-white">
+              {rewatchCount > 0 ? `${rewatchCount}×` : "+1×"}
+            </span>
+            <span className="text-[0.6875rem] font-medium text-mist-500">{t("rewatch")}</span>
           </button>
         </div>
 
-        {seriesId ? (
-          <div className="mt-3.5 flex items-center justify-between rounded-[14px] border border-white/[0.08] bg-ink-850 p-3.5">
+        {seriesId && ratingDrawerOpen ? (
+          <div className="mt-2.5 flex items-center justify-between rounded-[12px] border border-white/[0.08] bg-ink-850 px-3.5 py-2.5">
             <RatingInput
               value={tracking?.rating ?? 0}
               onChange={(rating) => setRating.mutate(rating || null)}
@@ -434,112 +484,157 @@ export function SeriesDetailScreen() {
             <button
               type="button"
               onClick={() => setReviewSheetOpen(true)}
-              className="tap-none text-[0.8125rem] font-semibold text-accent-400 transition-opacity hover:text-accent-300 active:opacity-70"
+              className="tap-none text-[0.75rem] font-semibold text-accent-400 hover:text-accent-300"
             >
               {ownReview?.body ? t("editReview") : t("writeReview")}
             </button>
           </div>
         ) : null}
 
-        {tracking ? (
-          <div className="mt-3 flex items-center gap-3 rounded-[14px] border border-white/[0.08] bg-ink-850 px-4 py-3">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-mist-400">
-              <path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span className="min-w-0 flex-1 text-[0.875rem] text-mist-300">
-              {(tracking.rewatchCount ?? 0) > 0 ? (
-                <>
-                  {t("rewatched")} <span className="font-semibold text-white">{tracking.rewatchCount}×</span>
-                </>
-              ) : (
-                t("logRewatch")
-              )}
+        {tracking && rewatchDrawerOpen ? (
+          <div className="mt-2.5 flex items-center justify-between rounded-[12px] border border-white/[0.08] bg-ink-850 px-3.5 py-2.5">
+            <span className="text-[0.8125rem] text-mist-300">
+              {t("rewatched")} <strong className="font-bold text-white">{rewatchCount}×</strong>
             </span>
-            {(tracking.rewatchCount ?? 0) > 0 ? (
+            <div className="flex items-center gap-2">
+              {rewatchCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => handleBumpRewatch(-1)}
+                  disabled={bumpRewatch.isPending}
+                  aria-label="Remove a rewatch"
+                  className="tap-none flex size-7 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700 disabled:opacity-50"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+                    <path d="M5 12h14" strokeLinecap="round" />
+                  </svg>
+                </button>
+              ) : null}
               <button
                 type="button"
-                onClick={() => handleBumpRewatch(-1)}
+                onClick={() => handleBumpRewatch(1)}
                 disabled={bumpRewatch.isPending}
-                aria-label="Remove a rewatch"
-                className="tap-none flex size-8 items-center justify-center rounded-full bg-ink-800 text-mist-300 active:bg-ink-700 disabled:opacity-50"
+                aria-label="Add a rewatch"
+                className="tap-none flex size-7 items-center justify-center rounded-full bg-accent-500 text-white active:opacity-80 disabled:opacity-50"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
-                  <path d="M5 12h14" strokeLinecap="round" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+                  <path d="M12 5v14M5 12h14" strokeLinecap="round" />
                 </svg>
               </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => handleBumpRewatch(1)}
-              disabled={bumpRewatch.isPending}
-              aria-label="Add a rewatch"
-              className="tap-none flex size-8 items-center justify-center rounded-full bg-accent-500 text-white active:opacity-80 disabled:opacity-50"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
-                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-              </svg>
-            </button>
+            </div>
           </div>
         ) : null}
 
-        {detail.overview ? (
-          <p className="mt-4 text-[0.875rem] leading-relaxed text-mist-300">{detail.overview}</p>
-        ) : null}
+        <div className="mt-5 flex gap-6 border-b border-white/[0.08]">
+          {(
+            [
+              { id: "episodes", label: `${t("seasons")} (${detail.seasonsMeta.length})` },
+              { id: "about", label: t("aboutAndCast") },
+              {
+                id: "reviews",
+                label:
+                  reviews && reviews.length > 0
+                    ? `${t("reviews")} (${reviews.length})`
+                    : t("reviews"),
+              },
+            ] as { id: DetailTab; label: string }[]
+          ).map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`tap-none relative py-2.5 text-[0.875rem] font-semibold transition-colors ${
+                  active ? "text-white" : "text-mist-500 hover:text-mist-300"
+                }`}
+              >
+                {tab.label}
+                {active ? (
+                  <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-white" />
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-        <WatchProvidersSection tmdbId={tmdbId} />
-
-        <div className="mt-5">
+      {activeTab === "episodes" ? (
+        <div className="px-5 pt-4">
           <SeriesStateCard
             detail={detail}
             watchedEpisodes={totalWatched}
             status={tracking?.status ?? null}
           />
+
+          <section className="mt-4">
+            {!seriesId ? (
+              <p className="py-2 text-[0.8125rem] text-mist-500">
+                {t("addSeriesPrompt")}
+              </p>
+            ) : null}
+            <div>
+              {detail.seasonsMeta.map((season) => (
+                <SeasonAccordion
+                  key={season.seasonNumber}
+                  tmdbId={tmdbId}
+                  season={season}
+                  progress={seasonProgress?.find((item) => item.seasonNumber === season.seasonNumber)}
+                  watchedIds={watched}
+                  canTrack={!!seriesId}
+                  onToggleEpisode={handleToggleEpisode}
+                  onToggleSeason={handleToggleSeason}
+                />
+              ))}
+            </div>
+          </section>
         </div>
-      </div>
+      ) : null}
 
-      <SeriesCastRail cast={cast ?? []} onSelectActor={setSelectedActor} />
-
-      <div className="px-5">
-        <section className="mt-7">
-          <h2 className="mb-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">{t("seasons")}</h2>
-          {!seriesId ? (
-            <p className="py-3 text-[0.875rem] text-mist-500">
-              {t("addSeriesPrompt")}
-            </p>
-          ) : null}
-          <div>
-            {detail.seasonsMeta.map((season) => (
-              <SeasonAccordion
-                key={season.seasonNumber}
-                tmdbId={tmdbId}
-                season={season}
-                progress={seasonProgress?.find((item) => item.seasonNumber === season.seasonNumber)}
-                watchedIds={watched}
-                canTrack={!!seriesId}
-                onToggleEpisode={handleToggleEpisode}
-                onToggleSeason={handleToggleSeason}
-              />
-            ))}
+      {activeTab === "about" ? (
+        <div className="pt-4">
+          <div className="px-5">
+            {detail.overview ? (
+              <p className="text-[0.875rem] leading-relaxed text-mist-300">{detail.overview}</p>
+            ) : (
+              <p className="text-[0.875rem] text-mist-500">{t("noDescription")}</p>
+            )}
+            <WatchProvidersSection tmdbId={tmdbId} />
           </div>
-        </section>
 
-        <section className="mt-7">
-          <h2 className="mb-2 text-[1.1875rem] font-bold tracking-[-0.015em] text-white">{t("reviews")}</h2>
+          <SeriesCastRail cast={cast ?? []} onSelectActor={setSelectedActor} />
+          <MoreLikeThisRail tmdbId={tmdbId} />
+        </div>
+      ) : null}
+
+      {activeTab === "reviews" ? (
+        <div className="px-5 pt-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-[1rem] font-bold text-white">{t("reviews")}</h2>
+            {seriesId ? (
+              <button
+                type="button"
+                onClick={() => setReviewSheetOpen(true)}
+                className="tap-none rounded-full border border-white/10 bg-ink-850 px-3 py-1 text-[0.75rem] font-semibold text-white hover:bg-ink-800"
+              >
+                {ownReview?.body ? t("editReview") : t("writeReview")}
+              </button>
+            ) : null}
+          </div>
+
           {ratingSummary && ratingSummary.total > 0 ? (
-            <div className="mb-4 mt-2">
+            <div className="mb-4">
               <RatingSummaryCard summary={ratingSummary} />
             </div>
           ) : null}
+
           <ReviewList
             reviews={reviews ?? []}
             currentUserId={user?.id}
             emptyMessage={t("noReviewsYet")}
           />
-        </section>
-      </div>
-
-      <MoreLikeThisRail tmdbId={tmdbId} />
+        </div>
+      ) : null}
 
       {detail.trailerKey ? (
         <Sheet

@@ -27,7 +27,7 @@ function greeting(lang: "en" | "pt"): string {
   return "Good evening";
 }
 
-type HomeTab = "for_you" | "friends" | "trending" | "schedule";
+type DiscoverFeed = "for_you" | "trending" | "friends";
 
 export function HomeScreen() {
   const { language, t } = useI18n();
@@ -35,44 +35,33 @@ export function HomeScreen() {
   const { data: trending } = useTrending();
   const { data: unreadCount } = useUnreadCount();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<HomeTab>("for_you");
+  const [feed, setFeed] = useState<DiscoverFeed>("for_you");
   const featured = trending?.results[0];
   const greet = greeting(language);
 
-  const tabs: { id: HomeTab; label: string }[] = [
-    { id: "for_you", label: language === "pt" ? "Para Ti" : "For You" },
+  const feedOptions: { id: DiscoverFeed; label: string }[] = [
+    { id: "for_you", label: t("forYou") },
+    { id: "trending", label: t("trendingShort") },
     { id: "friends", label: t("friends") },
-    { id: "trending", label: language === "pt" ? "Em Alta" : "Trending" },
-    { id: "schedule", label: t("thisWeek") },
   ];
 
   return (
     <>
       <header className="ios-material sticky top-0 z-30 border-b border-white/[0.08] pt-[calc(env(safe-area-inset-top)+0.625rem)]">
-        <div className="flex items-center justify-between px-5 pb-2.5">
+        <div className="flex items-center justify-between px-5 pb-3">
           <div className="flex items-center gap-2.5">
             <BrandMark size="md" />
             <div>
-              <h1 className="text-[1.25rem] leading-none font-extrabold tracking-[-0.025em] text-white">
+              <h1 className="text-[1.1875rem] leading-none font-extrabold tracking-[-0.025em] text-white">
                 Episodic
               </h1>
-              <p className="mt-0.5 text-[0.6875rem] font-medium text-mist-500">
+              <p className="mt-0.5 text-[0.75rem] font-medium text-mist-500">
                 {profile ? `${greet}, ${profile.displayName || profile.username}` : greet}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Link
-              to="/search"
-              className="tap-none flex size-9 items-center justify-center rounded-full border border-white/[0.08] bg-ink-850 text-white transition-opacity active:opacity-70 hover:bg-ink-800"
-              aria-label={t("search")}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[17px]">
-                <circle cx="11" cy="11" r="7" />
-                <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
-              </svg>
-            </Link>
             <Link
               to="/calendar"
               className="tap-none flex size-9 items-center justify-center rounded-full border border-white/[0.08] bg-ink-850 text-white transition-opacity active:opacity-70 hover:bg-ink-800"
@@ -101,65 +90,44 @@ export function HomeScreen() {
             </button>
           </div>
         </div>
+      </header>
 
-        <div className="no-scrollbar flex gap-6 overflow-x-auto px-5">
-          {tabs.map((tab) => {
-            const active = activeTab === tab.id;
+      <UpNextRail />
+
+      {featured ? (
+        <div className="mt-6 md:px-5">
+          <HomeHero series={featured} />
+        </div>
+      ) : null}
+
+      <ThisWeekRail />
+
+      <div className="mt-7 flex items-center justify-between px-5">
+        <h2 className="text-[1.1875rem] font-bold tracking-[-0.015em] text-white">
+          {t("discover")}
+        </h2>
+        <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-ink-850 p-0.5">
+          {feedOptions.map((option) => {
+            const active = feed === option.id;
             return (
               <button
-                key={tab.id}
+                key={option.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`tap-none relative shrink-0 py-2.5 text-[0.875rem] font-semibold transition-colors ${
-                  active ? "text-white" : "text-mist-500 hover:text-mist-300"
+                onClick={() => setFeed(option.id)}
+                className={`tap-none rounded-full px-3 py-1 text-[0.75rem] font-semibold transition-colors ${
+                  active ? "bg-ink-700 text-white" : "text-mist-400 hover:text-white"
                 }`}
               >
-                {tab.label}
-                {active ? (
-                  <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-white" />
-                ) : null}
+                {option.label}
               </button>
             );
           })}
         </div>
-      </header>
+      </div>
 
-      {activeTab === "for_you" ? (
-        <>
-          {featured ? (
-            <div className="md:px-5 md:pt-4">
-              <HomeHero series={featured} />
-            </div>
-          ) : null}
-
-          <UpNextRail />
-          <ThisWeekRail />
-          <FriendsRail />
-          <RecommendationsRail />
-          <TrendingRail />
-        </>
-      ) : null}
-
-      {activeTab === "friends" ? <FriendsRail /> : null}
-
-      {activeTab === "trending" ? (
-        <>
-          {featured ? (
-            <div className="md:px-5 md:pt-4">
-              <HomeHero series={featured} />
-            </div>
-          ) : null}
-          <TrendingRail />
-          <RecommendationsRail />
-        </>
-      ) : null}
-
-      {activeTab === "schedule" ? (
-        <>
-          <UpNextRail />
-          <ThisWeekRail />
-        </>
-      ) : null}
+      {feed === "for_you" ? <RecommendationsRail /> : null}
+      {feed === "trending" ? <TrendingRail /> : null}
+      {feed === "friends" ? <FriendsRail /> : null}
 
       <NotificationSheet open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
     </>
