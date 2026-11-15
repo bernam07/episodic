@@ -10,7 +10,6 @@ import { useLibrary, useToggleEpisode } from "@/presentation/hooks/useTracking";
 import { queryKeys } from "@/presentation/hooks/queryKeys";
 import { container } from "@/presentation/di/container";
 import { useI18n } from "@/presentation/i18n/I18nProvider";
-import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 
 type View = "week" | "month";
 
@@ -257,40 +256,46 @@ export function CalendarScreen() {
 
   return (
     <>
-      <ScreenHeader
-        title={t("calendar")}
-        subtitle={
-          !isLoading && grouped.total > 0
-            ? `${grouped.total} ${t("episodes")}`
-            : undefined
-        }
-      />
+      <header className="ios-material sticky top-0 z-30 border-b border-white/[0.08] px-5 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-[1.25rem] font-extrabold tracking-[-0.025em] text-white">
+              {t("calendar")}
+            </h1>
+            {!isLoading && grouped.total > 0 ? (
+              <span className="text-[0.75rem] font-semibold tabular-nums text-mist-500">
+                {grouped.total} {t("episodes")}
+              </span>
+            ) : null}
+          </div>
 
-      <div className="ios-material sticky top-0 z-20 border-b border-white/[0.08] px-5 pt-2.5 pb-3">
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-[9px] bg-ink-850 p-[2px]">
+          <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-ink-850 p-0.5">
             {(["week", "month"] as View[]).map((value) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => switchView(value)}
-                className={`tap-none min-h-[30px] rounded-[7px] px-4 text-[0.8125rem] font-semibold transition-all duration-150 ${
+                className={`tap-none rounded-full px-3.5 py-1 text-[0.75rem] font-semibold transition-colors ${
                   view === value
-                    ? "bg-ink-700 text-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
-                    : "text-mist-400 active:text-mist-200"
+                    ? "bg-ink-700 text-white"
+                    : "text-mist-400 hover:text-white"
                 }`}
               >
                 {value === "week" ? t("week") : t("month")}
               </button>
             ))}
           </div>
+        </div>
 
-          <div className="ml-auto flex items-center gap-1.5">
+        <div className="mt-2.5 flex items-center justify-between gap-2">
+          <p className="text-[0.9375rem] font-bold tracking-[-0.015em] text-white capitalize">{label}</p>
+
+          <div className="flex items-center gap-1.5">
             {offset !== 0 ? (
               <button
                 type="button"
                 onClick={() => setOffset(0)}
-                className="tap-none mr-0.5 rounded-full border border-white/10 bg-ink-850 px-3 py-1.5 text-[0.75rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-75"
+                className="tap-none mr-0.5 rounded-full border border-white/10 bg-ink-850 px-3 py-1 text-[0.75rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-75"
               >
                 {t("today")}
               </button>
@@ -299,9 +304,9 @@ export function CalendarScreen() {
               type="button"
               onClick={() => setOffset((o) => o - 1)}
               aria-label="Previous"
-              className="tap-none flex size-8 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-75"
+              className="tap-none flex size-7 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-75"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                 <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
@@ -309,17 +314,15 @@ export function CalendarScreen() {
               type="button"
               onClick={() => setOffset((o) => o + 1)}
               aria-label="Next"
-              className="tap-none flex size-8 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-75"
+              className="tap-none flex size-7 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-75"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                 <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
           </div>
         </div>
-
-        <p className="mt-2.5 text-[1.0625rem] font-bold tracking-[-0.015em] text-white capitalize">{label}</p>
-      </div>
+      </header>
 
       {isLoading ? (
         <div className="flex h-40 items-center justify-center">

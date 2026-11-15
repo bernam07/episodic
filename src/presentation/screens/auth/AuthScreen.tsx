@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { toUserMessage } from "@/core/errors/AppError";
 import { isValidUsername } from "@/domain/usecases/auth/AuthUseCases";
@@ -17,8 +17,6 @@ const fieldClass =
 
 const fieldIconClass =
   "pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-mist-500";
-
-const iconClass = "size-5";
 
 const USER_ICON = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={fieldIconClass}>
@@ -40,41 +38,6 @@ const LOCK_ICON = (
     <path d="M8 11V8a4 4 0 0 1 8 0v3" strokeLinecap="round" />
   </svg>
 );
-
-const FEATURES: { label: string; icon: ReactNode }[] = [
-  {
-    label: "Track episodes",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={iconClass}>
-        <rect x="4" y="4" width="16" height="16" rx="3" />
-        <path d="M8 12.5l2.5 2.5L16 9.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    label: "Rate & review",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={iconClass}>
-        <path
-          d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: "Follow friends",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={iconClass}>
-        <circle cx="9" cy="8" r="3" />
-        <path d="M3 20c0-3.3 2.7-5.3 6-5.3s6 2 6 5.3" strokeLinecap="round" />
-        <path d="M16 5.3a3 3 0 0 1 0 5.6" strokeLinecap="round" />
-        <path d="M17.3 14.4c1.9.7 3.2 2.3 3.2 5.1" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-];
 
 const WALL_TILE_COUNT = 30;
 
@@ -118,21 +81,6 @@ function PosterWall({ posterPaths }: { posterPaths: string[] }) {
           <PosterGrid tiles={tiles} eager={false} />
         </div>
       </div>
-    </div>
-  );
-}
-
-function FeatureRow() {
-  return (
-    <div className="mb-7 flex items-start justify-between gap-3 border-b border-white/[0.08] pb-6">
-      {FEATURES.map((feature) => (
-        <div key={feature.label} className="flex flex-1 flex-col items-center gap-2 text-center">
-          <span className="flex size-9 items-center justify-center rounded-full bg-ink-850 text-accent-500">
-            {feature.icon}
-          </span>
-          <span className="text-[0.75rem] font-medium text-mist-400">{feature.label}</span>
-        </div>
-      ))}
     </div>
   );
 }
@@ -279,10 +227,8 @@ export function AuthScreen() {
         </div>
       </div>
 
-      <div className="pb-safe flex flex-1 flex-col justify-center px-6 pt-7 md:px-16">
+      <div className="pb-safe flex flex-1 flex-col justify-center px-6 pt-6 md:px-16">
         <div className="mx-auto w-full max-w-sm">
-          <FeatureRow />
-
           {mode === "forgot" ? (
             <>
               <button

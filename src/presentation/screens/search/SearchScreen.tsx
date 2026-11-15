@@ -12,7 +12,6 @@ import { useGenres, useInfiniteDiscover, useSearchSeries } from "@/presentation/
 import { useInfiniteScroll } from "@/presentation/hooks/useInfiniteScroll";
 import { useSearchProfiles } from "@/presentation/hooks/useSocial";
 import { useI18n } from "@/presentation/i18n/I18nProvider";
-import { ScreenHeader } from "@/presentation/layout/ScreenHeader";
 
 type Tab = "series" | "users";
 
@@ -364,10 +363,32 @@ export function SearchScreen() {
 
   return (
     <>
-      <ScreenHeader title={t("search")} />
+      <header className="ios-material sticky top-0 z-30 border-b border-white/[0.08] px-5 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-3">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-[1.25rem] font-extrabold tracking-[-0.025em] text-white">
+            {t("search")}
+          </h1>
 
-      <div className="ios-material sticky top-0 z-20 border-b border-white/[0.08] px-5 pt-2.5">
-        <div className="relative">
+          <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-ink-850 p-0.5">
+            {(["series", "users"] as Tab[]).map((value) => {
+              const active = tab === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setTab(value)}
+                  className={`tap-none rounded-full px-3.5 py-1 text-[0.75rem] font-semibold transition-colors ${
+                    active ? "bg-ink-700 text-white" : "text-mist-400 hover:text-white"
+                  }`}
+                >
+                  {value === "series" ? t("series") : t("people")}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="relative mt-2.5">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -392,7 +413,7 @@ export function SearchScreen() {
                 setRecentSearches(getRecentSearches());
               }
             }}
-            className="w-full rounded-[12px] border border-white/[0.08] bg-ink-850 py-2.5 pr-9 pl-10 text-[0.9375rem] text-white placeholder:text-mist-500 transition-colors focus:border-accent-500 focus:bg-ink-800 focus:outline-none"
+            className="w-full rounded-[12px] border border-white/[0.08] bg-ink-850 py-2 pr-9 pl-10 text-[0.9375rem] text-white placeholder:text-mist-500 transition-colors focus:border-accent-500 focus:bg-ink-800 focus:outline-none"
           />
           {query.length > 0 ? (
             <button
@@ -410,28 +431,7 @@ export function SearchScreen() {
             </button>
           ) : null}
         </div>
-
-        <div className="mt-2 flex gap-6">
-          {(["series", "users"] as Tab[]).map((value) => {
-            const active = tab === value;
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setTab(value)}
-                className={`tap-none relative py-2.5 text-[0.875rem] font-semibold transition-colors ${
-                  active ? "text-white" : "text-mist-500 hover:text-mist-300"
-                }`}
-              >
-                {value === "series" ? t("series") : t("people")}
-                {active ? (
-                  <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-white" />
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      </header>
 
       {tab === "series" ? (
         <SeriesResults

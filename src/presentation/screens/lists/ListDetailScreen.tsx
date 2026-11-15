@@ -15,7 +15,7 @@ import {
   useRemoveFromList,
   useToggleListSave,
 } from "@/presentation/hooks/useLists";
-import { plural } from "@/presentation/utils/plural";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
 
 function ItemCard({
   item,
@@ -56,6 +56,7 @@ function ItemCard({
 }
 
 export function ListDetailScreen() {
+  const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: list, isLoading } = useList(id ?? null);
@@ -75,14 +76,14 @@ export function ListDetailScreen() {
   if (!list) {
     return (
       <div className="px-5 pt-[calc(env(safe-area-inset-top)+3rem)] text-center">
-        <p className="text-[1.0625rem] font-semibold text-white">List not found</p>
-        <p className="mt-1 text-[0.875rem] text-mist-500">It may be private or no longer exist.</p>
+        <p className="text-[1.0625rem] font-semibold text-white">{t("listNotFound")}</p>
+        <p className="mt-1 text-[0.875rem] text-mist-500">{t("listPrivateOrRemoved")}</p>
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="tap-none mt-5 inline-flex min-h-[44px] items-center rounded-[12px] bg-ink-800 px-5 text-[1.0625rem] font-semibold text-white active:bg-ink-700"
+          className="tap-none mt-5 inline-flex min-h-[44px] items-center rounded-full bg-ink-800 px-5 text-[0.875rem] font-semibold text-white active:bg-ink-700"
         >
-          Go back
+          {t("close")}
         </button>
       </div>
     );
@@ -95,59 +96,50 @@ export function ListDetailScreen() {
 
   return (
     <>
-      <div className="px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="Go back"
-          className="tap-none -ml-2 flex size-9 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-70"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
-            <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      </div>
-
-      <header className="px-5 pt-3 pb-4">
-        <div className="flex items-center gap-1.5">
-          {list.isPrivate ? (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-mist-500">
-              <rect x="5" y="11" width="14" height="9" rx="2" />
-              <path d="M8 11V8a4 4 0 0 1 8 0v3" strokeLinecap="round" />
+      <header className="ios-material sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-white/[0.08] px-5 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+            className="tap-none flex size-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-70"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
+              <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          ) : null}
-          <h1 className="text-[1.5rem] leading-[1.15] font-bold tracking-[-0.022em] text-white">{list.title}</h1>
+          </button>
+          <h1 className="truncate text-[1.1875rem] font-extrabold tracking-[-0.025em] text-white">
+            {list.title}
+          </h1>
         </div>
 
-        <Link
-          to={list.isOwn ? "/profile" : `/user/${list.ownerUsername}`}
-          className="tap-none mt-3 inline-flex items-center gap-2 active:opacity-70"
-        >
-          <Avatar username={list.ownerUsername} displayName={list.ownerDisplayName} avatarUrl={list.ownerAvatarUrl} size="sm" />
-          <span className="text-[0.8125rem] text-mist-400">
-            {list.isOwn ? "You" : list.ownerDisplayName || list.ownerUsername}
-          </span>
-        </Link>
+        <span className="shrink-0 rounded-full border border-white/10 bg-ink-850 px-2.5 py-0.5 text-[0.6875rem] font-semibold text-mist-400">
+          {list.isPrivate ? t("privateBadge") : t("publicBadge")}
+        </span>
+      </header>
 
-        {list.description ? (
-          <p className="mt-3 text-[0.9375rem] whitespace-pre-wrap text-mist-300">{list.description}</p>
-        ) : null}
+      <div className="px-5 pt-4 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link
+            to={list.isOwn ? "/profile" : `/user/${list.ownerUsername}`}
+            className="tap-none inline-flex items-center gap-2 active:opacity-70"
+          >
+            <Avatar username={list.ownerUsername} displayName={list.ownerDisplayName} avatarUrl={list.ownerAvatarUrl} size="sm" />
+            <span className="text-[0.8125rem] font-semibold text-white">
+              {list.ownerDisplayName || list.ownerUsername}
+            </span>
+            <span className="text-[0.75rem] text-mist-500">
+              · {list.itemCount} {t("series").toLowerCase()}
+            </span>
+          </Link>
 
-        <p className="mt-3 text-[0.75rem] text-mist-500">
-          {plural(list.itemCount, "series", "series")}
-          {saveInfo && saveInfo.saveCount > 0
-            ? ` · Saved by ${plural(saveInfo.saveCount, "person", "people")}`
-            : ""}
-        </p>
-
-        {!list.isOwn ? (
-          <div className="mt-4">
+          {!list.isOwn ? (
             <button
               type="button"
               onClick={() => toggleSave.mutate()}
               disabled={toggleSave.isPending}
               aria-pressed={saveInfo?.saved ?? false}
-              className={`tap-none inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] px-4 text-[0.8125rem] font-semibold transition-colors disabled:opacity-50 ${
+              className={`tap-none inline-flex min-h-[34px] items-center gap-1.5 rounded-full px-3.5 text-[0.75rem] font-semibold transition-colors disabled:opacity-50 ${
                 saveInfo?.saved
                   ? "border border-white/10 bg-ink-850 text-white active:bg-ink-800"
                   : "bg-accent-500 text-white active:opacity-80"
@@ -158,46 +150,49 @@ export function ListDetailScreen() {
                 fill={saveInfo?.saved ? "currentColor" : "none"}
                 stroke="currentColor"
                 strokeWidth="2"
-                className="size-4"
+                className="size-3.5"
               >
                 <path d="M6 4h12v16l-6-4-6 4z" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              {saveInfo?.saved ? "Saved" : "Save list"}
+              {saveInfo?.saved ? t("savedList") : t("saveList")}
+              {saveInfo && saveInfo.saveCount > 0 ? <span className="opacity-70">· {saveInfo.saveCount}</span> : null}
             </button>
-          </div>
-        ) : null}
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setEditing((value) => !value)}
+                className={`tap-none min-h-[34px] rounded-full px-3.5 text-[0.75rem] font-semibold transition-colors ${
+                  editing ? "bg-accent-500 text-white" : "border border-white/10 bg-ink-850 text-white hover:bg-ink-800 active:opacity-80"
+                }`}
+              >
+                {editing ? t("done") : t("manageSeries")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditOpen(true)}
+                className="tap-none min-h-[34px] rounded-full border border-white/10 bg-ink-850 px-3.5 text-[0.75rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80"
+              >
+                {t("editDetails")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeleteOpen(true)}
+                aria-label={t("delete")}
+                className="tap-none flex size-[34px] shrink-0 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-danger-500 transition-colors hover:bg-ink-800 active:opacity-80"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
 
-        {list.isOwn ? (
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setEditing((value) => !value)}
-              className={`tap-none min-h-[38px] flex-1 rounded-[10px] text-[0.8125rem] font-semibold transition-colors ${
-                editing ? "bg-accent-500 text-white" : "border border-white/10 bg-ink-850 text-white hover:bg-ink-800 active:opacity-80"
-              }`}
-            >
-              {editing ? "Done" : "Manage series"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditOpen(true)}
-              className="tap-none min-h-[38px] flex-1 rounded-[10px] border border-white/10 bg-ink-850 text-[0.8125rem] font-semibold text-white transition-colors hover:bg-ink-800 active:opacity-80"
-            >
-              Edit details
-            </button>
-            <button
-              type="button"
-              onClick={() => setDeleteOpen(true)}
-              aria-label="Delete list"
-              className="tap-none flex size-[38px] shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-ink-850 text-danger-500 transition-colors hover:bg-ink-800 active:opacity-80"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
-                <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
+        {list.description ? (
+          <p className="mt-3 text-[0.875rem] whitespace-pre-wrap text-mist-300">{list.description}</p>
         ) : null}
-      </header>
+      </div>
 
       <div className="px-5">
         {!items ? (
@@ -206,7 +201,7 @@ export function ListDetailScreen() {
           </div>
         ) : items.length === 0 ? (
           <p className="pt-6 text-center text-[0.9375rem] text-mist-500">
-            {list.isOwn ? "Add series from any series page." : "This list is empty."}
+            {list.isOwn ? t("emptyListOwner") : t("emptyListVisitor")}
           </p>
         ) : (
           <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
@@ -219,9 +214,9 @@ export function ListDetailScreen() {
 
       <ListFormSheet open={editOpen} onClose={() => setEditOpen(false)} existing={list} />
 
-      <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete list">
+      <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} title={t("confirmDelete")}>
         <p className="pt-3 text-[0.9375rem] text-mist-300">
-          Delete “{list.title}”? This can’t be undone. The series stay in your library.
+          {t("delete")} “{list.title}”?
         </p>
         <Button
           fullWidth
@@ -230,7 +225,7 @@ export function ListDetailScreen() {
           loading={deleteList.isPending}
           onClick={handleDelete}
         >
-          Delete list
+          {t("delete")}
         </Button>
         <Button
           fullWidth
@@ -238,7 +233,7 @@ export function ListDetailScreen() {
           className="mt-2.5"
           onClick={() => setDeleteOpen(false)}
         >
-          Cancel
+          {t("close")}
         </Button>
       </Sheet>
     </>

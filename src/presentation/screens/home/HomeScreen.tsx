@@ -92,13 +92,13 @@ export function HomeScreen() {
         </div>
       </header>
 
-      <UpNextRail />
-
       {featured ? (
-        <div className="mt-6 md:px-5">
+        <div className="md:px-5 md:pt-4">
           <HomeHero series={featured} />
         </div>
       ) : null}
+
+      <UpNextRail />
 
       <ThisWeekRail />
 

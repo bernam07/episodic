@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { ComparisonSheet } from "@/presentation/components/social/ComparisonSheet";
 import {
-  DISPLAY_SERIES_STATUS_LABELS,
   DISPLAY_SERIES_STATUSES,
   resolveDisplayStatus,
 } from "@/domain/entities/SeriesStatus";
@@ -14,20 +13,12 @@ import { FollowButton } from "@/presentation/components/social/FollowButton";
 import { FollowListSheet } from "@/presentation/components/social/FollowListSheet";
 import { FullScreenSpinner, Spinner } from "@/presentation/components/ui/Spinner";
 import { useProfileSummary, useUserFavorites, useUserLibrary } from "@/presentation/hooks/useSocial";
-import { pluralize } from "@/presentation/utils/plural";
+import { useI18n } from "@/presentation/i18n/I18nProvider";
 
 type UserTab = "overview" | "watchlist" | "lists" | "diary";
 
-function StatTile({ value, label }: { value: number; label: string }) {
-  return (
-    <div className="rounded-[14px] border border-white/[0.08] bg-ink-850 px-3 py-3 text-center">
-      <p className="text-[1.125rem] leading-none font-extrabold tabular-nums text-white">{value}</p>
-      <p className="mt-1 text-[0.75rem] text-mist-500">{label}</p>
-    </div>
-  );
-}
-
 export function UserProfileScreen() {
+  const { t } = useI18n();
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const { data: summary, isLoading } = useProfileSummary(username ?? null);
@@ -48,13 +39,13 @@ export function UserProfileScreen() {
   if (!summary) {
     return (
       <div className="px-5 pt-[calc(env(safe-area-inset-top)+3rem)] text-center">
-        <p className="text-[1.0625rem] font-semibold text-white">User not found</p>
-        <p className="mt-1 text-[0.875rem] text-mist-500">No one here goes by “{username}”.</p>
+        <p className="text-[1.0625rem] font-semibold text-white">{t("userNotFound")}</p>
+        <p className="mt-1 text-[0.875rem] text-mist-500">{t("userNotFoundSub")}</p>
         <Link
           to="/search"
-          className="tap-none mt-5 inline-flex min-h-[46px] items-center rounded-[12px] bg-ink-800 px-5 text-[0.9375rem] font-semibold text-white active:bg-ink-700"
+          className="tap-none mt-5 inline-flex min-h-[44px] items-center rounded-full bg-ink-800 px-5 text-[0.875rem] font-semibold text-white active:bg-ink-700"
         >
-          Back to search
+          {t("search")}
         </Link>
       </div>
     );
@@ -64,22 +55,30 @@ export function UserProfileScreen() {
     return <Navigate to="/profile" replace />;
   }
 
+  const statusLabels = {
+    watching: t("watching"),
+    up_to_date: t("upToDate"),
+    want_to_watch: t("wantToWatch"),
+    watched: t("watched"),
+    abandoned: t("abandoned"),
+  } as const;
+
   const counts = DISPLAY_SERIES_STATUSES.map((status) => ({
     status,
     count: (library ?? []).filter((item) => resolveDisplayStatus(item) === status).length,
   }));
 
   const tabs: { id: UserTab; label: string }[] = [
-    { id: "overview", label: "Overview" },
-    { id: "watchlist", label: "Watchlist" },
-    { id: "lists", label: "Lists" },
-    { id: "diary", label: "Activity" },
+    { id: "overview", label: t("overviewTab") },
+    { id: "watchlist", label: t("watchlistTab") },
+    { id: "lists", label: t("listsTab") },
+    { id: "diary", label: t("activityTab") },
   ];
 
   return (
     <>
       <header className="border-b border-white/[0.08]">
-        <div className="relative h-[144px] w-full overflow-hidden bg-gradient-to-br from-accent-600/25 via-ink-900 to-ink-950 md:h-[172px]">
+        <div className="relative h-[136px] w-full overflow-hidden bg-gradient-to-br from-accent-600/25 via-ink-900 to-ink-950 md:h-[164px]">
           {summary.bannerUrl ? (
             <img src={summary.bannerUrl} alt="" className="size-full object-cover opacity-65" />
           ) : null}
@@ -118,7 +117,7 @@ export function UserProfileScreen() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-accent-400">
                     <path d="M16 3h5v5M8 3H3v5M21 3l-7 7M3 3l7 7M16 21h5v-5M8 21H3v-5M21 21l-7-7M3 21l7-7" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  Compare
+                  {t("compare")}
                 </button>
               ) : null}
             </div>
@@ -132,29 +131,33 @@ export function UserProfileScreen() {
           </div>
 
           {summary.bio ? (
-            <p className="mt-2.5 text-[0.875rem] leading-relaxed whitespace-pre-wrap text-mist-300">{summary.bio}</p>
+            <p className="mt-2 text-[0.875rem] leading-relaxed whitespace-pre-wrap text-mist-300">{summary.bio}</p>
           ) : null}
 
-          <div className="mt-4 flex items-center divide-x divide-white/[0.12] text-[0.8125rem]">
-            <div className="pr-4">
+          <div className="mt-3.5 flex flex-wrap items-center divide-x divide-white/[0.12] text-[0.8125rem]">
+            <div className="pr-3.5">
               <strong className="font-bold tabular-nums text-white">{summary.seriesCount}</strong>{" "}
-              <span className="text-mist-400">Series</span>
+              <span className="text-mist-400">{t("series").toLowerCase()}</span>
+            </div>
+            <div className="px-3.5">
+              <strong className="font-bold tabular-nums text-white">{summary.episodesWatched}</strong>{" "}
+              <span className="text-mist-400">{t("episodes")}</span>
             </div>
             <button
               type="button"
               onClick={() => setFollowMode("following")}
-              className="tap-none px-4 text-mist-400 hover:text-white"
+              className="tap-none px-3.5 text-mist-400 hover:text-white"
             >
               <strong className="font-bold tabular-nums text-white">{summary.followingCount}</strong>{" "}
-              Following
+              {t("following")}
             </button>
             <button
               type="button"
               onClick={() => setFollowMode("followers")}
-              className="tap-none pl-4 text-mist-400 hover:text-white"
+              className="tap-none pl-3.5 text-mist-400 hover:text-white"
             >
               <strong className="font-bold tabular-nums text-white">{summary.followersCount}</strong>{" "}
-              {pluralize(summary.followersCount, "Follower", "Followers")}
+              {summary.followersCount === 1 ? t("follower") : t("followers")}
             </button>
           </div>
 
@@ -188,33 +191,19 @@ export function UserProfileScreen() {
         />
       </header>
 
-      {activeTab === "overview" ? (
-        <section className="mt-5 px-5">
-          <div className="grid grid-cols-3 gap-3">
-            <StatTile value={summary.seriesCount} label="series" />
-            <StatTile value={summary.episodesWatched} label="episodes" />
-            <StatTile value={summary.reviewsCount} label="reviews" />
-          </div>
-        </section>
-      ) : null}
-
-      {activeTab === "overview" || activeTab === "lists" ? (
-        <ListsSection userId={summary.id} isOwn={false} />
-      ) : null}
-
       {!summary.isFollowing ? (
         <div className="mx-5 mt-6 rounded-[18px] border border-white/[0.08] bg-ink-850 p-5 text-center">
-          <p className="text-[0.9375rem] font-semibold text-white">This library is private</p>
+          <p className="text-[0.9375rem] font-semibold text-white">{t("privateLibraryTitle")}</p>
           <p className="mx-auto mt-1 max-w-xs text-[0.8125rem] text-mist-500">
-            Follow {summary.displayName || summary.username} to see the series they are watching.
+            {t("privateLibrarySub", { username: summary.username })}
           </p>
         </div>
       ) : (
         <>
-          {(activeTab === "overview" || activeTab === "watchlist") && favorites && favorites.length > 0 ? (
-            <section className="mt-7 px-5">
+          {activeTab === "overview" && favorites && favorites.length > 0 ? (
+            <section className="mt-6 px-5">
               <h2 className="mb-3 flex items-baseline gap-2 text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
-                <span>Favorites</span>
+                <span>{t("favorites")}</span>
                 <span className="text-[0.875rem] font-normal text-mist-500">{favorites.length}</span>
               </h2>
               <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-5">
@@ -232,13 +221,15 @@ export function UserProfileScreen() {
           ) : null}
 
           {activeTab === "overview" || activeTab === "watchlist" ? (
-            <section className="mt-7">
+            <section className="mt-6">
               <div className="mb-3 flex items-baseline justify-between px-5">
-                <h2 className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">Library</h2>
+                <h2 className="text-[1.0625rem] font-bold tracking-[-0.015em] text-white">
+                  {t("library")}
+                </h2>
                 <span className="text-[0.75rem] text-mist-500">
                   {counts
                     .filter((entry) => entry.count > 0)
-                    .map((entry) => `${entry.count} ${DISPLAY_SERIES_STATUS_LABELS[entry.status].toLowerCase()}`)
+                    .map((entry) => `${entry.count} ${statusLabels[entry.status].toLowerCase()}`)
                     .join(" · ")}
                 </span>
               </div>
@@ -249,11 +240,11 @@ export function UserProfileScreen() {
                 </div>
               ) : (library?.length ?? 0) === 0 ? (
                 <p className="px-5 pt-4 text-center text-[0.9375rem] text-mist-500">
-                  Nothing in their library yet.
+                  {t("libraryEmpty")}
                 </p>
               ) : (
                 <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                  {(library ?? []).map((item) => (
+                  {(activeTab === "overview" ? (library ?? []).slice(0, 6) : (library ?? [])).map((item) => (
                     <SeriesCard
                       key={item.seriesId}
                       tmdbId={item.tmdbId}
@@ -269,7 +260,11 @@ export function UserProfileScreen() {
             </section>
           ) : null}
 
-          {activeTab === "overview" || activeTab === "diary" ? (
+          {activeTab === "lists" ? (
+            <ListsSection userId={summary.id} isOwn={false} />
+          ) : null}
+
+          {activeTab === "diary" ? (
             <DiarySection userId={summary.id} />
           ) : null}
         </>

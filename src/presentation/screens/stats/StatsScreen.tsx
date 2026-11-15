@@ -205,32 +205,35 @@ export function StatsScreen() {
 
   return (
     <>
-      <div className="flex items-center gap-2 px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="Go back"
-          className="tap-none -ml-2 flex size-9 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-70"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
-            <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <h1 className="text-[1.25rem] font-bold tracking-[-0.02em] text-white">{t("stats")}</h1>
+      <header className="ios-material sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-white/[0.08] px-5 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-3">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+            className="tap-none flex size-8 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-70"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
+              <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <h1 className="text-[1.25rem] font-extrabold tracking-[-0.025em] text-white">{t("stats")}</h1>
+        </div>
         {!isLoading && insights.seriesTracked > 0 ? (
           <button
             type="button"
             onClick={() => setShareOpen(true)}
             aria-label={t("shareWatchDna")}
-            className="tap-none ml-auto flex size-9 items-center justify-center rounded-full border border-white/10 bg-ink-850 text-white transition-colors hover:bg-ink-800 active:opacity-70"
+            className="tap-none flex items-center gap-1.5 rounded-full border border-accent-500/35 bg-accent-500/15 px-3 py-1.5 text-[0.75rem] font-semibold text-accent-400 transition-colors hover:bg-accent-500/25 active:opacity-75"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-[18px]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
               <path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M12 15V3M8 7l4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
+            <span>{t("shareWatchDna")}</span>
           </button>
         ) : null}
-      </div>
+      </header>
 
       <StatsShareSheet
         open={shareOpen}
@@ -250,17 +253,17 @@ export function StatsScreen() {
         </div>
       ) : (
         <>
-          <section className="px-5">
-            <div className="relative overflow-hidden rounded-[20px] border border-white/[0.07] bg-ink-850 px-6 pt-6 pb-5">
-              <p className="relative text-[0.8125rem] font-semibold text-mist-500">
+          <section className="mt-4 px-5">
+            <div className="relative overflow-hidden rounded-[20px] border border-white/[0.07] bg-ink-850 px-5 pt-5 pb-4">
+              <p className="relative text-[0.75rem] font-bold uppercase tracking-[0.04em] text-mist-400">
                 {t("totalWatchTime")}
               </p>
               <Duration
                 minutes={insights.watchTimeMinutes}
-                className="relative mt-2 block text-[3rem] leading-none font-bold tracking-[-0.03em] tabular-nums text-white"
+                className="relative mt-1.5 block text-[2.625rem] leading-none font-bold tracking-[-0.03em] tabular-nums text-white"
               />
 
-              <div className="relative mt-6 grid grid-cols-4 gap-2 border-t border-white/[0.08] pt-4">
+              <div className="relative mt-5 grid grid-cols-4 gap-2 border-t border-white/[0.08] pt-3.5">
                 <InlineStat value={insights.episodesWatched} label={t("episodes").toLowerCase()} />
                 <InlineStat value={insights.seriesTracked} label={t("series").toLowerCase()} />
                 <InlineStat value={insights.finished} label={t("finishedLabel")} />
@@ -269,38 +272,37 @@ export function StatsScreen() {
             </div>
           </section>
 
-          <section className="mt-3.5 px-5">
-            <div className="flex items-center gap-4 rounded-[14px] border border-white/[0.07] bg-ink-850 px-5 py-4">
-              <div
-                className={`flex size-11 shrink-0 items-center justify-center rounded-full ${
-                  streak && streak > 0 ? "bg-[#ff9f0a]/15 text-[#ff9f0a]" : "bg-ink-800 text-mist-500"
-                }`}
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="size-6">
-                  <path d="M12 2c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1 0-2-1-3 2 1 4 4 4 8a8 8 0 0 1-16 0c0-3 2-5 3-7 1 2 2 2 3 1 0-2-1-3-1-5z" />
-                </svg>
-              </div>
-              <div className="min-w-0 flex-1">
-                {streak && streak > 0 ? (
-                  <>
-                    <p className="text-[1.125rem] leading-none font-bold text-white">
-                      <span className="text-[#ff9f0a]">{streak}</span>{" "}
-                      {t("dayStreak")}
-                    </p>
-                    <p className="mt-1.5 text-[0.75rem] text-mist-500">
-                      {t("streakHint")}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[0.9375rem] font-semibold text-white">{t("noActiveStreak")}</p>
-                    <p className="mt-1 text-[0.75rem] text-mist-500">
-                      {t("noStreakHint")}
-                    </p>
-                  </>
-                )}
-              </div>
+          <section className="mt-3 grid grid-cols-3 gap-2.5 px-5">
+            <div className="rounded-[14px] border border-white/[0.07] bg-ink-850 px-3 py-3 text-center">
+              <p className="text-[1.1875rem] leading-none font-extrabold tabular-nums text-[#ff9f0a]">
+                {streak ?? 0}
+              </p>
+              <p className="mt-1 truncate text-[0.6875rem] font-medium text-mist-400">
+                {t("dayStreak")}
+              </p>
             </div>
+            <Link
+              to="/library?view=favorites"
+              className="tap-none rounded-[14px] border border-white/[0.07] bg-ink-850 px-3 py-3 text-center transition-colors hover:bg-ink-800 active:opacity-80"
+            >
+              <p className="text-[1.1875rem] leading-none font-extrabold tabular-nums text-white">
+                {insights.favorites}
+              </p>
+              <p className="mt-1 truncate text-[0.6875rem] font-medium text-mist-400">
+                {t("favorites")}
+              </p>
+            </Link>
+            <Link
+              to="/library?view=rewatched"
+              className="tap-none rounded-[14px] border border-white/[0.07] bg-ink-850 px-3 py-3 text-center transition-colors hover:bg-ink-800 active:opacity-80"
+            >
+              <p className="text-[1.1875rem] leading-none font-extrabold tabular-nums text-white">
+                {insights.rewatches}
+              </p>
+              <p className="mt-1 truncate text-[0.6875rem] font-medium text-mist-400">
+                {t("rewatches")}
+              </p>
+            </Link>
           </section>
 
           <Breakdown statusCounts={insights.statusCounts} total={insights.seriesTracked} />
@@ -310,7 +312,7 @@ export function StatsScreen() {
           <Ratings ratings={insights.ratings} />
 
           {insights.mostWatched ? (
-            <section className="mt-8">
+            <section className="mt-8 pb-8">
               <SectionHeading>{t("mostWatched")}</SectionHeading>
               <div className="px-5">
                 <Link
@@ -353,42 +355,6 @@ export function StatsScreen() {
               </div>
             </section>
           ) : null}
-
-          <section className="mt-6 px-5 pb-10">
-            <div className="grid grid-cols-2 gap-3">
-              <Link
-                to="/library?view=favorites"
-                className="tap-none flex items-center gap-3 rounded-[14px] border border-white/[0.07] bg-ink-850 px-4 py-3.5 transition-colors hover:bg-ink-800 active:opacity-80"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="size-[18px] shrink-0 text-danger-500">
-                  <path d="M12 21.23l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
-                </svg>
-                <div>
-                  <p className="text-[1.125rem] leading-none font-bold tabular-nums text-white">{insights.favorites}</p>
-                  <p className="mt-1 text-[0.75rem] font-medium text-mist-500">{t("favorites").toLowerCase()}</p>
-                </div>
-              </Link>
-              <Link
-                to="/library?view=rewatched"
-                className="tap-none flex items-center gap-3 rounded-[14px] border border-white/[0.07] bg-ink-850 px-4 py-3.5 transition-colors hover:bg-ink-800 active:opacity-80"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="size-[18px] shrink-0 text-accent-500"
-                >
-                  <path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <div>
-                  <p className="text-[1.125rem] leading-none font-bold tabular-nums text-white">{insights.rewatches}</p>
-                  <p className="mt-1 text-[0.75rem] font-medium text-mist-500">{t("rewatched").toLowerCase()}</p>
-                </div>
-              </Link>
-            </div>
-          </section>
         </>
       )}
     </>
