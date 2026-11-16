@@ -10,7 +10,7 @@ export function HomeHero({ series }: { series: SeriesSummary }) {
 
   return (
     <Link to={`/series/${series.tmdbId}`} className="group tap-none relative block active:opacity-95">
-      <div className="ambient-cinema-glow pointer-events-none absolute -inset-x-4 -top-4 -bottom-10 -z-10 opacity-90 blur-2xl" />
+      <div className="ambient-cinema-glow pointer-events-none absolute inset-x-0 -top-4 -bottom-10 -z-10 opacity-90 blur-2xl" />
       {backdrop ? (
         <img
           src={backdrop}

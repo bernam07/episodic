@@ -147,17 +147,22 @@ html {
   background-color: var(--color-ink-950);
   -webkit-text-size-adjust: 100%;
   color-scheme: dark;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
 }
 
 body {
   margin: 0;
+  width: 100%;
   min-height: 100dvh;
+  overflow-x: clip;
   background-color: var(--color-ink-950);
   color: var(--color-mist-100);
   font-family: var(--font-sans);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-x: none;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -173,7 +178,9 @@ p {
 }
 
 #root {
+  width: 100%;
   min-height: 100dvh;
+  overflow-x: clip;
   isolation: isolate;
 }
 

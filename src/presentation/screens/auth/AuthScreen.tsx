@@ -206,7 +206,7 @@ export function AuthScreen() {
   const copy = FORM_COPY[mode];
 
   return (
-    <div className="relative flex min-h-dvh flex-col md:flex-row">
+    <div className="relative flex min-h-dvh flex-col overflow-x-clip md:flex-row">
       <div className="relative h-[42vh] min-h-[260px] w-full shrink-0 overflow-hidden md:h-auto md:min-h-dvh md:w-1/2">
         <PosterWall posterPaths={posterPaths} />
         <div className="hero-scrim absolute inset-0" />

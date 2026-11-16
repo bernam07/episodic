@@ -99,7 +99,7 @@ export function OnboardingScreen() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-3xl flex-col">
+    <div className="mx-auto flex min-h-dvh max-w-3xl flex-col overflow-x-clip">
       <header className="ios-material sticky top-0 z-20 border-b border-white/[0.08] px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">

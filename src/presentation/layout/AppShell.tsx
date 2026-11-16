@@ -7,10 +7,10 @@ export function AppShell() {
   useSyncContinuingSeries();
 
   return (
-    <div className="relative min-h-dvh bg-ink-950 text-mist-100">
+    <div className="relative min-h-dvh overflow-x-clip bg-ink-950 text-mist-100">
       <SideNav />
-      <div className="pl-safe pr-safe md:pl-60">
-        <main className="no-scrollbar relative mx-auto min-h-dvh w-full max-w-screen-sm pb-[calc(env(safe-area-inset-bottom)+3.75rem)] md:max-w-5xl md:pb-12">
+      <div className="pl-safe pr-safe min-w-0 md:pl-60">
+        <main className="no-scrollbar relative mx-auto min-h-dvh w-full max-w-screen-sm overflow-x-clip pb-[calc(env(safe-area-inset-bottom)+3.75rem)] md:max-w-5xl md:pb-12">
           <Outlet />
         </main>
       </div>
